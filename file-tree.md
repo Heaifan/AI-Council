@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-07（D1-R2 更新）
+> 最后更新：2026-08-07（D1-R3 更新）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -11,7 +11,7 @@ AI-Council/
 ├── docs/                      # Phase 0 冻结文档（12 篇）
 ├── schema/                    # Schema v0.1 正式定义 + 示例
 ├── protocols/                 # 用户协议目录（运行时由浏览器选择）
-├── app/                       # ★ D1-R1/D1-R2 正式实现（纯 HTML/JS）
+├── app/                       # ★ D1-R1/D1-R2/D1-R3 正式实现（纯 HTML/JS）
 ├── reports/                   # 开发报告 + 真机验收截图
 ├── file-tree.md               # 本文件
 ├── changelog.md
@@ -31,9 +31,14 @@ app/
 │   ├── protocol-schema-validator.js  # Ajv 2020 封装，加载正式 Schema
 │   ├── protocol-semantic-validator.js  # D1-R2 确定性语义校验（可达性/Human Gate/Side/Role）
 │   ├── protocol-registry.js         # Available / Invalid 分流 + 重复检测
-│   ├── protocol-diagnostic.js       # 统一诊断结构
+│   ├── protocol-diagnostic.js       # 统一诊断结构（含 RUNTIME_* 码）
 │   ├── protocol-file-source.js      # File 快照 + protocols/**/protocol.json 发现
 │   ├── protocol-session.js          # Session 冻结（第42题：无热加载）
+│   ├── meeting-state.js             # D1-R3 Meeting 状态模型 + 错误模型
+│   ├── meeting-action.js            # D1-R3 Pending Action 构造
+│   ├── meeting-factory.js           # D1-R3 从 Available Protocol 创建 Meeting
+│   ├── meeting-runtime.js           # D1-R3 核心确定性引擎（start/drive/transition）
+│   ├── mock-agent-runtime.js        # D1-R3 测试用 Mock Agent 推进
 │   └── ui/
 │       ├── dom.js               # 轻量 DOM 工具
 │       ├── diagnostic-view.js   # 坏规则诊断渲染
@@ -50,6 +55,7 @@ app/
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
     ├── protocol-test-cases-session.js  # TEST-08..10, 13..15（冻结/Schema Override）
     ├── protocol-test-cases-semantic.js  # TEST-16..31（D1-R2 语义校验）
+│   ├── protocol-test-cases-runtime.js   # TEST-32..53（D1-R3 会议运行时）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/

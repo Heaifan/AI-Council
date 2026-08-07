@@ -18,6 +18,18 @@
 - 自动测试由 15 项增至 31 项（新增 TEST-16..TEST-31，覆盖每个语义规则及多错误一次返回）；原 15 项无回归。
 - 正式 `protocol.schema.json` 未修改；无 D1-R3 / D2 范围外实现。
 
+## D1-R3 — Meeting State Machine / Deterministic Runtime — 2026-08-07
+
+- 新增 `app/js/meeting-state.js`：Meeting 状态模型 + 错误模型（`STATUS` / `markFailed` / `recordCompletion` / `isActive`）。
+- 新增 `app/js/meeting-action.js`：Pending Action 构造（`collect_responses` / `await_human_decision`），`Runtime.getNextAction` 回答「下一步合法动作」。
+- 新增 `app/js/meeting-factory.js`：仅从 Available Protocol + config 经 `MeetingFactory.createMeeting` 创建会议（status=initialized）。
+- 新增 `app/js/meeting-runtime.js`：核心确定性引擎（`start` / `drive` / `submitResult` / `submitHumanDecision` / `resolveTransition` / `resolveParticipants`）；含 `MAX_INTERNAL_STEPS=1000` 安全阀；多候选 transition 确定性失败 `RUNTIME_AMBIGUOUS_TRANSITION`，绝不偷偷选数组第一项。
+- 新增 `app/js/mock-agent-runtime.js`：测试用 Mock Agent 一键推进整张 Phase Graph。
+- 新增 `app/tests/protocol-test-cases-runtime.js`：TEST-32..TEST-53（22 项），覆盖创建/启动/all_selected_respond/重复提交/Secretary/Critique/Human Gate 阻塞/Finish→$end/合法循环/非法 choice/Battle 选择/Battle 缺 selection/各 actor selector/System 自驱/$end/Ambiguous Transition/Step Limit/E2E Finish/E2E Continue+Battle。
+- 在 `protocol-diagnostic.js` 冻结 10 个 `RUNTIME_*` 诊断码（复用既有 ProtocolDiagnostic 体系）。
+- `index.html` 加载 5 个新脚本、页眉/脚注更新为 D1-R3；`run-node.js` 的 RUNTIME / AUDITED 增加 D1-R3 模块与测试文件。
+- 自动测试由 31 项增至 53 项（53/53 PASS）；无 LLM、无 Prompt 编译、无持久化/恢复/回放（属 D1-R4）、无 Checkpoint/Restore/Replay/WebRelay（属 D2）；正式 `protocol.schema.json` 未修改。
+
 ## [0.1.0] — D1-R1 Protocol Registry (HTML/JS) — 2026-08-07
 
 技术栈正式冻结为 **HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。

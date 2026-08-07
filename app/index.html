@@ -2,14 +2,14 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>AI顾问委员会 · Protocol Semantic Validator (D1-R2)</title>
+<title>AI顾问委员会 · Meeting Runtime (D1-R3)</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
 <header class="top">
-  <h1>AI顾问委员会 · Protocol Semantic Validator</h1>
-  <span class="badge">D1-R2 Developer Harness</span>
+  <h1>AI顾问委员会 · Meeting Runtime</h1>
+  <span class="badge">D1-R3 Developer Harness</span>
 </header>
 
 <section class="controls">
@@ -37,9 +37,10 @@
      之后无论磁盘上的 <code>protocol.json</code> 如何修改，本页结果都不会变化。
      需要重新读取规则请<strong>重新打开页面</strong>或<strong>重新选择目录（=新建 Session）</strong>。
      本应用不提供、也不允许提供“热刷新 Protocol”按钮。</p>
-  <p><strong>范围</strong>：D1-R2 在 JSON Parse + JSON Schema 校验之后，增加确定性的 Protocol 语义校验
-     （Phase 可达性、transition target、Human Gate、Side/Role 数量语义、Visibility 等）。
-     语义非法的 Protocol 进入 Quarantine，并在 Invalid 区展示其 Semantic Diagnostic Code。</p>
+  <p><strong>范围</strong>：D1-R3 在 Schema + Semantic 校验之后，增加确定性 Meeting Runtime。
+     从 Available Protocol 创建会议，按 Phase Graph 推进：Agent / Secretary / Battle 收集响应，
+     Human Gate 真正停住等待仲裁，System Phase 自动完成，$end 正常结束。Runtime 只读 Protocol、不接 LLM、
+     不生成 Prompt、不做持久化。</p>
 </footer>
 
 <script src="vendor/ajv2020.bundle.js"></script>
@@ -50,6 +51,11 @@
 <script src="js/protocol-semantic-validator.js"></script>
 <script src="js/protocol-registry.js"></script>
 <script src="js/protocol-session.js"></script>
+<script src="js/meeting-state.js"></script>
+<script src="js/meeting-action.js"></script>
+<script src="js/meeting-factory.js"></script>
+<script src="js/meeting-runtime.js"></script>
+<script src="js/mock-agent-runtime.js"></script>
 <script src="js/ui/dom.js"></script>
 <script src="js/ui/diagnostic-view.js"></script>
 <script src="js/ui/registry-view.js"></script>

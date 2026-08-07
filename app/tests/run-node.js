@@ -20,11 +20,17 @@ const RUNTIME = [
   "app/js/protocol-semantic-validator.js",
   "app/js/protocol-registry.js",
   "app/js/protocol-session.js",
+  "app/js/meeting-state.js",
+  "app/js/meeting-action.js",
+  "app/js/meeting-factory.js",
+  "app/js/meeting-runtime.js",
+  "app/js/mock-agent-runtime.js",
   "app/tests/protocol-test-suite.js",
   "app/tests/protocol-test-fixtures.js",
   "app/tests/protocol-test-cases.js",
   "app/tests/protocol-test-cases-session.js",
-  "app/tests/protocol-test-cases-semantic.js"
+  "app/tests/protocol-test-cases-semantic.js",
+  "app/tests/protocol-test-cases-runtime.js"
 ];
 
 const AUDITED = [
@@ -37,6 +43,11 @@ const AUDITED = [
   "app/js/protocol-semantic-validator.js",
   "app/js/protocol-registry.js",
   "app/js/protocol-session.js",
+  "app/js/meeting-state.js",
+  "app/js/meeting-action.js",
+  "app/js/meeting-factory.js",
+  "app/js/meeting-runtime.js",
+  "app/js/mock-agent-runtime.js",
   "app/js/ui/dom.js",
   "app/js/ui/diagnostic-view.js",
   "app/js/ui/registry-view.js"
