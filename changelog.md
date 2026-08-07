@@ -47,6 +47,17 @@
 - 新增 `app/tests/protocol-test-cases-persistence.js`：TEST-54..TEST-84（31 项），含 `SAVE → DESTROY → LOAD → CONTINUE → $end` 三条端到端。自动测试由 53 项增至 **84 项（84/84 PASS）**。
 - 正式 `schema/schemas/`（6 份）**零修改**；无 Replay / Timeline UI / Branch / Artifact-Annotation Runtime / InstructionPacket / Prompt 编译 / Web Relay / 真实 LLM。
 
+## D2-R1 — Instruction Compiler / Role Card Registry — 2026-08-07
+
+- 新增 `app/js/role-card-registry.js`：按 `role_class` 确定性解析 Role Card（同 class 多卡按 `role_id` 升序 pick 第一张），补 D1-R4 报告 §24-1 的 Role Registry 缺口；与 Model Registry 解耦（Role-Card-Spec §1）。
+- 新增 `app/js/instruction-packet-schema.js`：用 `instruction-packet.schema.json`（Draft 2020-12）校验编译产物，复用 `vendor/ajv2020.bundle.js` 与 `SchemaValidator.toDiagnostics`。
+- 新增 `app/js/instruction-compiler.js`：确定性 `(Protocol, Meeting, Phase, Participant) → InstructionPacket`；复用 `Runtime._resolveParticipants` 与 `ProtocolFingerprint.canonicalize`；`packet_id` 内容寻址（FNV-1a 32-bit，纯 JS，无 Crypto 依赖）；`generated_at` 可注入时钟；不接 LLM / 不渲染 Prompt / 不接 Transport / 不修改 Runtime。
+- 新增 `roles/advisor.json` 与 `roles/chair-secretary.json`：示例 Role Card（符合 `role.schema.json`），供测试与未来浏览器 loader 装载。
+- 新增 `schema/schemas/instruction-packet.schema.json`：**新增** Schema（非冻结 6 份之一），`additionalProperties:false`，字段对齐编译产物；已写入 `schema/manifest.sha256.json`。
+- 在 `protocol-diagnostic.js` 冻结 7 个 `COMPILER_*` / `ROLE_*` 诊断码（含 `ROLE_CARD_NOT_FOUND` / `ROLE_CARD_INVALID` / `COMPILER_PARTICIPANT_NOT_TARGETED` / `COMPILER_NO_AGENT_TARGET` 等）。
+- 新增 `app/tests/protocol-test-cases-compiler.js`：TEST-85..TEST-109（25 项），覆盖确定性 / 内容寻址 / Role Card 解析与拒绝 / 可见性与上下文与输出合同透传 / actor 解析 / 各类拒绝路径 / Schema 校验 / JSON 安全。
+- 自动测试由 84 项增至 **109 项（109/109 PASS）**；无 Prompt 编译（D2-R2）/ Transport / Web Relay（D2-R3）/ 真实 LLM；正式 `schema/schemas/`（6 份）**零修改**。
+
 ## [0.1.0] — D1-R1 Protocol Registry (HTML/JS) — 2026-08-07
 
 技术栈正式冻结为 **HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。

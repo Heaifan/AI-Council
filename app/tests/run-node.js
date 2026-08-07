@@ -32,6 +32,9 @@ const RUNTIME = [
   "app/js/meeting-restore-validator.js",
   "app/js/meeting-persistence.js",
   "app/js/meeting-restore.js",
+  "app/js/role-card-registry.js",
+  "app/js/instruction-packet-schema.js",
+  "app/js/instruction-compiler.js",
   "app/js/mock-agent-runtime.js",
   "app/tests/protocol-test-suite.js",
   "app/tests/protocol-test-fixtures.js",
@@ -39,7 +42,8 @@ const RUNTIME = [
   "app/tests/protocol-test-cases-session.js",
   "app/tests/protocol-test-cases-semantic.js",
   "app/tests/protocol-test-cases-runtime.js",
-  "app/tests/protocol-test-cases-persistence.js"
+  "app/tests/protocol-test-cases-persistence.js",
+  "app/tests/protocol-test-cases-compiler.js"
 ];
 
 const AUDITED = [
@@ -64,6 +68,9 @@ const AUDITED = [
   "app/js/meeting-restore-validator.js",
   "app/js/meeting-persistence.js",
   "app/js/meeting-restore.js",
+  "app/js/role-card-registry.js",
+  "app/js/instruction-packet-schema.js",
+  "app/js/instruction-compiler.js",
   "app/js/mock-agent-runtime.js",
   "app/js/ui/dom.js",
   "app/js/ui/diagnostic-view.js",
@@ -85,6 +92,9 @@ const ctx = {
   messageSchemaText: read("schema/schemas/message.schema.json"),
   artifactSchemaText: read("schema/schemas/artifact.schema.json"),
   annotationSchemaText: read("schema/schemas/annotation.schema.json"),
+  instructionPacketSchemaText: read("schema/schemas/instruction-packet.schema.json"),
+  roleCardAdvisorText: read("roles/advisor.json"),
+  roleCardChairSecretaryText: read("roles/chair-secretary.json"),
   appSources
 };
 

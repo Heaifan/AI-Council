@@ -104,6 +104,11 @@
       "bytes": 2025
     },
     {
+      "path": "schemas/instruction-packet.schema.json",
+      "sha256": "a685ae049545efaa03e1df0992ae0934a6090b4b9149627c7d3c50581bddc5b0",
+      "bytes": 7376
+    },
+    {
       "path": "tools/validate_schemas.py",
       "sha256": "025f51906243b3f75002b039c9e703a7fe54976e70a8516f77452676723d067b",
       "bytes": 15042

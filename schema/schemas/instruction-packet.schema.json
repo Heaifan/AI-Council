@@ -1,0 +1,367 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xuanyu.local/ai-council/schemas/instruction-packet.schema.json",
+  "title": "AI Council Instruction Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "packet_id",
+    "compiler_version",
+    "protocol",
+    "meeting",
+    "phase",
+    "target",
+    "instruction",
+    "role_card",
+    "visibility",
+    "output_contract",
+    "actor",
+    "generated_at",
+    "deterministic"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "packet_id": {
+      "type": "string",
+      "pattern": "^ip-[0-9a-f]{8}$"
+    },
+    "compiler_version": {
+      "type": "string"
+    },
+    "protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_id",
+        "protocol_version"
+      ],
+      "properties": {
+        "protocol_id": {
+          "type": "string"
+        },
+        "protocol_version": {
+          "type": "string"
+        }
+      }
+    },
+    "meeting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "meeting_id",
+        "visibility_mode"
+      ],
+      "properties": {
+        "meeting_id": {
+          "type": "string"
+        },
+        "visibility_mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "public",
+            "semi_anonymous",
+            "full_anonymous",
+            null
+          ]
+        }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "phase_id",
+        "phase_kind",
+        "phase_name"
+      ],
+      "properties": {
+        "phase_id": {
+          "type": "string"
+        },
+        "phase_kind": {
+          "type": "string",
+          "enum": [
+            "agent_turn",
+            "secretary_summary",
+            "critique",
+            "battle",
+            "human_gate",
+            "archive",
+            "system"
+          ]
+        },
+        "phase_name": {
+          "type": "string"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "participant_id",
+        "role_class",
+        "side_id",
+        "alias"
+      ],
+      "properties": {
+        "participant_id": {
+          "type": "string"
+        },
+        "role_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "advisor",
+            "chair",
+            "secretary",
+            "chair_secretary",
+            null
+          ]
+        },
+        "side_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "alias": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "instruction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task",
+        "context_scope",
+        "context_keys",
+        "include_role_card",
+        "include_visibility_rules"
+      ],
+      "properties": {
+        "task": {
+          "type": "string"
+        },
+        "context_scope": {
+          "type": "string",
+          "enum": [
+            "none",
+            "phase",
+            "meeting",
+            "selective"
+          ]
+        },
+        "context_keys": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "include_role_card": {
+          "type": "boolean"
+        },
+        "include_visibility_rules": {
+          "type": "boolean"
+        }
+      }
+    },
+    "role_card": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "role_id",
+        "name",
+        "role_class",
+        "description",
+        "responsibilities",
+        "focus_areas",
+        "behavioral_constraints"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string"
+        },
+        "role_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "role_class": {
+          "type": "string",
+          "enum": [
+            "advisor",
+            "chair",
+            "secretary",
+            "chair_secretary"
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "responsibilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "focus_areas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "behavioral_constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "task_guidance": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "extensions": {
+          "type": "object"
+        }
+      }
+    },
+    "visibility": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "allowed_modes",
+        "anonymous",
+        "rules_included"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "public",
+            "semi_anonymous",
+            "full_anonymous"
+          ]
+        },
+        "allowed_modes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "public",
+              "semi_anonymous",
+              "full_anonymous"
+            ]
+          }
+        },
+        "anonymous": {
+          "type": "boolean"
+        },
+        "rules_included": {
+          "type": "boolean"
+        }
+      }
+    },
+    "output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "text",
+            "structured_json"
+          ]
+        },
+        "required_sections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "json_schema": {
+          "type": "object"
+        }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selector"
+      ],
+      "properties": {
+        "selector": {
+          "type": "string"
+        },
+        "side_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role_class": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "participant_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "selection_key": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "deterministic": {
+      "const": true
+    }
+  }
+}
