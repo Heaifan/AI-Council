@@ -10,9 +10,13 @@
 - 更新 `file-tree.md`，使导航统一指向 HTML/CSS/JavaScript 正式实现。
 - 修正 D1-R1 报告中文件统计（22 个新增文件）与 Git 状态（cf13050 / ef3a257）。
 
-## [Unreleased]
+## D1-R2 — Protocol Semantic Validator — 2026-08-07
 
-- （无）
+- 新增 `app/js/protocol-semantic-validator.js`：对通过 JSON Schema 校验的 Protocol 做确定性语义校验（100% deterministic，无 LLM）。
+- 语义规则：Phase ID 唯一性、initial_phase_id 存在性、Transition target 存在性、Human Gate actor/completion 合规、Phase 可达性、$end 可达性、Side 唯一性/数量/总容量、Required Role 唯一性/数量、Advisor 与 participant_policy 一致性、Default Visibility 合法性。
+- Registry 在 Schema PASS 后追加 Semantic Gate：Semantic 失败进入 Quarantine 并携带 Semantic Diagnostic Code；合法循环允许，仅需至少一条路径抵达 $end。
+- 自动测试由 15 项增至 31 项（新增 TEST-16..TEST-31，覆盖每个语义规则及多错误一次返回）；原 15 项无回归。
+- 正式 `protocol.schema.json` 未修改；无 D1-R3 / D2 范围外实现。
 
 ## [0.1.0] — D1-R1 Protocol Registry (HTML/JS) — 2026-08-07
 

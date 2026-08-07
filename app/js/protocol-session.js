@@ -70,7 +70,7 @@
     }
 
     var loadResults = A.ProtocolLoader.loadAll(snapshot.protocolFiles);
-    var registry = A.ProtocolRegistry.build(loadResults, validator, sessionDiagnostics);
+    var registry = A.ProtocolRegistry.build(loadResults, validator, A.ProtocolSemanticValidator, sessionDiagnostics);
 
     return Object.freeze({
       sessionId: "S" + (++seq),

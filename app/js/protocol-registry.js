@@ -25,8 +25,8 @@
     });
   }
 
-  /* 阶段一：解析结果 → 候选 / 隔离 */
-  function classify(loadResults, validator) {
+  /* 阶段一：解析结果 → 候选 / 隔离（Schema PASS 后追加 D1-R2 Semantic Gate） */
+  function classify(loadResults, validator, semanticValidator) {
     var candidates = [], invalid = [];
     (loadResults || []).forEach(function (r) {
       if (!r.ok) { invalid.push(quarantine(r.filePath, r.identity, r.diagnostics)); return; }
@@ -39,6 +39,27 @@
         invalid.push(quarantine(r.filePath, r.identity, SV.toDiagnostics(result.errors, r.filePath, r.identity)));
         return;
       }
+
+      /* D1-R2：Schema PASS 不等于 Available，再做确定性语义校验 */
+      if (semanticValidator) {
+        var sr = semanticValidator.validate(r.parsed);
+        if (!sr.valid) {
+          var semDiags = sr.diagnostics.map(function (rawD) {
+            return D.create({
+              code: rawD.code,
+              filePath: r.filePath,
+              protocolId: r.identity.protocolId,
+              protocolVersion: r.identity.version,
+              jsonPath: rawD.jsonPath,
+              message: rawD.message,
+              details: rawD.details
+            });
+          });
+          invalid.push(quarantine(r.filePath, r.identity, semDiags));
+          return;
+        }
+      }
+
       candidates.push({ filePath: r.filePath, identity: r.identity, document: r.parsed });
     });
     return { candidates: candidates, invalid: invalid };
@@ -72,8 +93,8 @@
     return { accepted: accepted, conflicted: conflicted };
   }
 
-  function build(loadResults, validator, extraDiagnostics) {
-    var phase1 = classify(loadResults, validator);
+  function build(loadResults, validator, semanticValidator, extraDiagnostics) {
+    var phase1 = classify(loadResults, validator, semanticValidator);
     var phase2 = splitDuplicates(phase1.candidates);
 
     var available = phase2.accepted.map(function (c) {

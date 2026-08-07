@@ -17,12 +17,14 @@ const RUNTIME = [
   "app/js/protocol-file-source.js",
   "app/js/protocol-loader.js",
   "app/js/protocol-schema-validator.js",
+  "app/js/protocol-semantic-validator.js",
   "app/js/protocol-registry.js",
   "app/js/protocol-session.js",
   "app/tests/protocol-test-suite.js",
   "app/tests/protocol-test-fixtures.js",
   "app/tests/protocol-test-cases.js",
-  "app/tests/protocol-test-cases-session.js"
+  "app/tests/protocol-test-cases-session.js",
+  "app/tests/protocol-test-cases-semantic.js"
 ];
 
 const AUDITED = [
@@ -32,6 +34,7 @@ const AUDITED = [
   "app/js/protocol-file-source.js",
   "app/js/protocol-loader.js",
   "app/js/protocol-schema-validator.js",
+  "app/js/protocol-semantic-validator.js",
   "app/js/protocol-registry.js",
   "app/js/protocol-session.js",
   "app/js/ui/dom.js",

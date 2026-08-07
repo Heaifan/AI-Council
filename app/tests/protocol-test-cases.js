@@ -117,11 +117,14 @@
       });
   });
 
-  T.test("TEST-11", "语义非法示例在 D1-R1 通过 Schema 层（未偷跑 D1-R2）", function (ctx) {
+  T.test("TEST-11", "D1-R2：语义非法示例现在被 Semantic 拒绝（transition target 不存在）", function (ctx) {
     return F.buildSession([F.schemaEntry(ctx.schemaText), F.protocolEntry("semantic", ctx.invalidSemanticText)])
       .then(function (s) {
-        T.assertEqual(s.registry.counts.available, 1, "Available（语义检查属于 D1-R2）");
-        T.assertEqual(s.registry.counts.invalid, 0, "Invalid");
+        T.assertEqual(s.registry.counts.available, 0, "Available（语义检查已启用）");
+        T.assertEqual(s.registry.counts.invalid, 1, "Invalid");
+        var ds = s.registry.invalid[0].diagnostics;
+        T.assert(ds.some(function (d) { return d.code === "SEMANTIC_TRANSITION_TARGET_NOT_FOUND"; }),
+          "必须给出 SEMANTIC_TRANSITION_TARGET_NOT_FOUND，实际：" + ds.map(function (d) { return d.code; }).join(","));
       });
   });
 
