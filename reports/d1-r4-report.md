@@ -237,8 +237,10 @@ node app/tests/run-node.js
 
 - Branch：`main`
 - Commit message：`D1-R4: add meeting persistence and restore`
-- HEAD / remote 一致性以 `git ls-remote origin main` 为准（见 §31）。
-- 注：本沙箱环境限制对远程跟踪引用（`packed-refs`）的写入，`git status -sb` 可能显示误导性的 `ahead N`。该显示仅反映本地跟踪引用陈旧，**不代表未推送**。
+- HEAD：`72051aa9456428835c30e692f14c87ddf8e65bf7`（短 `72051aa`）
+- Remote main（`git ls-remote origin main` 权威校验）：`72051aa9456428835c30e692f14c87ddf8e65bf7` = HEAD，**已 push 成功**
+- Ahead/Behind：0/0；Worktree：clean
+- 提交规模：22 files changed（含本报告 +302），`+1808 / -21`
 
 ## 22. 范围越界扫描
 
