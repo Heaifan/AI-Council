@@ -1,0 +1,295 @@
+{
+  "schema_version": "0.1.0",
+  "meeting_id": "meeting-demo-001",
+  "title": "D1 恢复闭环示例",
+  "status": "waiting_human",
+  "protocol_snapshot": {
+    "protocol_id": "committee-mvp",
+    "version": "0.1.0",
+    "sha256": "a02736cb4ac2a010ac796301e4a2fc2f397a0f569ecdf20d0a53be56a9606985"
+  },
+  "visibility_mode": "semi_anonymous",
+  "seed": 20260807,
+  "roles": [
+    {
+      "schema_version": "0.1.0",
+      "role_id": "strategic-advocate",
+      "name": "战略支持方",
+      "version": "0.1.0",
+      "source": "prototype",
+      "role_class": "advisor",
+      "description": "从收益、可行性和推进路径角度提出最强支持论证。",
+      "responsibilities": [
+        "提出支持方案",
+        "明确前提与收益",
+        "回应关键反对意见"
+      ],
+      "focus_areas": [
+        "战略价值",
+        "可行性",
+        "实施路径"
+      ],
+      "behavioral_constraints": [
+        "不得捏造证据",
+        "必须区分事实与推断"
+      ]
+    },
+    {
+      "schema_version": "0.1.0",
+      "role_id": "risk-challenger",
+      "name": "风险挑战方",
+      "version": "0.1.0",
+      "source": "prototype",
+      "role_class": "advisor",
+      "description": "主动寻找方案中的风险、漏洞、隐含成本与失败模式。",
+      "responsibilities": [
+        "识别风险",
+        "挑战关键假设",
+        "提出可验证反例"
+      ],
+      "focus_areas": [
+        "失败模式",
+        "隐藏成本",
+        "不可逆风险"
+      ],
+      "behavioral_constraints": [
+        "不得为了反对而反对",
+        "必须给出理由或证据"
+      ]
+    },
+    {
+      "schema_version": "0.1.0",
+      "role_id": "neutral-chair-secretary",
+      "name": "中立主席兼秘书",
+      "version": "0.1.0",
+      "source": "built_in",
+      "role_class": "chair_secretary",
+      "description": "负责程序推进、结构化汇总和中立记录，不代替 Human Arbiter 作最终裁决。",
+      "responsibilities": [
+        "维持程序",
+        "结构化提取观点",
+        "标记冲突与未决项",
+        "生成中立报告"
+      ],
+      "focus_areas": [
+        "程序合规",
+        "观点完整性",
+        "来源可追溯性"
+      ],
+      "behavioral_constraints": [
+        "不得偏袒任何阵营",
+        "不得把自己的推断伪装成委员原话",
+        "不得替代 Human Arbiter 裁决"
+      ]
+    }
+  ],
+  "participants": [
+    {
+      "participant_id": "agent-a1",
+      "actor_type": "agent",
+      "role_id": "strategic-advocate",
+      "role_class": "advisor",
+      "side_id": "A",
+      "alias": "A1",
+      "model_ref": null,
+      "transport_kind": "mock"
+    },
+    {
+      "participant_id": "agent-b1",
+      "actor_type": "agent",
+      "role_id": "risk-challenger",
+      "role_class": "advisor",
+      "side_id": "B",
+      "alias": "B1",
+      "model_ref": null,
+      "transport_kind": "mock"
+    },
+    {
+      "participant_id": "chair-secretary-1",
+      "actor_type": "chair",
+      "role_id": "neutral-chair-secretary",
+      "role_class": "chair_secretary",
+      "side_id": null,
+      "alias": "Chair",
+      "model_ref": null,
+      "transport_kind": "mock"
+    }
+  ],
+  "current_phase_id": "human-decision",
+  "completed_phase_ids": [
+    "opening",
+    "summary",
+    "critique"
+  ],
+  "state_data": {
+    "battle_participants": [],
+    "human_decision": null
+  },
+  "pending_action": {
+    "action_type": "await_human_decision",
+    "phase_id": "human-decision"
+  },
+  "events": [
+    {
+      "seq": 0,
+      "event_id": "evt-0000",
+      "event_type": "meeting_started",
+      "phase_id": "opening",
+      "actor_type": "system",
+      "actor_id": null,
+      "occurred_at": "2026-08-07T17:29:00+08:00",
+      "payload": {}
+    },
+    {
+      "seq": 1,
+      "event_id": "evt-0001",
+      "event_type": "phase_entered",
+      "phase_id": "opening",
+      "actor_type": "system",
+      "actor_id": null,
+      "occurred_at": "2026-08-07T17:29:01+08:00",
+      "payload": {}
+    },
+    {
+      "seq": 2,
+      "event_id": "evt-0002",
+      "event_type": "message_accepted",
+      "phase_id": "opening",
+      "actor_type": "agent",
+      "actor_id": "agent-a1",
+      "occurred_at": "2026-08-07T17:30:00+08:00",
+      "payload": {
+        "message_id": "msg-0001"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "schema_version": "0.1.0",
+      "message_id": "msg-0001",
+      "meeting_id": "meeting-demo-001",
+      "phase_id": "opening",
+      "event_seq": 2,
+      "sender": {
+        "actor_type": "agent",
+        "actor_id": "agent-a1",
+        "role_id": "strategic-advocate",
+        "alias": "A1"
+      },
+      "recipients": {
+        "scope": "meeting"
+      },
+      "identity_visibility_mode": "semi_anonymous",
+      "content": {
+        "raw_text": "{\"position\":\"支持\",\"reasons\":[\"可验证\"],\"risks\":[\"实现复杂度\"]}",
+        "structured_output": {
+          "position": "支持",
+          "reasons": [
+            "可验证"
+          ],
+          "risks": [
+            "实现复杂度"
+          ]
+        },
+        "content_type": "structured_json"
+      },
+      "references": {
+        "message_ids": [],
+        "event_ids": [],
+        "artifact_ids": []
+      },
+      "validation": {
+        "status": "valid",
+        "errors": []
+      },
+      "accepted_by_runtime": true,
+      "created_at": "2026-08-07T17:30:00+08:00"
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "checkpoint-after-critique",
+      "at_event_seq": 2,
+      "phase_id": "human-decision",
+      "state_snapshot": {
+        "status": "waiting_human",
+        "current_phase_id": "human-decision",
+        "completed_phase_ids": [
+          "opening",
+          "summary",
+          "critique"
+        ],
+        "state_data": {
+          "battle_participants": [],
+          "human_decision": null
+        },
+        "pending_action": {
+          "action_type": "await_human_decision",
+          "phase_id": "human-decision"
+        }
+      },
+      "created_at": "2026-08-07T17:34:00+08:00"
+    }
+  ],
+  "artifacts": [
+    {
+      "schema_version": "0.1.0",
+      "artifact_id": "artifact-decision-report-v1",
+      "meeting_id": "meeting-demo-001",
+      "artifact_type": "decision-report",
+      "title": "示例决策报告",
+      "version": 1,
+      "status": "draft",
+      "content_type": "application/json",
+      "content": {
+        "supporting_points": [
+          "支持点示例"
+        ],
+        "opposing_points": [
+          "反对点示例"
+        ],
+        "open_questions": [
+          "待决问题示例"
+        ]
+      },
+      "created_by": {
+        "actor_type": "secretary",
+        "actor_id": "chair-secretary-1"
+      },
+      "provenance": {
+        "source_event_ids": [
+          "evt-0002"
+        ],
+        "source_message_ids": [
+          "msg-0001"
+        ],
+        "source_artifact_ids": []
+      },
+      "parent_artifact_id": null,
+      "created_at": "2026-08-07T17:32:00+08:00"
+    }
+  ],
+  "annotations": [
+    {
+      "schema_version": "0.1.0",
+      "annotation_id": "annotation-0001",
+      "meeting_id": "meeting-demo-001",
+      "annotation_kind": "human_seal",
+      "target": {
+        "target_type": "artifact",
+        "target_id": "artifact-decision-report-v1"
+      },
+      "author_type": "human_arbiter",
+      "author_id": "owner",
+      "seal": {
+        "decision": "accepted_with_reservations",
+        "statement": "接受当前版本作为本次会议正式结果，但保留待验证问题。",
+        "sealed_version": 1
+      },
+      "created_at": "2026-08-07T17:35:00+08:00"
+    }
+  ],
+  "branch": null,
+  "created_at": "2026-08-07T17:29:00+08:00",
+  "updated_at": "2026-08-07T17:35:00+08:00"
+}

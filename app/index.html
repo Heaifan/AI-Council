@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>AI顾问委员会 · Protocol Registry (D1-R1)</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <h1>AI顾问委员会 · Protocol Registry</h1>
+  <span class="badge">D1-R1 Developer Harness</span>
+</header>
+
+<section class="controls">
+  <label class="btn">
+    选择项目目录
+    <input type="file" id="dir-input" webkitdirectory directory multiple hidden>
+  </label>
+  <label class="btn secondary">
+    指定正式 protocol.schema.json
+    <input type="file" id="schema-input" accept="application/json,.json" hidden>
+  </label>
+  <p class="hint">
+    浏览器没有权限自动扫描磁盘，必须由用户主动选择目录。
+    选中的目录需包含 <code>protocols/**/protocol.json</code>；
+    若目录内含 <code>schemas/protocol.schema.json</code> 则自动使用，否则请用右侧按钮直接指定正式 Schema 文件。
+  </p>
+</section>
+
+<div id="status" class="status info">正在加载…</div>
+
+<main id="output"></main>
+
+<footer class="foot">
+  <p><strong>不热加载（第42题）</strong>：目录选择完成的瞬间即建立 File Snapshot 并冻结本 Session。
+     之后无论磁盘上的 <code>protocol.json</code> 如何修改，本页结果都不会变化。
+     需要重新读取规则请<strong>重新打开页面</strong>或<strong>重新选择目录（=新建 Session）</strong>。
+     本应用不提供、也不允许提供“热刷新 Protocol”按钮。</p>
+  <p><strong>范围</strong>：D1-R1 仅做 JSON Parse + JSON Schema 校验 + Registry 分流。
+     Phase 可达性、transition target、Human Gate 等语义检查属于 D1-R2，本轮不实现。</p>
+</footer>
+
+<script src="vendor/ajv2020.bundle.js"></script>
+<script src="js/protocol-diagnostic.js"></script>
+<script src="js/protocol-file-source.js"></script>
+<script src="js/protocol-loader.js"></script>
+<script src="js/protocol-schema-validator.js"></script>
+<script src="js/protocol-registry.js"></script>
+<script src="js/protocol-session.js"></script>
+<script src="js/ui/dom.js"></script>
+<script src="js/ui/diagnostic-view.js"></script>
+<script src="js/ui/registry-view.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

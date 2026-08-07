@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xuanyu.local/ai-council/schemas/annotation.schema.json",
+  "title": "AI Council Human Annotation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "annotation_id",
+    "meeting_id",
+    "annotation_kind",
+    "target",
+    "author_type",
+    "author_id",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "annotation_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "meeting_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "annotation_kind": {
+      "enum": [
+        "note",
+        "highlight",
+        "human_seal"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_type",
+        "target_id"
+      ],
+      "properties": {
+        "target_type": {
+          "enum": [
+            "meeting",
+            "message",
+            "event",
+            "artifact",
+            "decision_report",
+            "checkpoint"
+          ]
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "author_type": {
+      "const": "human_arbiter"
+    },
+    "author_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "content": {
+      "type": "string"
+    },
+    "highlight_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "seal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "accepted",
+            "rejected",
+            "accepted_with_reservations"
+          ]
+        },
+        "statement": {
+          "type": "string"
+        },
+        "sealed_version": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "annotation_kind": {
+            "const": "human_seal"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "seal"
+        ]
+      },
+      "else": {
+        "required": [
+          "content"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "annotation_kind": {
+            "const": "highlight"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "highlight_range"
+        ]
+      }
+    }
+  ]
+}

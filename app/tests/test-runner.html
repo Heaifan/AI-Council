@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>AI顾问委员会 · D1-R1 测试</title>
+<link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+
+<header class="top">
+  <h1>D1-R1 自动测试</h1>
+  <span class="badge">TEST-01 … TEST-12</span>
+</header>
+
+<section class="controls">
+  <label class="btn">
+    选择 AI-Council 项目根目录
+    <input type="file" id="dir-input" webkitdirectory directory multiple hidden>
+  </label>
+  <p class="hint">
+    测试夹具全部从正式文件派生：<code>schema/schemas/protocol.schema.json</code>、
+    <code>schema/examples/*.json</code>，以及用于静态审计的 <code>app/js/**</code> 与 <code>app/index.html</code>。
+    无需服务器，双击本文件即可运行。
+  </p>
+</section>
+
+<div id="status" class="status info">等待选择项目根目录。</div>
+<main id="output"></main>
+
+<script src="../vendor/ajv2020.bundle.js"></script>
+<script src="../js/protocol-diagnostic.js"></script>
+<script src="../js/protocol-file-source.js"></script>
+<script src="../js/protocol-loader.js"></script>
+<script src="../js/protocol-schema-validator.js"></script>
+<script src="../js/protocol-registry.js"></script>
+<script src="../js/protocol-session.js"></script>
+<script src="../js/ui/dom.js"></script>
+<script src="protocol-test-suite.js"></script>
+<script src="protocol-test-fixtures.js"></script>
+<script src="protocol-test-cases.js"></script>
+<script src="protocol-test-cases-session.js"></script>
+<script src="source-bundle.js"></script>
+<script src="test-runner.js"></script>
+
+</body>
+</html>

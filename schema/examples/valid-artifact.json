@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.1.0",
+  "artifact_id": "artifact-decision-report-v1",
+  "meeting_id": "meeting-demo-001",
+  "artifact_type": "decision-report",
+  "title": "示例决策报告",
+  "version": 1,
+  "status": "draft",
+  "content_type": "application/json",
+  "content": {
+    "supporting_points": [
+      "支持点示例"
+    ],
+    "opposing_points": [
+      "反对点示例"
+    ],
+    "open_questions": [
+      "待决问题示例"
+    ]
+  },
+  "created_by": {
+    "actor_type": "secretary",
+    "actor_id": "chair-secretary-1"
+  },
+  "provenance": {
+    "source_event_ids": [
+      "evt-0002"
+    ],
+    "source_message_ids": [
+      "msg-0001"
+    ],
+    "source_artifact_ids": []
+  },
+  "parent_artifact_id": null,
+  "created_at": "2026-08-07T17:32:00+08:00"
+}

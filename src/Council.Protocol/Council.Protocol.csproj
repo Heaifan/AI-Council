@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Council.Protocol</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Draft 2020-12 JSON Schema 校验器；.NET BCL 不自带。见 reports/D1-R1-Report.md 第 20 节依赖说明。 -->
+    <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      正式机器合同直接以 EmbeddedResource 引用冻结基线文件本身。
+      刻意不复制到 src/ 下，避免出现第二份 protocol.schema.json 与基线漂移。
+    -->
+    <EmbeddedResource Include="..\..\schema\schemas\protocol.schema.json"
+                      LogicalName="Council.Protocol.protocol.schema.json" />
+  </ItemGroup>
+
+</Project>

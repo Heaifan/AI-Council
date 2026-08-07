@@ -1,0 +1,396 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xuanyu.local/ai-council/schemas/meeting.schema.json",
+  "title": "AI Council Meeting Archive",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meeting_id",
+    "title",
+    "status",
+    "protocol_snapshot",
+    "visibility_mode",
+    "seed",
+    "roles",
+    "participants",
+    "current_phase_id",
+    "completed_phase_ids",
+    "state_data",
+    "events",
+    "messages",
+    "checkpoints",
+    "artifacts",
+    "annotations",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "meeting_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "status": {
+      "enum": [
+        "initialized",
+        "running",
+        "waiting_human",
+        "paused",
+        "completed",
+        "failed"
+      ]
+    },
+    "protocol_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_id",
+        "version",
+        "sha256"
+      ],
+      "properties": {
+        "protocol_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "visibility_mode": {
+      "enum": [
+        "public",
+        "semi_anonymous",
+        "full_anonymous"
+      ]
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "$ref": "role.schema.json"
+      }
+    },
+    "participants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "participant_id",
+          "actor_type",
+          "role_id",
+          "role_class",
+          "side_id",
+          "alias",
+          "model_ref",
+          "transport_kind"
+        ],
+        "properties": {
+          "participant_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+          },
+          "actor_type": {
+            "enum": [
+              "chair",
+              "secretary",
+              "agent"
+            ]
+          },
+          "role_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          "role_class": {
+            "enum": [
+              "advisor",
+              "chair",
+              "secretary",
+              "chair_secretary"
+            ]
+          },
+          "side_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "alias": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transport_kind": {
+            "enum": [
+              "mock",
+              "api",
+              "local",
+              "web_relay",
+              "web_automation"
+            ]
+          }
+        }
+      }
+    },
+    "current_phase_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "completed_phase_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      }
+    },
+    "state_data": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "pending_action": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": true
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "seq",
+          "event_id",
+          "event_type",
+          "phase_id",
+          "actor_type",
+          "occurred_at",
+          "payload"
+        ],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "event_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+          },
+          "event_type": {
+            "enum": [
+              "meeting_started",
+              "phase_entered",
+              "instruction_compiled",
+              "agent_output_received",
+              "message_accepted",
+              "message_rejected",
+              "phase_completed",
+              "checkpoint_created",
+              "human_decision",
+              "meeting_paused",
+              "meeting_resumed",
+              "branch_created",
+              "artifact_created",
+              "annotation_added",
+              "meeting_completed",
+              "meeting_failed",
+              "transport_error"
+            ]
+          },
+          "phase_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actor_type": {
+            "enum": [
+              "human_arbiter",
+              "chair",
+              "secretary",
+              "agent",
+              "system"
+            ]
+          },
+          "actor_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "$ref": "message.schema.json"
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "checkpoint_id",
+          "at_event_seq",
+          "phase_id",
+          "state_snapshot",
+          "created_at"
+        ],
+        "properties": {
+          "checkpoint_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+          },
+          "at_event_seq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "phase_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          "state_snapshot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "current_phase_id",
+              "completed_phase_ids",
+              "state_data"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "initialized",
+                  "running",
+                  "waiting_human",
+                  "paused",
+                  "completed",
+                  "failed"
+                ]
+              },
+              "current_phase_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "completed_phase_ids": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+                }
+              },
+              "state_data": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "pending_action": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "artifact.schema.json"
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "$ref": "annotation.schema.json"
+      }
+    },
+    "branch": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "branch_id",
+        "parent_meeting_id",
+        "parent_checkpoint_id"
+      ],
+      "properties": {
+        "branch_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+        },
+        "parent_meeting_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+        },
+        "parent_checkpoint_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$"
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

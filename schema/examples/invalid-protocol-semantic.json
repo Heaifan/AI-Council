@@ -1,0 +1,309 @@
+{
+  "schema_version": "0.1.0",
+  "protocol_id": "committee-mvp",
+  "name": "Committee MVP Protocol",
+  "version": "0.1.0",
+  "source": "built_in",
+  "lifecycle_status": "formal",
+  "description": "用于 D1/D2 验证的最小可恢复委员会流程。",
+  "runtime_min_version": "0.1.0",
+  "default_visibility_mode": "semi_anonymous",
+  "allowed_visibility_modes": [
+    "public",
+    "semi_anonymous",
+    "full_anonymous"
+  ],
+  "participant_policy": {
+    "min_advisors": 2,
+    "max_advisors": 6,
+    "sides": [
+      {
+        "side_id": "A",
+        "label": "支持方",
+        "min_members": 1,
+        "max_members": 3
+      },
+      {
+        "side_id": "B",
+        "label": "反对方",
+        "min_members": 1,
+        "max_members": 3
+      }
+    ]
+  },
+  "required_roles": [
+    {
+      "role_class": "advisor",
+      "min_count": 2,
+      "max_count": 6
+    },
+    {
+      "role_class": "chair_secretary",
+      "min_count": 1,
+      "max_count": 1
+    }
+  ],
+  "initial_phase_id": "opening",
+  "phases": [
+    {
+      "phase_id": "opening",
+      "name": "独立陈述",
+      "kind": "agent_turn",
+      "actor": {
+        "selector": "all_advisors"
+      },
+      "instruction": {
+        "task": "独立陈述你的初始判断、关键理由、风险与待验证假设。",
+        "context_scope": "meeting",
+        "include_role_card": true,
+        "include_visibility_rules": true
+      },
+      "output_contract": {
+        "mode": "structured_json",
+        "json_schema": {
+          "type": "object",
+          "required": [
+            "position",
+            "reasons",
+            "risks"
+          ],
+          "properties": {
+            "position": {
+              "type": "string"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "risks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "completion": {
+        "mode": "all_selected_respond"
+      },
+      "checkpoint": true,
+      "transitions": [
+        {
+          "trigger": "complete",
+          "target": "phase-does-not-exist"
+        }
+      ]
+    },
+    {
+      "phase_id": "summary",
+      "name": "秘书汇总",
+      "kind": "secretary_summary",
+      "actor": {
+        "selector": "role_class",
+        "role_class": "chair_secretary"
+      },
+      "instruction": {
+        "task": "中立汇总各方观点，保留来源、冲突和未决问题。",
+        "context_scope": "meeting",
+        "include_role_card": true,
+        "include_visibility_rules": true
+      },
+      "output_contract": {
+        "mode": "structured_json",
+        "json_schema": {
+          "type": "object",
+          "required": [
+            "supporting_points",
+            "opposing_points",
+            "conflicts",
+            "open_questions"
+          ],
+          "properties": {
+            "supporting_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "opposing_points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "conflicts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "open_questions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "completion": {
+        "mode": "secretary_respond"
+      },
+      "checkpoint": true,
+      "transitions": [
+        {
+          "trigger": "complete",
+          "target": "critique"
+        }
+      ]
+    },
+    {
+      "phase_id": "critique",
+      "name": "全员挑刺",
+      "kind": "critique",
+      "actor": {
+        "selector": "all_advisors"
+      },
+      "instruction": {
+        "task": "阅读秘书汇总，指出遗漏、错误、最脆弱假设和最值得继续追问的问题。",
+        "context_scope": "meeting",
+        "include_role_card": true,
+        "include_visibility_rules": true
+      },
+      "output_contract": {
+        "mode": "structured_json",
+        "json_schema": {
+          "type": "object",
+          "required": [
+            "challenges"
+          ],
+          "properties": {
+            "challenges": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "completion": {
+        "mode": "all_selected_respond"
+      },
+      "checkpoint": true,
+      "transitions": [
+        {
+          "trigger": "complete",
+          "target": "human-decision"
+        }
+      ]
+    },
+    {
+      "phase_id": "human-decision",
+      "name": "Human Arbiter 决策",
+      "kind": "human_gate",
+      "actor": {
+        "selector": "human_arbiter"
+      },
+      "instruction": {
+        "task": "决定结束会议、继续会议或进入追加 Battle。",
+        "context_scope": "meeting",
+        "include_role_card": false,
+        "include_visibility_rules": false
+      },
+      "output_contract": {
+        "mode": "text",
+        "required_sections": [
+          "decision"
+        ]
+      },
+      "completion": {
+        "mode": "human_decision"
+      },
+      "checkpoint": true,
+      "transitions": [
+        {
+          "trigger": "human_choice",
+          "choice": "finish",
+          "target": "archive"
+        },
+        {
+          "trigger": "human_choice",
+          "choice": "continue",
+          "target": "critique"
+        },
+        {
+          "trigger": "human_choice",
+          "choice": "battle",
+          "target": "battle"
+        }
+      ]
+    },
+    {
+      "phase_id": "battle",
+      "name": "代表 Battle",
+      "kind": "battle",
+      "actor": {
+        "selector": "selected_participants",
+        "selection_key": "battle_participants"
+      },
+      "instruction": {
+        "task": "针对当前最大争点进行定向攻防，回应对方最强论点。",
+        "context_scope": "meeting",
+        "include_role_card": true,
+        "include_visibility_rules": true
+      },
+      "output_contract": {
+        "mode": "text",
+        "required_sections": [
+          "claim",
+          "rebuttal",
+          "remaining_uncertainty"
+        ]
+      },
+      "completion": {
+        "mode": "all_selected_respond"
+      },
+      "checkpoint": true,
+      "transitions": [
+        {
+          "trigger": "complete",
+          "target": "human-decision"
+        }
+      ]
+    },
+    {
+      "phase_id": "archive",
+      "name": "归档",
+      "kind": "archive",
+      "actor": {
+        "selector": "system"
+      },
+      "instruction": {
+        "task": "生成最终归档事件并结束会议。",
+        "context_scope": "meeting",
+        "include_role_card": false,
+        "include_visibility_rules": false
+      },
+      "output_contract": {
+        "mode": "text"
+      },
+      "completion": {
+        "mode": "system_immediate"
+      },
+      "checkpoint": true,
+      "transitions": [
+        {
+          "trigger": "complete",
+          "target": "$end"
+        }
+      ]
+    }
+  ]
+}

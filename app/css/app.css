@@ -1,0 +1,71 @@
+/* AI Council v0.1 — D1-R1 Developer Harness 样式：浅色、清晰、简单。 */
+
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --line: #dfe3e8;
+  --ink: #1f2328;
+  --muted: #656d76;
+  --ok: #1a7f37;
+  --bad: #b42318;
+  --warn: #9a6700;
+  --accent: #0b5fff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.6 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.top h1 { font-size: 20px; margin: 0; }
+.badge { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; }
+
+.controls { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+.btn {
+  display: inline-block; cursor: pointer; margin-right: 8px;
+  background: var(--accent); color: #fff; border-radius: 6px; padding: 8px 16px; font-size: 14px;
+}
+.btn.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+.hint { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+
+.status { margin: 16px 0; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); }
+.status.ok { border-color: #b7e0c1; background: #f0fbf3; color: var(--ok); }
+.status.bad { border-color: #f2c2bd; background: #fef4f3; color: var(--bad); }
+.status.warn { border-color: #f0dfa8; background: #fffbef; color: var(--warn); }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.card h2 { font-size: 15px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.card.blocked { border-color: #f2c2bd; }
+.count { font-size: 12px; border-radius: 10px; padding: 1px 9px; background: #eef1f4; color: var(--muted); }
+.count.ok { background: #e6f6ea; color: var(--ok); }
+.count.bad { background: #fdecea; color: var(--bad); }
+
+.field { display: flex; gap: 10px; font-size: 13px; padding: 1px 0; }
+.field-key { flex: 0 0 116px; color: var(--muted); }
+.field-value { flex: 1; word-break: break-all; font-family: Consolas, "Courier New", monospace; }
+.note { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+.empty { color: var(--muted); margin: 0; }
+
+.entry { border: 1px solid var(--line); border-left-width: 3px; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+.entry.ok { border-left-color: var(--ok); }
+.entry.bad { border-left-color: var(--bad); }
+.entry-title { font-weight: 600; font-family: Consolas, "Courier New", monospace; margin-bottom: 6px; }
+.entry summary { cursor: pointer; font-weight: 600; font-family: Consolas, "Courier New", monospace; margin-bottom: 6px; }
+.code-tag { margin-left: 10px; font-size: 11px; font-weight: 400; color: var(--bad); background: #fdecea; border-radius: 4px; padding: 1px 6px; }
+
+.diagnostic-list { margin-top: 8px; }
+.diagnostic { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-top: 8px; background: #fcfcfd; }
+.diagnostic-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.diagnostic .code { font-family: Consolas, monospace; font-weight: 700; color: var(--bad); }
+.diagnostic.sev-warning .code { color: var(--warn); }
+.diagnostic.sev-info .code { color: var(--muted); }
+.diagnostic .severity { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; }
+
+.foot { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); margin-top: 24px; padding-top: 12px; }
+code { background: #eef1f4; border-radius: 3px; padding: 0 4px; font-family: Consolas, monospace; }
