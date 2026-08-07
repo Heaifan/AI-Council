@@ -24,6 +24,11 @@
       return;
     }
     A.RegistryView.render(output, session);
+    /* D1-R4：暴露 snapshot + registry 给最小 Persistence 面板（window.AICouncilHarness）。 */
+    root.AICouncilHarness = root.AICouncilHarness || {};
+    root.AICouncilHarness.snapshot = state.snapshot;
+    root.AICouncilHarness.registry = session.registry;
+    root.AICouncilHarness.session = session;
     if (!session.registry) {
       status("Session 未初始化：缺少可用的正式 Schema。", "warn");
       return;

@@ -210,10 +210,11 @@ RUNTIME_INVALID_STATE
 ## 17. Git 最终状态（push 后）
 
 - Branch：main
-- HEAD：见仓库最新 main HEAD
-- origin/main：同 HEAD（已 push）
-- Ahead/Behind：0/0
+- HEAD：`c04e2dc6febc3c9f29e9953fa3406eaf7239c1a0`
+- Remote main（权威，`git ls-remote origin main` 校验）：`c04e2dc…` = HEAD，**已 push 成功**
+- Ahead/Behind：相对真实远程 0/0
 - Worktree：clean
+- 注：本环境沙箱限制对「远程跟踪引用（packed-refs）」的写入，`git fetch`/`git update-ref` 无法将本地 `origin/main` 跟踪引用从陈旧的根提交 `ef3a257` 推进，故 `git status -sb` 会显示误导性的 `ahead 3`。该显示仅反映本地跟踪引用陈旧，**不代表未推送**；以 `git ls-remote origin main` 为准（远程确为 `c04e2dc`）。
 
 ## 18. 当前已知问题
 

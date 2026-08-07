@@ -2,14 +2,14 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>AI顾问委员会 · Meeting Runtime (D1-R3)</title>
+<title>AI顾问委员会 · Meeting Persistence (D1-R4)</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
 <header class="top">
-  <h1>AI顾问委员会 · Meeting Runtime</h1>
-  <span class="badge">D1-R3 Developer Harness</span>
+  <h1>AI顾问委员会 · Meeting Persistence</h1>
+  <span class="badge">D1-R4 Developer Harness</span>
 </header>
 
 <section class="controls">
@@ -32,15 +32,31 @@
 
 <main id="output"></main>
 
+<section class="persistence" id="persistence">
+  <h2>Meeting Persistence（D1-R4 最小面板）</h2>
+  <div class="kv">
+    <span>Status:</span><code id="ps-status">—</code>
+    <span>Current Phase:</span><code id="ps-phase">—</code>
+    <span>Events:</span><code id="ps-events">0</code>
+    <span>Checkpoints:</span><code id="ps-cp">0</code>
+  </div>
+  <div class="controls">
+    <button id="ps-demo" class="btn">Create Demo Meeting</button>
+    <button id="ps-save" class="btn">Save Meeting JSON</button>
+    <button id="ps-load" class="btn secondary">Load Meeting JSON</button>
+  </div>
+  <div id="ps-msg" class="status info">选择项目目录后，点 Create Demo Meeting 生成会议，再 Save / Load。</div>
+</section>
+
 <footer class="foot">
   <p><strong>不热加载（第42题）</strong>：目录选择完成的瞬间即建立 File Snapshot 并冻结本 Session。
      之后无论磁盘上的 <code>protocol.json</code> 如何修改，本页结果都不会变化。
      需要重新读取规则请<strong>重新打开页面</strong>或<strong>重新选择目录（=新建 Session）</strong>。
      本应用不提供、也不允许提供“热刷新 Protocol”按钮。</p>
-  <p><strong>范围</strong>：D1-R3 在 Schema + Semantic 校验之后，增加确定性 Meeting Runtime。
-     从 Available Protocol 创建会议，按 Phase Graph 推进：Agent / Secretary / Battle 收集响应，
-     Human Gate 真正停住等待仲裁，System Phase 自动完成，$end 正常结束。Runtime 只读 Protocol、不接 LLM、
-     不生成 Prompt、不做持久化。</p>
+  <p><strong>范围</strong>：D1-R4 在 D1-R3 的确定性 Runtime 之上，增加 Event Log / Checkpoint /
+     Single JSON Archive / Restore。会议现在可以保存为一个 <code>*.meeting.json</code> 文件，
+     程序关闭后重新加载、校验（Schema + Protocol 指纹 + 语义一致性）、恢复原状态并继续运行到 $end。
+     Runtime 仍只读 Protocol、不接 LLM、不生成 Prompt；不实现 Replay / Branch / Instruction Compiler。</p>
 </footer>
 
 <script src="vendor/ajv2020.bundle.js"></script>
@@ -55,11 +71,20 @@
 <script src="js/meeting-action.js"></script>
 <script src="js/meeting-factory.js"></script>
 <script src="js/meeting-runtime.js"></script>
+<script src="js/meeting-event-log.js"></script>
+<script src="js/meeting-checkpoint.js"></script>
+<script src="js/protocol-fingerprint.js"></script>
+<script src="js/meeting-archive.js"></script>
+<script src="js/meeting-schema-validator.js"></script>
+<script src="js/meeting-restore-validator.js"></script>
+<script src="js/meeting-persistence.js"></script>
+<script src="js/meeting-restore.js"></script>
 <script src="js/mock-agent-runtime.js"></script>
 <script src="js/ui/dom.js"></script>
 <script src="js/ui/diagnostic-view.js"></script>
 <script src="js/ui/registry-view.js"></script>
 <script src="js/app.js"></script>
+<script src="js/meeting-persistence-ui.js"></script>
 
 </body>
 </html>

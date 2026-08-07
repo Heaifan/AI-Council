@@ -8,7 +8,12 @@
     schemaText: "schema/schemas/protocol.schema.json",
     validText: "schema/examples/valid-protocol-committee-mvp.json",
     invalidSchemaText: "schema/examples/invalid-protocol-schema.json",
-    invalidSemanticText: "schema/examples/invalid-protocol-semantic.json"
+    invalidSemanticText: "schema/examples/invalid-protocol-semantic.json",
+    meetingSchemaText: "schema/schemas/meeting.schema.json",
+    roleSchemaText: "schema/schemas/role.schema.json",
+    messageSchemaText: "schema/schemas/message.schema.json",
+    artifactSchemaText: "schema/schemas/artifact.schema.json",
+    annotationSchemaText: "schema/schemas/annotation.schema.json"
   };
 
   var APP_SOURCE = /^app\/(?:js\/.*\.js|index\.html)$/;

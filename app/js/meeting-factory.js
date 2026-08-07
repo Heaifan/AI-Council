@@ -20,6 +20,13 @@
     return m;
   }
 
+  /* seed 规范化：非法 / 缺省一律回落到 0（确定性默认种子）。 */
+  function normalizeSeed(v) {
+    if (typeof v !== "number" || !isFinite(v)) return 0;
+    var n = Math.floor(v);
+    return n < 0 ? 0 : n;
+  }
+
   function normalizeParticipant(p) {
     return {
       participant_id: p.participant_id,
@@ -44,11 +51,16 @@
       protocolVersion: doc.version,
       title: config.title || (doc.name || doc.protocol_id),
       visibilityMode: config.visibilityMode || doc.default_visibility_mode || null,
-      seed: (typeof config.seed === "number") ? config.seed : null,
+      /* seed 必须是 >=0 的整数（meeting.schema.json 要求 required + integer + minimum:0）。
+       * 确定性 Runtime 的默认种子取 0，不使用 null，避免 Archive 出现不可存档状态。 */
+      seed: normalizeSeed(config.seed),
       status: STATUS.INITIALIZED,
       currentPhaseId: doc.initial_phase_id || null,
       completedPhaseIds: [],
       participants: (config.participants || []).map(normalizeParticipant),
+      roles: config.roles ? clone(config.roles) : [],
+      events: [],
+      checkpoints: [],
       stateData: config.stateData ? clone(config.stateData) : {},
       pendingAction: null,
       lastTransition: null,

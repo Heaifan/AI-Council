@@ -32,6 +32,16 @@
     meeting.status = STATUS.FAILED;
     meeting.pendingAction = null;
     meeting.error = makeDiagnostic(code, message, details);
+    /* D1-R4：留下 meeting_failed 事件（仅当 events 已初始化；Factory 创建失败时尚无 events）。 */
+    var log = root.AICouncil && root.AICouncil.MeetingEventLog;
+    if (log && meeting.events) {
+      try {
+        log.append(meeting, "meeting_failed", {
+          phaseId: meeting.currentPhaseId,
+          payload: { diagnosticCode: code, message: message }
+        });
+      } catch (e) { /* 记录失败不应二次破坏状态 */ }
+    }
     return meeting.error;
   }
 

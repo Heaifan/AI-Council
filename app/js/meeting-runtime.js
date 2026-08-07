@@ -111,12 +111,28 @@
       default:
         fail(meeting, C.RUNTIME_INVALID_STATE, "未知 phase.kind：" + String(phase.kind) + "（phase " + phaseId + "）。");
     }
+    /* D1-R4 — 记录 phase_entered（含最小必要 payload，不存整个 Protocol） */
+    var paType = meeting.pendingAction ? meeting.pendingAction.action_type : null;
+    var selIds = (meeting.pendingAction && meeting.pendingAction.requiredParticipantIds) || null;
+    root.AICouncil.MeetingEventLog.append(meeting, "phase_entered", {
+      phaseId: phaseId,
+      payload: { phase_kind: phase.kind, pending_action_type: paType, selected_participant_ids: selIds }
+    });
+    /* D1-R4 — checkpoint=true 的 Phase 进入并稳定状态后，自动建立 Checkpoint */
+    if (phase.checkpoint === true) {
+      root.AICouncil.MeetingCheckpoint.create(meeting, {
+        phaseKind: phase.kind,
+        pendingActionType: paType,
+        selectedParticipantIds: selIds
+      });
+    }
   }
 
   function doEnd(meeting) {
     meeting.status = STATUS.COMPLETED;
     meeting.currentPhaseId = null;
     meeting.pendingAction = null;
+    root.AICouncil.MeetingEventLog.append(meeting, "meeting_completed", { phaseId: null, payload: {} });
   }
 
   /* 正常完成当前 phase 并 transition（agent / secretary / battle / system）。 */
@@ -124,6 +140,7 @@
     var phase = currentPhase(meeting, pm);
     if (!phase) { fail(meeting, C.RUNTIME_PHASE_NOT_FOUND, "当前 phase 不存在，无法完成。"); return true; }
     MS.recordCompletion(meeting, phase.phase_id);
+    root.AICouncil.MeetingEventLog.append(meeting, "phase_completed", { phaseId: phase.phase_id, payload: { phase_id: phase.phase_id } });
     var t = resolveTransition(phase, "complete", null);
     if (!t.ok) { fail(meeting, t.diagnostic.code, t.diagnostic.message, t.diagnostic.details); return true; }
     meeting.lastTransition = { trigger: "complete", choice: null, from: phase.phase_id, target: t.transition.target };
@@ -166,6 +183,7 @@
     var pm = root.AICouncil.MeetingFactory.buildPhaseMap(doc);
     var initial = doc.initial_phase_id;
     if (!initial || !pm[initial]) { fail(meeting, C.RUNTIME_PHASE_NOT_FOUND, "initial_phase_id(" + initial + ") 不存在。"); return { ok: false, diagnostic: meeting.error }; }
+    root.AICouncil.MeetingEventLog.append(meeting, "meeting_started", { phaseId: initial });
     enterPhase(meeting, protocol, pm, initial);
     drive(meeting, protocol, pm);
     return { ok: true };
@@ -195,6 +213,10 @@
 
     pa.receivedParticipantIds.push(pid);
     meeting.lastAction = { type: root.AICouncil.MeetingAction.ACTION.COLLECT_RESPONSES, phaseId: pa.phaseId, participantId: pid };
+    root.AICouncil.MeetingEventLog.append(meeting, "agent_output_received", {
+      phaseId: pa.phaseId, actorType: "agent", actorId: pid,
+      payload: { participant_id: pid, mock: !!(result && result.mock) }
+    });
 
     var comp = phase.completion || {};
     var mode = comp.mode;
@@ -227,6 +249,10 @@
       return { ok: false, diagnostic: t.diagnostic };
     }
     MS.recordCompletion(meeting, phase.phase_id);
+    root.AICouncil.MeetingEventLog.append(meeting, "human_decision", {
+      phaseId: phase.phase_id, actorType: "human_arbiter", payload: { choice: choice }
+    });
+    root.AICouncil.MeetingEventLog.append(meeting, "phase_completed", { phaseId: phase.phase_id, payload: { phase_id: phase.phase_id } });
     meeting.lastTransition = { trigger: "human_choice", choice: choice, from: phase.phase_id, target: t.transition.target };
     if (t.transition.target === "$end") { doEnd(meeting); return { ok: true }; }
     enterPhase(meeting, protocol, pm, t.transition.target);

@@ -24,13 +24,22 @@ const RUNTIME = [
   "app/js/meeting-action.js",
   "app/js/meeting-factory.js",
   "app/js/meeting-runtime.js",
+  "app/js/meeting-event-log.js",
+  "app/js/meeting-checkpoint.js",
+  "app/js/protocol-fingerprint.js",
+  "app/js/meeting-archive.js",
+  "app/js/meeting-schema-validator.js",
+  "app/js/meeting-restore-validator.js",
+  "app/js/meeting-persistence.js",
+  "app/js/meeting-restore.js",
   "app/js/mock-agent-runtime.js",
   "app/tests/protocol-test-suite.js",
   "app/tests/protocol-test-fixtures.js",
   "app/tests/protocol-test-cases.js",
   "app/tests/protocol-test-cases-session.js",
   "app/tests/protocol-test-cases-semantic.js",
-  "app/tests/protocol-test-cases-runtime.js"
+  "app/tests/protocol-test-cases-runtime.js",
+  "app/tests/protocol-test-cases-persistence.js"
 ];
 
 const AUDITED = [
@@ -47,6 +56,14 @@ const AUDITED = [
   "app/js/meeting-action.js",
   "app/js/meeting-factory.js",
   "app/js/meeting-runtime.js",
+  "app/js/meeting-event-log.js",
+  "app/js/meeting-checkpoint.js",
+  "app/js/protocol-fingerprint.js",
+  "app/js/meeting-archive.js",
+  "app/js/meeting-schema-validator.js",
+  "app/js/meeting-restore-validator.js",
+  "app/js/meeting-persistence.js",
+  "app/js/meeting-restore.js",
   "app/js/mock-agent-runtime.js",
   "app/js/ui/dom.js",
   "app/js/ui/diagnostic-view.js",
@@ -63,6 +80,11 @@ const ctx = {
   validText: read("schema/examples/valid-protocol-committee-mvp.json"),
   invalidSchemaText: read("schema/examples/invalid-protocol-schema.json"),
   invalidSemanticText: read("schema/examples/invalid-protocol-semantic.json"),
+  meetingSchemaText: read("schema/schemas/meeting.schema.json"),
+  roleSchemaText: read("schema/schemas/role.schema.json"),
+  messageSchemaText: read("schema/schemas/message.schema.json"),
+  artifactSchemaText: read("schema/schemas/artifact.schema.json"),
+  annotationSchemaText: read("schema/schemas/annotation.schema.json"),
   appSources
 };
 

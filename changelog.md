@@ -30,6 +30,23 @@
 - `index.html` 加载 5 个新脚本、页眉/脚注更新为 D1-R3；`run-node.js` 的 RUNTIME / AUDITED 增加 D1-R3 模块与测试文件。
 - 自动测试由 31 项增至 53 项（53/53 PASS）；无 LLM、无 Prompt 编译、无持久化/恢复/回放（属 D1-R4）、无 Checkpoint/Restore/Replay/WebRelay（属 D2）；正式 `protocol.schema.json` 未修改。
 
+## D1-R4 — Event Log / Checkpoint / Single JSON Persistence / Restore — 2026-08-07
+
+- 新增 `app/js/meeting-event-log.js`：Append-only Event Log，`seq` 严格 0..N-1、`event_id = evt-NNNNNN`、时钟可注入（测试确定性）；`meeting.events` 缺失时报 `PERSISTENCE_EVENT_LOG_UNAVAILABLE`。
+- 新增 `app/js/meeting-checkpoint.js`：进入 `checkpoint=true` Phase 且状态稳定后自动建检查点；先写 `checkpoint_created` 事件再以其 `seq` 作为 `at_event_seq`；`state_snapshot` 为深拷贝，后续状态变化不污染旧快照。
+- 新增 `app/js/protocol-fingerprint.js`：Canonical JSON（键名升序、数组保序、无空白、UTF-8）+ Web Crypto `crypto.subtle.digest("SHA-256")`；Crypto 不可用时报 `PERSISTENCE_CRYPTO_UNAVAILABLE`，绝不伪造哈希。
+- 新增 `app/js/meeting-archive.js`：Runtime Meeting → `meeting.schema.json` 存档 DTO；`protocol_snapshot.sha256` 为真实指纹；`messages/artifacts/annotations=[]`、`branch=null`（预留 D2+）。
+- 新增 `app/js/meeting-schema-validator.js`：把 meeting/role/message/artifact/annotation 五份 Schema 注册进**同一个** Ajv 2020 实例以解析 `$ref`；缺件报 `PERSISTENCE_SCHEMA_PACK_INCOMPLETE`。
+- 新增 `app/js/meeting-restore-validator.js`：恢复前语义校验（Protocol 存在 / 指纹一致 / Phase 存在 / 事件序号连续 / 事件 ID 唯一 / Checkpoint 指向合法事件 / 参与者 ID 唯一 / 状态一致 / Pending Action 一致），任何一项失败即拒绝，**绝不自动修复坏存档**。
+- 新增 `app/js/meeting-persistence.js`：`serialize` / `parse`（失败产出 `PERSISTENCE_JSON_PARSE_FAILED`）/ 浏览器 Blob 下载 / `<input type=file>` 读取；Object URL 惰性回收，不使用任何定时器。
+- 新增 `app/js/meeting-restore.js`：存档 → Runtime Meeting 原子恢复（Candidate → Validate → Commit）；恢复后**绝不重新 `start()`**、不重跑已完成 Phase、保留部分响应。
+- 新增 `app/js/meeting-persistence-ui.js` 与 `index.html` 持久化面板（Create Demo / Save / Load），仅浏览器加载，不进 Node 测试。
+- `meeting-runtime.js` 埋点：`meeting_started` / `phase_entered` / `agent_output_received` / `phase_completed` / `human_decision` / `meeting_completed`；`meeting-state.js` 补 `meeting_failed`。
+- `meeting-factory.js`：`seed` 默认值由 `null` 改为确定性 `0`（`meeting.schema` 要求 `integer + minimum:0 + required`，`null` 会产出无法存档的状态）。
+- 在 `protocol-diagnostic.js` 冻结 16 个 `PERSISTENCE_*` / `RESTORE_*` 诊断码。
+- 新增 `app/tests/protocol-test-cases-persistence.js`：TEST-54..TEST-84（31 项），含 `SAVE → DESTROY → LOAD → CONTINUE → $end` 三条端到端。自动测试由 53 项增至 **84 项（84/84 PASS）**。
+- 正式 `schema/schemas/`（6 份）**零修改**；无 Replay / Timeline UI / Branch / Artifact-Annotation Runtime / InstructionPacket / Prompt 编译 / Web Relay / 真实 LLM。
+
 ## [0.1.0] — D1-R1 Protocol Registry (HTML/JS) — 2026-08-07
 
 技术栈正式冻结为 **HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
