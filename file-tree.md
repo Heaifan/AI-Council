@@ -1,23 +1,21 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-07
+> 最后更新：2026-08-07（D1-R1-F1 更新）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
-> 构建产物（`bin/`、`obj/`、`.dll`、`.pdb`、`.cache`）已被 `.gitignore` 忽略，未计入跟踪文件。
+> 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
 ## 顶层
 
 ```text
 AI-Council/
-├── AI-Council.slnx            # 解决方案文件（C# 探索遗留，非 D1-R1 范围）
 ├── docs/                      # Phase 0 冻结文档（12 篇）
 ├── schema/                    # Schema v0.1 正式定义 + 示例
 ├── protocols/                 # 用户协议目录（运行时由浏览器选择）
-├── src/                       # 遗留 C# 探索（技术栈已改 HTML/JS，保留参考）
-├── tests/                     # 遗留 C# 测试（同上）
 ├── app/                       # ★ D1-R1 正式实现（纯 HTML/JS）
 ├── reports/                   # 开发报告 + 真机验收截图
 ├── file-tree.md               # 本文件
-└── changelog.md
+├── changelog.md
+└── .gitignore
 ```
 
 ## app/（D1-R1 正式实现，核心目录）
@@ -89,12 +87,6 @@ docs/
 └── Phase-0-Package-README.md
 ```
 
-## src/ 与 tests/（遗留 C# 探索，非 D1-R1 范围）
+## 技术栈
 
-技术栈已冻结为 HTML/JS，以下 C# 代码仅作历史参考，不参与 D1-R1 运行。
-
-```text
-src/Council.Protocol/{Diagnostics,Loading,Registry,Validation}/*.cs
-src/Council.Cli/*.cs
-tests/Council.Protocol.Tests/*.cs
-```
+正式实现已冻结为纯浏览器 **HTML / CSS / JavaScript**，无服务器、无后端、无 CDN、无构建产物。早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从工作树删除，仅保留于 Git 历史，不作为正式运行代码；当前运行代码仅为 `app/`。

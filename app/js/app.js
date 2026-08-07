@@ -40,6 +40,9 @@
     status("正在建立 File Snapshot…（本次读取后不再访问磁盘）", "info");
     A.FileSource.fromFileList(files).then(function (snapshot) {
       state.snapshot = snapshot;
+      // F01: 重新选择目录必须结束旧 Schema Override，让新目录自行发现自身 Schema。
+      // 旧 Override 属于上一个目录选择 Session，不得带入新 Session（否则跨目录残留）。
+      state.schemaOverride = null;
       rebuild();
     }).catch(function (e) {
       status("读取目录失败：" + (e && e.message ? e.message : String(e)), "bad");

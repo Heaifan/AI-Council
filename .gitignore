@@ -1,14 +1,3 @@
-## .NET
-bin/
-obj/
-[Dd]ebug/
-[Rr]elease/
-*.user
-*.suo
-TestResults/
-.vs/
-artifacts/
-
 ## Tooling
 __pycache__/
 *.pyc

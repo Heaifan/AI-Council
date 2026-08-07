@@ -2,9 +2,17 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D1-R1-F1 — Protocol Registry 收口修复 — 2026-08-07
+
+- 修复切换项目目录后旧 Schema Override 跨目录残留的问题（F01）。
+- 增加 Schema Override Session 生命周期回归测试（TEST-13 / TEST-14 / TEST-15，自动测试 12 → 15 项）。
+- 删除已废弃的 C# 探索实现（`AI-Council.slnx` / `src/` / `tests/`）与 `.gitignore` 中 `.NET` 段，正式仓库仅保留 HTML/CSS/JavaScript。
+- 更新 `file-tree.md`，使导航统一指向 HTML/CSS/JavaScript 正式实现。
+- 修正 D1-R1 报告中文件统计（22 个新增文件）与 Git 状态（cf13050 / ef3a257）。
+
 ## [Unreleased]
 
-- 补建 `file-tree.md` 与 `changelog.md`（仓库导航与变更记录）。
+- （无）
 
 ## [0.1.0] — D1-R1 Protocol Registry (HTML/JS) — 2026-08-07
 
@@ -18,7 +26,7 @@
 - **重复检测**：`protocol_id + version` 唯一；冲突双方均隔离并产出 `DUPLICATE_PROTOCOL`，不依赖文件顺序、不覆盖。
 - **Session 冻结（第42题）**：用户选目录后建立 File Snapshot，`Object.freeze()` 注册表，无轮询 / watcher / 定时器 / 自动刷新。
 - **坏规则隔离（第43题）**：UI 明确显示文件 / ID / 版本 / 错误码 / JSON Path / 消息。
-- 测试：`tests/` 下 12 项自动测试（Node + 浏览器），Chrome 真机 10/10、Edge 真机 10/10。
+- 测试：`app/tests/` 下的 JavaScript 自动测试（D1-R1 为 12 项，D1-R1-F1 增至 15 项；Node 命令行 15/15，Chrome/Edge 真机各 10/10）。
 
 ### Frozen
 - 禁用：C# / .NET / WPF / Avalonia / Java / Python 后端 / Node 后端 / Electron / Tauri / 数据库服务器。

@@ -104,7 +104,7 @@ app/
 | `app/tests/protocol-test-cases.js` | 新增 | ~180 |
 | `app/tests/protocol-test-cases-session.js` | 新增 | ~85 |
 | `app/tests/source-bundle.js` | 新增 | ~65 |
-| **合计** | **19 个新文件** | |
+| **合计** | **22 个新文件**（D1-R1 原始提交当时；D1-R1-F1 删除 C# 遗留后，当前工作树不再含 `src/` 与 `tests/`） | |
 
 ## 6. Browser 本地文件读取方案
 
@@ -292,7 +292,16 @@ app/
 
 ## 19. Git 状态
 
-待首次提交（仓库当前无 commit）。
+D1-R1 implementation commit:
+cf13050
+
+documentation commit:
+ef3a257
+
+D1-R1-F1 commit:
+即包含本文件的提交（仓库最新 commit；完整 hash 见 D1-R1-F1 最终收口报告）。
+
+> 注：原报告曾误写“待首次提交（仓库当前无 commit）”，彼时仓库已存在上述两次提交，属文档过期，已于 D1-R1-F1 修正。
 
 ## 20. 下一步
 

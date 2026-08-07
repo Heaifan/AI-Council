@@ -64,4 +64,60 @@
     T.assert(html.indexOf('src="vendor/ajv2020.bundle.js"') >= 0, "index.html 必须本地引用 Ajv 打包文件");
     T.assert(html.indexOf('type="module"') < 0, "file:// 下不得使用 ES Module，保证双击即运行");
   });
+
+  /* F01 — Schema Override 跨目录残留回归测试（§8 TEST-13/14/15）。
+   * 直接验证 ProtocolSession 在“切换目录 / 同 Session 内 Override”场景下的契约；
+   * 对应 app.js 修复：重新选择目录后 schemaOverride 归零，新目录自行发现自身 Schema。 */
+
+  T.test("TEST-13", "切换目录后旧 Schema Override 必须失效，新目录自行发现自身 Schema", function (ctx) {
+    var overrideA = { path: "manual/schema-A.json", text: ctx.schemaText };
+    return A.FileSource.fromEntries([F.protocolEntry("good-a", ctx.validText)], "dirA")  // DirA 无自带 Schema
+      .then(function (snapA) {
+        var sessionA = A.ProtocolSession.initialize(snapA, overrideA);  // 手动 Override
+        T.assert(sessionA.schema, "DirA 应使用手动 Override");
+        T.assertEqual(sessionA.schema.filePath, overrideA.path, "DirA 使用 Override-A");
+
+        // 切换到 DirB（自带正式 Schema）——修复后 app 传入 override = null
+        return A.FileSource.fromEntries(
+          [F.schemaEntry(ctx.schemaText), F.protocolEntry("good-c", F.withId(ctx.validText, "demo-protocol"))], "dirB"
+        ).then(function (snapB) {
+          var sessionB = A.ProtocolSession.initialize(snapB, null);  // F01：切换目录后 Override 归零
+          T.assert(sessionB.schema, "DirB 应有可用 Schema");
+          T.assertEqual(sessionB.schema.filePath, "schemas/protocol.schema.json", "DirB 必须用自己的 Schema，而非继承 Override-A");
+          T.assertEqual(sessionB.registry.counts.available, 1, "DirB Available");
+          T.assert(sessionB.schema.filePath !== overrideA.path, "不得继承旧 Override");
+        });
+      });
+  });
+
+  T.test("TEST-14", "切换到同样无 Schema 的目录时不得继承旧 Override，必须回到需要 Schema 状态", function (ctx) {
+    var overrideA = { path: "manual/schema-A.json", text: ctx.schemaText };
+    return A.FileSource.fromEntries([F.protocolEntry("good-a", ctx.validText)], "dirA")  // DirA 无自带 Schema
+      .then(function (snapA) {
+        var sessionA = A.ProtocolSession.initialize(snapA, overrideA);
+        T.assert(sessionA.schema, "DirA 使用手动 Override");
+
+        // 切换到 DirB（也无 Schema），修复后 override = null
+        return A.FileSource.fromEntries(
+          [F.protocolEntry("good-b", F.withId(ctx.validText, "another-protocol"))], "dirB"
+        ).then(function (snapB) {
+          var sessionB = A.ProtocolSession.initialize(snapB, null);  // F01：不得复用 A 的 Override
+          T.assert(!sessionB.registry, "DirB 不应有可用 Registry（无 Schema）");
+          var codes = sessionB.diagnostics.map(function (d) { return d.code; });
+          T.assert(codes.indexOf("SCHEMA_SOURCE_MISSING") >= 0, "DirB 必须回到“需要 Schema”状态，不得继承 A 的 Override");
+        });
+      });
+  });
+
+  T.test("TEST-15", "同一 Session 内手工 Override 仍正常工作（修复不能误清空当前 Override）", function (ctx) {
+    var override = { path: "manual/schema.json", text: ctx.schemaText };
+    return A.FileSource.fromEntries([F.protocolEntry("good-a", ctx.validText)], "dirA")  // 无自带 Schema
+      .then(function (snap) {
+        var session = A.ProtocolSession.initialize(snap, override);
+        T.assert(session.schema, "Override 应被使用");
+        T.assertEqual(session.schema.filePath, override.path, "Override 路径正确");
+        T.assert(session.registry, "Registry 应正常构建");
+        T.assertEqual(session.registry.counts.available, 1, "Available");
+      });
+  });
 })(typeof globalThis !== "undefined" ? globalThis : this);
