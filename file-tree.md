@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-07（D2-R1 更新）
+> 最后更新：2026-08-07（D2-R2 更新）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -51,6 +51,7 @@ app/
 │   ├── role-card-registry.js       # ★D2-R1 Role Card 装载 / 按 role_class 确定性解析（补 §24-1 缺口）
 │   ├── instruction-packet-schema.js # ★D2-R1 InstructionPacket Schema 校验器（Ajv2020）
 │   ├── instruction-compiler.js      # ★D2-R1 确定性 (Protocol,Meeting,Phase,Participant)→InstructionPacket
+│   ├── prompt-renderer.js           # ★D2-R2 确定性 InstructionPacket → 人类可读 Prompt 文本（按 Role-Card-Spec §5 红化）
 │   ├── mock-agent-runtime.js        # D1-R3 测试用 Mock Agent 推进
 │   └── ui/
 │       ├── dom.js               # 轻量 DOM 工具
@@ -71,6 +72,7 @@ app/
     ├── protocol-test-cases-runtime.js   # TEST-32..53（D1-R3 会议运行时）
     ├── protocol-test-cases-persistence.js  # ★TEST-54..84（D1-R4 事件/检查点/指纹/存档/恢复）
     ├── protocol-test-cases-compiler.js    # ★TEST-85..109（D2-R1 Instruction Compiler / Role Card）
+│   ├── protocol-test-cases-renderer.js    # ★TEST-110..128（D2-R2 Prompt Renderer）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/

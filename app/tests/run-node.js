@@ -35,6 +35,7 @@ const RUNTIME = [
   "app/js/role-card-registry.js",
   "app/js/instruction-packet-schema.js",
   "app/js/instruction-compiler.js",
+  "app/js/prompt-renderer.js",
   "app/js/mock-agent-runtime.js",
   "app/tests/protocol-test-suite.js",
   "app/tests/protocol-test-fixtures.js",
@@ -43,7 +44,8 @@ const RUNTIME = [
   "app/tests/protocol-test-cases-semantic.js",
   "app/tests/protocol-test-cases-runtime.js",
   "app/tests/protocol-test-cases-persistence.js",
-  "app/tests/protocol-test-cases-compiler.js"
+  "app/tests/protocol-test-cases-compiler.js",
+  "app/tests/protocol-test-cases-renderer.js"
 ];
 
 const AUDITED = [
@@ -71,6 +73,7 @@ const AUDITED = [
   "app/js/role-card-registry.js",
   "app/js/instruction-packet-schema.js",
   "app/js/instruction-compiler.js",
+  "app/js/prompt-renderer.js",
   "app/js/mock-agent-runtime.js",
   "app/js/ui/dom.js",
   "app/js/ui/diagnostic-view.js",

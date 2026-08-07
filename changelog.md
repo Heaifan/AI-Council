@@ -58,6 +58,16 @@
 - 新增 `app/tests/protocol-test-cases-compiler.js`：TEST-85..TEST-109（25 项），覆盖确定性 / 内容寻址 / Role Card 解析与拒绝 / 可见性与上下文与输出合同透传 / actor 解析 / 各类拒绝路径 / Schema 校验 / JSON 安全。
 - 自动测试由 84 项增至 **109 项（109/109 PASS）**；无 Prompt 编译（D2-R2）/ Transport / Web Relay（D2-R3）/ 真实 LLM；正式 `schema/schemas/`（6 份）**零修改**。
 
+## D2-R2 — Prompt Renderer (InstructionPacket → 人类可读 Prompt) — 2026-08-07
+
+- 新增 `app/js/prompt-renderer.js`：`PromptRenderer.render(packet) → { ok, text?, diagnostics? }`，确定性把 `InstructionPacket` 渲染为人类可读 Prompt 文本；**严格只消费 Packet 字段**，绝不回查 protocol / meeting / role 文件（Packet 即唯一事实来源）。
+- 段落结构：协议/会议/阶段头、对外标识（可见性红化）、角色职责（**始终完整渲染**，因 Agent 必知自己的角色——Role-Card-Spec §4）、本阶段任务、上下文范围、可见性规则、输出合同、选中原因、元数据 footer。
+- 可见性红化落实 Role-Card-Spec §5 / Council-Constitution §4：`meeting.visibility_mode` 为权威模式；`public` 暴露真实 alias/participant_id/角色/阵营，`semi_anonymous` 隐藏个人 alias 与 ID、保留角色与阵营（底层模型本就不出现在 Packet 中，天然隐藏），`full_anonymous` 仅显示阵营字母 + 确定性代号（A1…A9）、角色与 ID 隐藏；`include_visibility_rules` 仅控制是否渲染「可见性规则」解释段。
+- `full_anonymous` 代号由 `participant_id` 经 FNV-1a 32-bit（纯 JS，与编译器同源）派生 `A{n}`，确定性稳定、不泄露真实 ID。
+- 在 `protocol-diagnostic.js` 冻结 1 个 `RENDERER_PACKET_INVALID` 诊断码：畸形 packet（null / 缺必填字段 / 字段非对象）/ 未知可见性模式 → 明确拒绝，绝不静默渲染。
+- 新增 `app/tests/protocol-test-cases-renderer.js`：TEST-110..TEST-128（19 项），覆盖确定性、三种可见性模式红化差异、角色卡含/缺、可见性规则含/缺、输出合同 text/structured_json、上下文范围、畸形拒绝、actor 透传、元数据 footer、null 模式兜底、Compiler→Renderer 端到端。
+- 自动测试由 109 项增至 **128 项（128/128 PASS）**；对 `prompt-renderer.js` 扫描 `openai/anthropic/WEB_RELAY/fetch/WebSocket/setTimeout/PromptCompiler` 等禁止 API **零命中**；无 LLM / 无 Transport（D2-R3）/ 不修改 Compiler / Runtime；正式 `schema/schemas/`（6 份）+ `instruction-packet.schema.json` **零修改**。
+
 ## [0.1.0] — D1-R1 Protocol Registry (HTML/JS) — 2026-08-07
 
 技术栈正式冻结为 **HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
