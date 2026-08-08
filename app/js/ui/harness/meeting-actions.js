@@ -31,6 +31,16 @@
     A.HarnessStore.setMeeting(state.meeting);
   }
 
+  /* 生成含 web_relay 参与者的演示会议（agent-a1=web_relay），用于演练 Manual Relay。 */
+  function createRelay() {
+    var proto = A.HarnessStore.availableProtocol("committee-mvp");
+    if (!proto) { say("Available 中找不到 committee-mvp，请选择包含 protocols/committee-mvp/ 的项目目录。", "warn"); A.HarnessStore.notify(); return; }
+    var r = A.RelayFlow.createRelayDemo(proto);
+    if (!r.ok) { say(r.message, "bad"); A.HarnessStore.notify(); return; }
+    say("已创建 Relay Demo（agent-a1 为 web_relay），停在 " + r.meeting.currentPhaseId + "。", "ok");
+    A.HarnessStore.setMeeting(r.meeting, proto);
+  }
+
   /* Human Gate 只能走这里：Mock 永远不得代替人类选择 finish / continue / battle。 */
   function decide(state, choice) {
     var r = A.MeetingStepFlow.decide(state.meeting, state.protocol, choice);
@@ -55,7 +65,7 @@
       return A.ArchiveFlow.restoreFrom(text, state.schemaPack, (state.registry && state.registry.available) || []);
     }).then(function (r) {
       say(r.message, r.ok ? "ok" : "bad");
-      if (r.ok) A.HarnessStore.setMeeting(r.meeting, r.protocol);
+      if (r.ok) { A.RelayFlow.hydrate(r.meeting); A.HarnessStore.setMeeting(r.meeting, r.protocol); }
       else A.HarnessStore.notify();
     }).catch(function (e) {
       say("加载失败：" + fail(e), "bad");
@@ -65,6 +75,6 @@
 
   A.MeetingActions = Object.freeze({
     message: message, say: say,
-    create: create, step: step, decide: decide, save: save, load: load
+    create: create, createRelay: createRelay, step: step, decide: decide, save: save, load: load
   });
 })(typeof globalThis !== "undefined" ? globalThis : this);

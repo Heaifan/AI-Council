@@ -1,7 +1,5 @@
-/* AI Council v0.1 — D2-F1
- * MeetingStepFlow：Harness 的会议步进流程（无 DOM，可在 Node 中直接测试）。
- * 三条硬规则：Create Demo 绝不预跑；一次点击只消费一个步骤；Human Gate 只认人工点击。
- */
+/* AI Council v0.1 — D2-F1 · MeetingStepFlow：Harness 会议步进流程（无 DOM）。
+ * 三条硬规则：Create Demo 绝不预跑；一次点击只消费一个步骤；Human Gate 只认人工点击。 */
 (function (root) {
   "use strict";
 
@@ -9,8 +7,7 @@
   var STATUS = A.MeetingState.STATUS;
   var ACTION = A.MeetingAction.ACTION;
 
-  /* Demo 参与者：Chair 故意声明一个 roles/ 中不存在的 role_id，
-   * 用来在界面上真实展示「role_id 未命中 → 按 role_class 回退」的解析路径。 */
+  /* Demo 参与者：Chair 故意声明一个 roles/ 中不存在的 role_id，界面上展示 role_id 未命中→按 role_class 回退。 */
   function demoParticipants() {
     return [
       { participant_id: "agent-a1", role_class: "advisor", side_id: "A", actor_type: "agent", alias: "A1", role_id: "strategic-advocate" },
@@ -31,7 +28,11 @@
     return { ok: true, meeting: m };
   }
 
+  /* step 路由判定下沉到 RelayFlow.routeStep：web_relay 参与者必须停下交人工（绝不自动替外部 AI 推进）。 */
   function step(meeting, protocol) {
+    var route = A.RelayFlow.routeStep(meeting);
+    if (route && route.auto === false)
+      return { ok: false, reason: "web_relay", message: route.message, participantId: route.participantId };
     return A.MockAgentRuntime.stepOnce(A.MeetingRuntime, meeting, protocol);
   }
 
@@ -43,8 +44,7 @@
     return { enabled: waiting, phaseId: waiting ? pa.phaseId : null, choices: waiting ? pa.choices.slice() : [] };
   }
 
-  /* battle 相位的 actor 是 selected_participants(battle_participants)：人只按了 Battle，还没挑人。
-   * D2-F1 用确定性默认——全部 advisor 按 id 升序——并如实告知；正式六席 UI 必须让人工勾选。 */
+  /* battle 相位 actor=selected_participants(battle_participants)：D2-F1 确定性默认全部 advisor 升序，如实告知。 */
   function ensureBattleSelection(meeting) {
     var sd = meeting.stateData || (meeting.stateData = {});
     if (Array.isArray(sd.battle_participants) && sd.battle_participants.length) return null;

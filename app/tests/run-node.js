@@ -40,6 +40,7 @@ const RUNTIME = [
   "app/js/harness/harness-store.js",
   "app/js/harness/participant-binding.js",
   "app/js/harness/meeting-step-flow.js",
+  "app/js/harness/relay-flow.js",
   "app/js/harness/compile-flow.js",
   "app/js/harness/archive-flow.js",
   "app/tests/protocol-test-suite.js",
@@ -58,6 +59,9 @@ const RUNTIME = [
   "app/js/invocation/agent-transport-adapter.js",
   "app/js/invocation/agent-mock-transport.js",
   "app/js/invocation/agent-web-relay-transport.js",
+  "app/js/invocation/agent-web-relay-controller.js",
+  "app/js/invocation/invocation-message-factory.js",
+  "app/tests/protocol-test-cases-web-relay-flow.js",
   "app/tests/protocol-test-cases-web-relay-contract.js",
   "app/tests/protocol-test-cases-web-relay-state.js"
 ];
@@ -92,6 +96,7 @@ const AUDITED = [
   "app/js/harness/harness-store.js",
   "app/js/harness/participant-binding.js",
   "app/js/harness/meeting-step-flow.js",
+  "app/js/harness/relay-flow.js",
   "app/js/harness/compile-flow.js",
   "app/js/harness/archive-flow.js",
   "app/js/ui/dom.js",
@@ -107,7 +112,11 @@ const AUDITED = [
   "app/js/invocation/agent-web-relay-state-machine.js",
   "app/js/invocation/agent-transport-adapter.js",
   "app/js/invocation/agent-mock-transport.js",
-  "app/js/invocation/agent-web-relay-transport.js"
+  "app/js/invocation/agent-web-relay-transport.js",
+  "app/js/invocation/agent-web-relay-controller.js",
+  "app/js/invocation/invocation-message-factory.js",
+  "app/js/ui/harness/web-relay-actions.js",
+  "app/js/ui/harness/web-relay-view.js"
 ];
 
 RUNTIME.forEach((rel) => vm.runInThisContext(read(rel), { filename: rel }));

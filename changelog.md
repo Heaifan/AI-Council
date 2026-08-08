@@ -2,6 +2,24 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D3 · WEB_RELAY — Manual Relay（实现完成，Browser Gate NOT VERIFIED）— 2026-08-08
+
+- **目的**：把系统从「只能跑 Mock 会议」推进为「能接一个真实外部 AI 的回答并写进会议」，但**系统绝不自动相信外部 AI**。四道闸门：①复制 Prompt → ②粘贴 Response → ③V01–V05 硬校验 → ④Accept 后才落成正式会议消息 → Runtime 继续。对应最初验收标准：复制 Prompt 给你、你粘回回答、校验并经 Accept 后才写入会议、Runtime 继续。
+- **新增 6 个文件（核心均 ≤100 行）**：
+  - `app/js/invocation/agent-web-relay-controller.js`（56）：Manual Relay 协调层 open/receive/validate(V01–V05)/accept/reject/retry/cancel/hydrate/state/sessions；无 DOM、无网络、不生成 Prompt。
+  - `app/js/invocation/invocation-message-factory.js`（43）：把**已 Accept** 的 Result 落成正式 Meeting Message（`accepted_by_runtime=true`、`validation.status:"valid"`）；绝不凭空生成事实。
+  - `app/js/harness/relay-flow.js`（82）：CompileFlow（Prompt 生成）↔ WebRelayController 接合；`routeStep` 供 step 委托停下；`createRelayDemo` 造 web_relay 演示会议；依赖项统一调用时取 `A.*`（修复 Node 加载顺序敏感）。
+  - `app/js/ui/harness/web-relay-view.js`（57）：面板渲染（readonly Prompt + 复制、粘贴框、V01–V05 清单、接受/拒绝/重试/取消按钮启用规则）。
+  - `app/js/ui/harness/web-relay-actions.js`（37）：面板点击行为，模块内持有 handle/最近校验结果。
+  - `app/tests/protocol-test-cases-web-relay-flow.js`（145）：WR-01..13 流程测试（含 Save/Load 断点续传、cancel、retry、V05 参与者移除、nextRelay 跳过 mock、step 路由、accept 写 messages）。
+- **修改 6 个文件（接线点，均 ≤100）**：`meeting-step-flow.js`(98，step 路由 web_relay 停下) / `harness-shell.js`(73，能力灯 WebRelay + Meeting Tab 内嵌 WebRelayView) / `meeting-actions.js`(80，新增 `createRelay` + `load` 后 `hydrate`) / `meeting-runtime-view.js`(86，新增 Create Relay Demo 按钮) / `index.html`(加 3 个 script) / `run-node.js`(RUNTIME + AUDITED 注册)。
+- **红线（用户裁定，已落实）**：Runtime 不知道 ChatGPT（代码中无 ChatGPT/Claude/OpenAI/browser 概念，仅有 `web_relay` transport_kind）；AI 回答不直接成为会议事实（必经 validate→accept，无 `Paste→messages.push` 捷径）；Human Gate 仍不是 Transport（`waiting_human` 时 WEB_RELAY 完全停下，web_relay 命中时 `step` 返回 `{ok:false, reason:"web_relay"}`）。
+- **校验语义（复用冻结错误码，不新增）**：V01 句柄有效(STALE_INVOCATION) / V02 状态机在 response_received / V03 原文非空(EMPTY_RESPONSE) / V04 长度≤20000(INVALID_RESPONSE) / V05 参与者仍在会议(PARTICIPANT_NOT_FOUND)。
+- **断点续传**：运行态存 `meeting.state_data.web_relay`（additionalProperties:true），Archive/Restore 往返后 `WebRelayController.hydrate` 灌回 transport 内存 `_store`。**Schema 零改动**（复用既有 event_type / participants.transport_kind / state_data 开放袋）；Event Log 复用 `agent_output_received`，不新增枚举（延续 D3-D0-F1 移除 invocation_waiting 的治理）。
+- **测试**：自动测试由 **156 项增至 169 项（169/169 PASS，原 156 零回归）**，新增 13 项 WR 流程测试；Contract 12/12、Line Audit、Dead Reference、Script Assembly、Schema/Manifest 均 PASS。**Browser Gate：NOT VERIFIED（沙箱无 Playwright，`run-browser.js` 含 B01..B20 待开发机复跑）**。
+- **状态**：`D3 · WEB_RELAY: IMPLEMENTED · Node 169/169 PASS · Contract 12/12 PASS · Browser Gate: NOT VERIFIED · Blocking Issues: 1（Browser）· 不得宣布 CLOSED 直至开发机复跑 Browser + 人工验收 A01..A10`。6 条 Stop Condition 均无触发。
+- 新增 `reports/d3-web-relay-manual-relay.md`；同步 `file-tree.md`、`changelog.md`。commit：`feat: implement manual web relay`（待 push）。
+
 ## D3-D0-F2 — Browser Gate Closure（最终收口，D3-D0 CLOSED）— 2026-08-08
 
 - **背景**：用户在正式开发机真实执行 `node app/tests/run-browser.js`，得 **29/29 PASS**（真机 Chrome，非静态审计、非预计）。据此把 Browser Gate 由 `NOT VERIFIED` 翻为正式 `PASS`，唯一 Blocking Issue 清除。本轮**仅做仓库收口，无任何功能开发**，禁止自动进入 D3-R1。

@@ -57,6 +57,7 @@
     var bar = Dom.el("div", "controls");
     var canStep = !!(s && s.pending && s.pending.type === A.MeetingAction.ACTION.COLLECT_RESPONSES);
     bar.appendChild(btn("mt-create", "Create Demo Meeting", false, !state.registry, A.MeetingActions.create));
+    bar.appendChild(btn("mt-create-relay", "Create Relay Demo", true, !state.registry, A.MeetingActions.createRelay));
     bar.appendChild(btn("mt-step", "执行下一步 Mock", false, !canStep, function () { A.MeetingActions.step(state); }));
     bar.appendChild(gateBtn("mt-finish", "Finish", gate, "finish", state));
     bar.appendChild(gateBtn("mt-continue", "Continue", gate, "continue", state));

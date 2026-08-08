@@ -14,7 +14,8 @@
     ["Runtime", function () { return !!(A.MeetingRuntime && A.MeetingFactory); }],
     ["Persistence", function () { return !!(A.MeetingArchive && A.MeetingPersistence && A.MeetingRestore); }],
     ["Compiler", function () { return !!(A.InstructionCompiler && A.RoleCardRegistry); }],
-    ["Renderer", function () { return !!A.PromptRenderer; }]
+    ["Renderer", function () { return !!A.PromptRenderer; }],
+    ["WebRelay", function () { return !!(A.WebRelayController && A.RelayFlow); }]
   ];
 
   function renderCapabilities() {
@@ -43,7 +44,12 @@
   /* Store 一变就整屏重绘：Harness 不做局部 diff，宁可全量重画换取状态与界面绝对一致。 */
   function refresh() {
     var s = A.HarnessStore.get();
-    A.MeetingRuntimeView.render(document.getElementById("view-meeting"), s);
+    var mh = document.getElementById("view-meeting");
+    if (mh) {
+      A.Dom.clear(mh);
+      var rt = A.Dom.el("div"); mh.appendChild(rt); A.MeetingRuntimeView.render(rt, s);
+      var rl = A.Dom.el("div"); mh.appendChild(rl); A.WebRelayView.render(rl, s);
+    }
     A.CompilerView.render(document.getElementById("view-compiler"), s);
   }
 
