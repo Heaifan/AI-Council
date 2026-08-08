@@ -1,6 +1,5 @@
 /* AI Council v0.1 — D3 · 会议控制台 · RelayPanel：中栏主工作区装配（DOM 投影，动作全在 WebRelayActions）。
- * 当前执行信息（委员/模型/状态 + 打开模型网页）→ RelayWorkarea（Prompt/Response 大区）
- * → 校验状态行 + 折叠详情 → 四个人工决定按钮。
+ * 当前执行信息 → RelayWorkarea 双栏 → 校验折叠 → 状态驱动决定按钮。
  */
 (function (root) {
   "use strict";
@@ -14,7 +13,6 @@
     if (!disabled) b.addEventListener("click", onClick);
     return b;
   }
-
   function row(box, id, label, value) {
     var f = Dom.field(label, value);
     f.lastChild.id = id;
@@ -35,20 +33,21 @@
       !active || !A.RelayProfiles.isSafeUrl(A.RelayProfiles.webUrlFor(profiles, modelRef)),
       function () { A.ConsoleActions.openWeb(modelRef); });
     box.appendChild(open);
+    box.appendChild(A.AutomationView.build(active, modelRef));
     return box;
   }
 
   function actionsBar(active, check) {
     var bar = Dom.el("div", "controls relay-actions");
-    /* 状态驱动（方案 §六）：校验通过前不显示「接受」；通过后显示接受/拒绝/重新请求。 */
+    /* 状态驱动（方案 §六）：校验通过后才显示接受/拒绝/重新请求。 */
     if (check && check.ok) {
       bar.appendChild(btn("relay-accept", "接受为正式发言", "primary", false, function () { A.WebRelayActions.accept(); }));
       bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", false, function () { A.WebRelayActions.reject(); }));
       bar.appendChild(btn("relay-retry", "重新请求", "secondary", false, function () { A.WebRelayActions.retry(); }));
     } else {
-      var canAlt = !!(active && active.state !== "rejected" && active.state !== "failed");
-      bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", !canAlt, function () { A.WebRelayActions.reject(); }));
-      bar.appendChild(btn("relay-retry", "重新请求", "secondary", !canAlt, function () { A.WebRelayActions.retry(); }));
+      var canAlt = !(active && active.state !== "rejected" && active.state !== "failed");
+      bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", canAlt, function () { A.WebRelayActions.reject(); }));
+      bar.appendChild(btn("relay-retry", "重新请求", "secondary", canAlt, function () { A.WebRelayActions.retry(); }));
     }
     bar.appendChild(btn("relay-cancel", "取消本次请求", "secondary", !active, function () { A.WebRelayActions.cancel(); }));
     return bar;

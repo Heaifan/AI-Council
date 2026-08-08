@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D3 · WEB_RELAY — 六席会议控制台重构：Node 185/185 · Browser 86/86 · 人工真机验收 A01..A10 待执行）
+> 最后更新：2026-08-08（D3 · WEB_AUTOMATION ChatGPT 单站 PoC：Offline 14/14 · Node 185/185 · Browser 99/99 · Live ChatGPT 人工验收待执行）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -104,7 +104,7 @@ app/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
     ├── run-node.js             # Node 入口（自动测试，现 185 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft + seat-layout）
-    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols + D2 Meeting/Compiler + D3 WEB_RELAY B01..B25 + D4 控制台 C01..C16 + D5 六席 S01..S14；86 项）
+    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols + D2 Meeting/Compiler + D3 B01..B25 + D4 C01..C16 + D5 六席 S01..S14 + D6 One-Screen/Clipboard U16..U22；99 项）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
@@ -122,9 +122,39 @@ app/
     ├── protocol-test-cases-console-draft.js        # ★TEST-147..154（D3 会议控制台：MeetingDraft 校验/一次性创建/议题落库 + RelayProfiles URL 安全/upsert；123 行，测试文件不受 ≤100 约束）
     ├── protocol-test-cases-seat-layout.js          # ★TEST-155..160（D3 六席：SEATS 顺序/映射/立场覆盖/seat↔participant 双向/六席模板建会 topic 入 Packet；95 行，测试文件不受 ≤100 约束）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
-    └── fixtures/acceptance/protocols/   # 人工验收样例
-        ├── good-a/ good-c/      broken-b/  missing-version/
-        └── dup-x/ dup-y/        # 各含 protocol.json
+    ├── fixtures/acceptance/protocols/   # 人工验收样例
+    │       ├── good-a/ good-c/  broken-b/  missing-version/
+    │       └── dup-x/ dup-y/    # 各含 protocol.json
+    └── fixtures/fake-ai-page.html       # ★WEB_AUTOMATION 假 AI 页面（输入/发送/生成中/回答/登录墙，离线测试用）
+```
+
+## automation/（WEB_AUTOMATION 本地 Node Worker，仅自动化模式，方案 §九/§十二）
+
+```text
+automation/
+├── start.js                    # 入口：node automation/start.js → http://127.0.0.1:3741/（仅本机）
+├── core/
+│   ├── automation-errors.js    # 10 个 AUTOMATION_* 错误码（中文+代码+阶段）+ AutomationError
+│   ├── automation-result.js    # AutomationResult（ok/responseText/error/artifactDir；永不自动进 Message）
+│   ├── automation-session.js   # 状态机（idle→…→completed + 异常终态）+ 步骤进度
+│   └── automation-controller.js# 编排：Driver 启动→打开目标→发送→条件等待→提取；失败证据落盘
+├── browser/
+│   └── browser-profile.js      # runtime/browser-profile（gitignore）+ artifacts 目录（browser-manager 预留未建）
+├── drivers/
+│   ├── automation-driver.js    # AutomationDriver 接口契约（Transport 层禁直接 require playwright）
+│   ├── playwright-driver.js    # 主路径：launchPersistentContext + 专用 Profile + 条件等待（99 行）
+│   └── visual-locator.js       # VisionLocator 接口冻结（boundingBox/confidence/method/evidence；不实现）
+├── sites/
+│   ├── site-adapter.js         # 站点适配器工厂（PoC 仅 chatgpt）
+│   └── chatgpt-adapter.js      # ChatGPT：ARIA/Role 优先候选 + 生成检测 + 回答提取
+├── server/
+│   ├── static-server.js        # app/ 静态服务 + automation-ui.js 注入（同源）
+│   └── automation-server.js    # /api/automate + /api/status/:id + /api/result/:id + /api/health
+├── ui/
+│   └── automation-ui.js        # 覆写 AutomationBridge 为同源 fetch（仅 localhost 注入）
+└── tests/
+    ├── offline-automation-tests.js  # A01..A12b：Fake AI Page 离线全链路（14 项）
+    └── smoke-server.js              # server 冒烟（health/注入/automate 202/404）
 ```
 
 ## schema/（正式 Schema，优先级高于个人判断）

@@ -2,6 +2,17 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D3 · WEB_AUTOMATION — ChatGPT 单站 PoC — 2026-08-08
+
+- **目的**：把「人工搬运 Prompt/Response」自动化。本地 Node Automation Worker（automation/）以 localhost 同源模式提供 UI + Automation API + 专用 Chrome Profile；只做 ChatGPT 单站；自动化结果必经校验 + 人工 Accept 才进正式会议（只替代搬运，不替代协议/运行时/校验/裁定）。自动化模式 `node automation/start.js` → http://127.0.0.1:3741/；Manual 模式双击 app/index.html 不变。
+- **架构**：`automation/{core,browser,drivers,sites,server,ui,tests}`；AutomationDriver 接口（Transport 层不得直接 require playwright）→ PlaywrightDriver（launchPersistentContext + 专用 Profile，禁控制日常 Chrome）→ SiteAdapter → ChatGptSiteAdapter（ARIA/Role 优先 → 语义属性 → 结构候选带上下文验证，无 nth-child）。生成结束 = Stop 按钮消失 + 文本 1.5s 稳定窗口双保险（禁死等）。登录/验证码一律停给人工（LOGIN_REQUIRED），绝不绕过。
+- **状态机**：idle→launching_browser→opening_target→locating_input→submitting→waiting_response→extracting→completed；异常 login_required/locator_not_found/response_timeout/browser_crashed/challenge_detected/cancelled。10 个 AUTOMATION_* 错误码（中文+代码+阶段），失败自动落盘 runtime/automation-artifacts/<invocation-id>/{screenshot.png,page.html,failure.json}。
+- **UI 集成**：中央大屏「网页自动化」卡（[自动发送给 ChatGPT] Primary + [切换人工中继] fallback + 执行进度 + 失败原因与重试）；app/js 零网络纪律保持——app 侧 AutomationBridge no-op 占位，真实 fetch 在 automation/ui/automation-ui.js（localhost 由 static-server 注入，file:// 不加载）。
+- **测试**：Offline Automation **14/14**（Fake AI Page：tests/fixtures/fake-ai-page.html，A01..A12b 覆盖启动/定位/输入/发送/条件等待/提取/Result 返回/不自动进 Message/登录墙/证据落盘）；Node 185/185 + Browser 99/99 零回归；server 冒烟（health/注入/202/404）PASS。Live ChatGPT E2E：NOT VERIFIED（人工验收步骤见 reports/d3-web-automation-poc.md §6）。
+- **未决项**：影刀可行性审计未执行（无 web 调研工具；审计通过前不实现 YingDaoDriver，登记后续轮次）；真实 ChatGPT 生成参数需实机微调。
+- 新增 `reports/d3-web-automation-poc.md`；同步 file-tree.md；runtime/browser-profile 与 automation-artifacts 加入 .gitignore。
+- **状态**：`WEB_AUTOMATION PoC: IMPLEMENTED · Offline 14/14 · Node 185/185 · Browser 99/99 · Live ChatGPT 人工验收待执行`。
+
 ## D3 · WEB_RELAY — 六席会议控制台重构（Six-Seat Console）— 2026-08-08
 
 - **目的**：把「三栏表单型页面」重构为「会议室操作台」——左右六席摘要卡（A 支持侧 / B 质疑侧）+ 中央唯一操作大屏 + 底部时间线。用户裁定：席位可配置但配置表单不长期铺开，详细配置进中央大屏；底层仍跑 D3 单席位 WEB_RELAY（不做 D4 多 Agent 并发调度）。自动测试基线：Node 179/179、Browser 72/72。

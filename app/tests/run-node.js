@@ -112,6 +112,8 @@ const AUDITED = [
   "app/js/ui/harness/meeting-actions.js",
   "app/js/ui/harness/web-relay-actions.js",
   "app/js/ui/harness/console-actions.js",
+  "app/js/ui/harness/automation-bridge.js",
+  "app/js/ui/harness/automation-view.js",
   "app/js/ui/harness/seat-local-config.js",
   "app/js/ui/harness/seat-status.js",
   "app/js/ui/harness/seat-card.js",

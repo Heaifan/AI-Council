@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Fake AI Page · AI-Council 自动化离线测试页</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+  #composer { width: 100%; min-height: 80px; border: 1px solid #888; border-radius: 8px; padding: 10px; }
+  #send-btn { margin-top: 8px; padding: 8px 20px; cursor: pointer; }
+  #generating { display: none; color: #b36b00; margin: 8px 0; }
+  #stop-btn { display: none; margin-top: 8px; padding: 6px 14px; cursor: pointer; }
+  .msg { border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+  .msg.user { background: #eef4ff; }
+  .msg.assistant { background: #f2fbf0; }
+  #login-wall { display: none; border: 2px solid #c33; padding: 16px; margin: 16px 0; color: #c33; }
+</style>
+</head>
+<body>
+<h1>Fake AI Page</h1>
+<p>自动化离线测试页：模拟 ChatGPT 的输入区 / 发送 / 生成中 / 回答区（无网络、无真实 AI）。</p>
+<div id="login-wall">需要登录（测试用登录墙）</div>
+<textarea id="composer" placeholder="输入消息…" aria-label="消息输入框"></textarea>
+<div><button id="send-btn" aria-label="发送">发送</button></div>
+<div id="generating">正在生成…</div>
+<div><button id="stop-btn" aria-label="停止生成">停止</button></div>
+<div id="chat-log"></div>
+<script>
+  (function () {
+    var log = document.getElementById("chat-log");
+    var composer = document.getElementById("composer");
+    var generating = document.getElementById("generating");
+    var stopBtn = document.getElementById("stop-btn");
+    var sendBtn = document.getElementById("send-btn");
+    var seq = 0;
+
+    function addMsg(role, text) {
+      var div = document.createElement("div");
+      div.className = "msg " + role;
+      div.setAttribute("data-message-author-role", role);
+      div.textContent = text;
+      log.appendChild(div);
+      return div;
+    }
+
+    sendBtn.addEventListener("click", function () {
+      var text = composer.value.trim();
+      if (!text) return;
+      addMsg("user", text);
+      composer.value = "";
+      generating.style.display = "block";
+      stopBtn.style.display = "inline-block";
+      /* 模拟生成：800ms 后输出「假回答」+ 200ms 内停止生成指示（条件等待可观察）。 */
+      setTimeout(function () {
+        var reply = "Fake AI 回答 #" + (++seq) + "：已收到「" + text.slice(0, 40) + "…」，这是离线测试的确定性回复。";
+        addMsg("assistant", reply);
+        generating.style.display = "none";
+        stopBtn.style.display = "none";
+      }, 800);
+    });
+
+    stopBtn.addEventListener("click", function () {
+      generating.style.display = "none";
+      stopBtn.style.display = "none";
+    });
+
+    /* 测试钩子：URL 参数 ?login=1 显示登录墙（验证 AUTOMATION_LOGIN_REQUIRED 路径）。 */
+    if (/[?&]login=1/.test(location.search)) {
+      document.getElementById("login-wall").style.display = "block";
+      document.body.setAttribute("data-login-wall", "1");
+    }
+  })();
+</script>
+</body>
+</html>
