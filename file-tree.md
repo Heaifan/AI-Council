@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D2-F1 Integration Harness 更新）
+> 最后更新：2026-08-08（D2-F1 Integration Harness + D3-D0 WEB_RELAY Contract Freeze 更新）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -52,6 +52,11 @@ app/
 │   ├── instruction-compiler.js      # ★D2-R1 确定性 (Protocol,Meeting,Phase,Participant)→InstructionPacket（D2-F1 改用 resolveForParticipant）
 │   ├── prompt-renderer.js           # ★D2-R2 确定性 InstructionPacket → 人类可读 Prompt 文本（按 Role-Card-Spec §5 红化）
 │   ├── mock-agent-runtime.js        # D1-R3 测试用 Mock Agent 推进（D2-F1 新增 stepOnce 单步语义）
+│   ├── invocation/                  # ★D3-D0 WEB_RELAY Transport 合同（纯数据，不发起网络请求）
+│   │   ├── agent-invocation-request.js     # Meeting→Transport 唯一合同（request_id 内容寻址 + sequence）
+│   │   ├── agent-invocation-result.js       # Transport→Meeting 唯一合同（Result≠正式Message，无 message_id）
+│   │   ├── agent-web-relay-state-machine.js # Manual Relay 状态机（8 态，replay 可重放恢复）
+│   │   └── agent-transport-adapter.js      # TransportAdapter 抽象 + Mock + WebRelay（禁 api/local/web_automation）
 │   ├── harness/                     # ★D2-F1 无 DOM 流程层（可在 Node 直接测试，每文件 ≤100 行）
 │   │   ├── harness-store.js          # 共享状态 + 订阅；setSession 从 snapshot.assetFiles 冻结装入 Role Card/Schema Pack/Packet Schema
 │   │   ├── participant-binding.js    # Participant 下拉来源（只来自 meeting.participants[]）+ 当前相位 actor 标注 + Compiler 禁用态
@@ -73,7 +78,7 @@ app/
 └── tests/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
-    ├── run-node.js             # Node 入口（自动测试，现 144 项，含 harness/* 流程层）
+    ├── run-node.js             # Node 入口（自动测试，现 156 项，含 harness/* 与 invocation/*）
     ├── run-browser.js          # Playwright 真机验收入口（覆盖 D1 Protocols + D2-F1 Meeting/Compiler 真实点击链路）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
@@ -85,6 +90,7 @@ app/
     ├── protocol-test-cases-compiler.js    # TEST-85..109（D2-R1 Instruction Compiler / Role Card）
     ├── protocol-test-cases-renderer.js    # TEST-110..128（D2-R2 Prompt Renderer）
     ├── protocol-test-cases-harness.js     # ★TEST-129..144（D2-F1 接线：脚本装配/冻结/禁用/Mock单步/Human Gate/Role≠Participant/Save-Load）
+    ├── protocol-test-cases-web-relay.js   # ★D3D0-01..12（D3-D0 WEB_RELAY 合同冻结：Request/Result/状态机/TransportAdapter）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/
@@ -97,7 +103,7 @@ app/
 schema/
 ├── schemas/
 │   ├── protocol.schema.json    # ★ D1-R1 校验依据（未修改）
-│   ├── meeting.schema.json     # ★ D1-R4 存档校验依据（未修改）
+│   ├── meeting.schema.json     # ★ D1-R4 存档校验依据（D3-D0 追加 invocation_created/invocation_waiting/invocation_cancelled 三个 event_type 枚举值，manifest 同步刷新）
 │   ├── role.schema.json  message.schema.json      # D1-R4 作为 $ref Schema Pack 注册
 │   ├── artifact.schema.json  annotation.schema.json
 │   ├── instruction-packet.schema.json # ★ D2-R1 新增（编译产物校验；非冻结 6 份之一）
@@ -133,6 +139,7 @@ docs/
 ├── Meeting-Persistence-Spec.md
 ├── Model-Transport-Spec.md
 ├── Phase-0-Freeze-Register.md
+├── d3-web-relay-contract.md   # D3-D0 WEB_RELAY Transport 合同冻结
 └── Phase-0-Package-README.md
 ```
 

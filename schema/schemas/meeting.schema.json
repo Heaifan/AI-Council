@@ -209,6 +209,8 @@
               "meeting_started",
               "phase_entered",
               "instruction_compiled",
+              "invocation_created",
+              "invocation_waiting",
               "agent_output_received",
               "message_accepted",
               "message_rejected",
@@ -222,6 +224,7 @@
               "annotation_added",
               "meeting_completed",
               "meeting_failed",
+              "invocation_cancelled",
               "transport_error"
             ]
           },

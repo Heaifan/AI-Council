@@ -2,6 +2,21 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D3-D0 — WEB_RELAY Contract Freeze（合同冻结，D3 第一步）— 2026-08-08
+
+- **目的**：冻结「服务于 Manual WEB_RELAY 的最小 Transport 合同」，证明闭环 Meeting Runtime → InstructionPacket → Renderer → 外部 Web AI → Response → Validation → 写回 → Runtime 继续 的确定性合同，把系统从 Mock 会议模拟器推进为真实 AI 会议系统。本轮**只冻结合同**，不实现 Manual Relay UI（D3-R1）、不实现自动校验（D3-R2）、不接真实 LLM、不预实现 api/local/web_automation。
+- **新增 `app/js/invocation/`（4 份纯数据合同，JSON-safe、浅冻结，不发起任何网络请求）**：
+  - `agent-invocation-request.js`：`AgentInvocationRequest.create/validate`，字段集严格冻结；`request_id = req-` + FNV-1a32(canonical{meeting,phase,participant,packet}) + `-` + 2 位 sequence（按目标内容寻址、prompt 不影响、sequence 改变）；`metadata` 禁止供应商/UI 专有字段。
+  - `agent-invocation-result.js`：`AgentInvocationResult.create/validate`，4 状态（success/failure/cancelled/needs_human_refill）；**红线 Result ≠ 正式 Message（无 message_id）**；success 必带 raw_response、failure/cancelled 必带 error。
+  - `agent-web-relay-state-machine.js`：`WebRelayStateMachine`，8 态 + 冻结转移表 + `replay()` 重放恢复（断点续传 / 审计）。
+  - `agent-transport-adapter.js`：`TransportAdapter` 抽象 + `MockTransport`（确定性）+ `WebRelayTransport`（状态机驱动，begin/receive/validate/accept/reject/cancel/retry/getState）；工厂仅放行 mock/web_relay，api/local/web_automation → `TRANSPORT_KIND_UNSUPPORTED`。
+- **错误模型**：`protocol-diagnostic.js` 追加 10 个 D3-D0 码——7 个 WEB_RELAY 业务错误（EMPTY_RESPONSE/INVALID_RESPONSE/VALIDATION_FAILED/CANCELLED/TRANSPORT_FAILED/STALE_INVOCATION/PARTICIPANT_NOT_FOUND）+ 3 个合同完整性错误（INVOCATION_REQUEST_INVALID/INVOCATION_STATE_TRANSITION_INVALID/TRANSPORT_KIND_UNSUPPORTED），两组语义刻意分开。
+- **审计事件**：`meeting.schema.json` 的 `event_type` 枚举追加 3 个真正新的（`invocation_created` / `invocation_waiting` / `invocation_cancelled`），其余复用既有 `agent_output_received` / `message_accepted` / `message_rejected` / `transport_error`；`manifest.sha256.json` 同步刷新 meeting.schema.json 的哈希（9285 字节）。
+- **测试**：新增 `app/tests/protocol-test-cases-web-relay.js`（D3D0-01..12，共 12 项），覆盖 Request 成功/拒供应商字段/缺 participant/非法 kind/request_id 寻址、Result 无 message_id/一致性/拒供应商字段、状态机合法链路与非法转移+replay、工厂放行边界、WebRelayTransport 端到端 Manual Relay 生命周期。`run-node.js` 把 `invocation/*` 纳入 RUNTIME 与 AUDITED、把合同测试纳入执行；`index.html` 装配 4 个新 `<script>`。自动测试由 **144 项增至 156 项（156/156 PASS，原 144 零回归）**；脚本装配静态审计（TEST-129）通过。
+- **不做的范围**：OpenAI/Anthropic/Gemini API、Local LLM/Ollama、浏览器自动化（Playwright 控制 ChatGPT/Selenium/Chrome Extension）、WEB_AUTOMATION、正式六席会议室 UI、多 Agent 并行调度（D4）、具体 Response Validation（D3-R2）、真实闭环接线（D3-R1）。
+- **门禁**：`run-node.js` 156/156 PASS；`run-browser.js`（Playwright 真机 29/29）需在装有 Playwright 的环境复跑——本沙箱未安装，因仅做加法（4 个新 `<script>` + 枚举追加）不改动既有运行行为，无回归风险。**D3-D0: PASS · WEB_RELAY Contract: FROZEN · Blocking Issues: 0 · Recommendation: ENTER D3-R1（待人工拍板）**。
+- 新增 `docs/d3-web-relay-contract.md`；同步 `file-tree.md`。
+
 ## D2-F1 — Developer Harness Integration（接线，不做六席会议室 UI）— 2026-08-08
 
 - **目的**：把已完成的 Protocol Kernel / Meeting Runtime / Persistence-Restore / Instruction Compiler / Prompt Renderer 接进同一个浏览器 Harness，做到「点得到、看得到、验得到」。本轮**只做接线**，不开发 D3 Transport、不接真实 LLM、不做正式六席会议室 UI。

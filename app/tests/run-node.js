@@ -51,7 +51,12 @@ const RUNTIME = [
   "app/tests/protocol-test-cases-persistence.js",
   "app/tests/protocol-test-cases-compiler.js",
   "app/tests/protocol-test-cases-renderer.js",
-  "app/tests/protocol-test-cases-harness.js"
+  "app/tests/protocol-test-cases-harness.js",
+  "app/js/invocation/agent-invocation-request.js",
+  "app/js/invocation/agent-invocation-result.js",
+  "app/js/invocation/agent-web-relay-state-machine.js",
+  "app/js/invocation/agent-transport-adapter.js",
+  "app/tests/protocol-test-cases-web-relay.js"
 ];
 
 const AUDITED = [
@@ -93,7 +98,11 @@ const AUDITED = [
   "app/js/ui/harness/meeting-runtime-view.js",
   "app/js/ui/harness/compiler-packet-view.js",
   "app/js/ui/harness/compiler-view.js",
-  "app/js/ui/harness/harness-shell.js"
+  "app/js/ui/harness/harness-shell.js",
+  "app/js/invocation/agent-invocation-request.js",
+  "app/js/invocation/agent-invocation-result.js",
+  "app/js/invocation/agent-web-relay-state-machine.js",
+  "app/js/invocation/agent-transport-adapter.js"
 ];
 
 RUNTIME.forEach((rel) => vm.runInThisContext(read(rel), { filename: rel }));
