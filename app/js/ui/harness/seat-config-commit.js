@@ -39,6 +39,7 @@
     }
     A.SeatLocalConfig.setStance(pid, edits.stance);
     A.SeatLocalConfig.setNote(pid, edits.note);
+    A.SeatEditDraft.clear(pid);   /* 保存成功：草稿落库并清除（G06） */
     A.WebRelayActions.say(seatId + " 配置已保存。", "ok");
     actions.setMode("run");   /* 保存后自动返回会议界面（§十） */
     A.HarnessStore.notify();

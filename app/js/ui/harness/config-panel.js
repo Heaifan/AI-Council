@@ -1,7 +1,6 @@
-/* AI Council v0.1 — D3 · 六席会议控制台 · ConfigPanel：中央大屏「会议配置」卡（DOM 投影）。
- * 无会议：会议名称 / 议题 / 议事规则（可编辑）+ 创建会议（Primary）。
- * 有会议：冻结摘要（只读）+ 创建按钮 disabled（保留文本与 id，Browser 契约 cfg-* 不回归）。
- * 与会者/席位配置已移至 SeatConfigPanel；开发工具移至 DevToolsPanel。
+/* AI Council v0.1 — D3 · 六席会议控制台 · ConfigPanel：中央「会议配置」卡（DOM 投影）。
+ * F2：会前/运行分离——无会议 = 可编辑表单 + 创建按钮；有会议 = 一行摘要 + 表单隐藏
+ * （cfg-* 契约 DOM 保留 disabled，C10/S10 isDisabled 可查；创建按钮保留可见，C15 契约）。
  */
 (function (root) {
   "use strict";
@@ -29,18 +28,8 @@
     return sel;
   }
 
-  function render(host, state) {
-    if (!host) return;
-    var actions = A.ConsoleActions;
-    var draft = actions.getDraft();
-    var frozen = actions.isFrozen();
-
-    var box = Dom.el("div", "card config-card");
-    box.id = "console-config";
-    box.appendChild(Dom.el("h2", null, "会议配置"));
-    if (frozen) box.appendChild(Dom.el("p", "note", "会议配置已冻结：如需修改议题或委员配置，请结束当前会议后新建。"));
-
-    var grid = Dom.el("div", "cfg-grid");
+  /* 表单字段（会前可编辑 / 运行态 disabled 但 DOM 常驻）。 */
+  function buildForm(grid, draft, state, actions, frozen) {
     var title = document.createElement("input");
     title.type = "text"; title.value = draft.title || ""; title.placeholder = "例如：玄域引擎战略评审";
     fieldRow(grid, "cfg-title", "会议名称", title);
@@ -54,7 +43,9 @@
     title.addEventListener("change", function () { actions.setField("title", title.value); });
     topic.addEventListener("change", function () { actions.setField("topic", topic.value); });
     proto.addEventListener("change", function () { actions.setField("protocolId", proto.value); });
+  }
 
+  function createButton(actions, state, frozen) {
     var create = Dom.el("button", "btn primary", "创建会议");
     create.id = "cfg-create";
     create.disabled = frozen || !state.registry;
@@ -63,10 +54,40 @@
       if (!r.ok) A.WebRelayActions.say(r.message || "创建失败。", "bad");
       A.HarnessStore.notify();
     });
-    var row = Dom.el("div", "controls span2");
-    row.appendChild(create);
-    grid.appendChild(row);
+    return create;
+  }
+
+  function render(host, state) {
+    if (!host) return;
+    var actions = A.ConsoleActions;
+    var draft = actions.getDraft();
+    var frozen = actions.isFrozen();
+
+    var box = Dom.el("div", "card config-card");
+    box.id = "console-config";
+    box.appendChild(Dom.el("h2", null, "会议配置"));
+
+    var grid = Dom.el("div", "cfg-grid");
+    buildForm(grid, draft, state, actions, frozen);
+    if (frozen) {
+      /* 运行态：一行摘要（表单隐藏但 DOM 保留）；中央空间交还会议内容（F2 T03）。 */
+      var m = state.meeting;
+      grid.style.display = "none";
+      var sum = Dom.el("div", "config-summary");
+      var nm = Dom.el("span", "cs-name", m ? (m.title || "—") : "—");
+      nm.id = "config-summary-title";
+      sum.appendChild(nm);
+      var tp = Dom.el("span", "cs-topic", m && m.topic ? m.topic : "");
+      tp.id = "config-summary-topic";
+      sum.appendChild(tp);
+      box.appendChild(sum);
+    } else {
+      var row = Dom.el("div", "controls span2");
+      row.appendChild(createButton(actions, state, false));
+      grid.appendChild(row);
+    }
     box.appendChild(grid);
+    if (frozen) box.appendChild(createButton(actions, state, true));
     host.appendChild(box);
   }
 

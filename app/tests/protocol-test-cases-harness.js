@@ -76,6 +76,7 @@
       "js/ui/harness/meeting-actions.js", "js/ui/harness/web-relay-actions.js",
       "js/ui/harness/console-actions.js", "js/ui/harness/automation-bridge.js",
       "js/ui/harness/automation-view.js", "js/ui/harness/seat-local-config.js",
+      "js/ui/harness/seat-edit-draft.js", "js/ui/harness/meeting-hud.js",
       "js/ui/harness/seat-status.js", "js/ui/harness/seat-card.js",
       "js/ui/harness/seat-column.js", "js/ui/harness/seat-config-fields.js",
       "js/ui/harness/seat-config-commit.js",
@@ -96,7 +97,9 @@
     });
     T.assert(html.indexOf("AI 顾问委员会 · 开发验证台") >= 0, "顶部标题必须是中文「AI 顾问委员会 · 开发验证台」");
     T.assert(html.indexOf('class="badge">人工网页中继') >= 0, "顶部徽标必须是中文「人工网页中继」");
-    T.assert(html.indexOf('id="runtime-status"') >= 0, "必须有与能力灯分开的独立「当前状态」行");
+    T.assert(html.indexOf('id="meeting-hud"') >= 0, "必须有 Meeting HUD 容器（F2：HUD 内提供当前状态契约）");
+    var hudSrc = (ctx.appSources || {})["app/js/ui/harness/meeting-hud.js"] || "";
+    T.assert(hudSrc.indexOf('"runtime-status"') >= 0, "MeetingHud 必须创建 #runtime-status（当前状态契约行）");
     ["D2-F1", "Developer Harness", "Integration Harness"].forEach(function (dead) {
       T.assert(html.indexOf(dead) < 0, "index.html 不得残留过期文案：" + dead);
     });

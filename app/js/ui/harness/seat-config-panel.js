@@ -48,7 +48,7 @@
     var profile = A.RelayProfiles.findByModelRef(actions.getProfiles(), pt.model_ref || "");
     A.SeatConfigFields.build(box, pt, seat, profile, frozen, actions,
       function (edits) { A.SeatConfigCommit.run(pt.participant_id, seat.seat_id, edits); },
-      function () { actions.setMode("run"); });
+      function () { A.SeatEditDraft.clear(pt.participant_id); actions.setMode("run"); });
     host.appendChild(box);
   }
 

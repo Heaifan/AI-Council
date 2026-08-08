@@ -12,6 +12,9 @@
     "XMLHttpRequest", "fetch(", "WebSocket", "EventSource",
     "FileSystemObserver", "serviceWorker"
   ];
+  /* F2 唯一白名单：meeting-hud.js 的 1s 本地 UI 时钟（只更新 #meeting-timer 文本，
+   * 非网络轮询；用户 MEETING-UX-F2 §T05 要求 Timer 局部更新）。其余文件仍全禁。 */
+  var TIMER_EXEMPT = ["app/js/ui/harness/meeting-hud.js"];
 
   T.test("TEST-08", "修改磁盘后已初始化的 Registry 不得变化", function (ctx) {
     var disk = { text: ctx.validText };
@@ -53,6 +56,7 @@
 
     paths.forEach(function (p) {
       FORBIDDEN_APIS.forEach(function (api) {
+        if (api === "setInterval(" && TIMER_EXEMPT.indexOf(p) >= 0) return;
         T.assert(sources[p].indexOf(api) < 0, p + " 含被禁止的 API：" + api);
       });
     });

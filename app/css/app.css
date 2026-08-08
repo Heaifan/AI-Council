@@ -40,6 +40,31 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.6 "Micr
 .tab-panel { display: none; padding-top: 12px; max-height: calc(100dvh - 200px); overflow-y: auto; }
 .tab-panel.active { display: block; }
 
+/* ---------- F2 Meeting HUD：会议运行头（≤68px，含系统状态折叠） ---------- */
+.meeting-hud { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 12px; margin: 8px 0 0; }
+.hud-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hud-title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36%; }
+.hud-topic { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 36%; }
+.hud-gap { flex: 1; }
+.hud-sub { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); min-width: 0; }
+.hud-round { font-weight: 600; color: var(--ink); }
+.hud-timer { font-family: Consolas, monospace; color: var(--ink); }
+.hud-status.live { color: var(--ok); font-weight: 600; }
+.hud-rs { margin-left: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34%; }
+
+/* 系统状态：能力灯收进折叠弹层（#capabilities 契约容器在 HUD 内） */
+#capabilities { position: relative; }
+.sys-status { position: relative; }
+.sys-status summary { cursor: pointer; font-size: 12px; color: var(--muted); list-style: none; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; background: var(--bg); user-select: none; white-space: nowrap; }
+.sys-status summary::-webkit-details-marker { display: none; }
+.sys-status[open] .sys-body { position: absolute; right: 0; top: 100%; z-index: 50; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; box-shadow: 0 6px 20px rgba(0, 0, 0, .12); min-width: 280px; }
+.sys-body .capability { white-space: nowrap; }
+
+/* 会议配置运行态摘要行（F2：表单隐藏保留 DOM 契约） */
+.config-summary { display: flex; align-items: center; gap: 10px; font-size: 13px; min-width: 0; }
+.config-summary .cs-name { font-weight: 600; white-space: nowrap; }
+.config-summary .cs-topic { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* ---------- F1 一屏工作台：body flex 列，main 占满，会议 Tab 内部 flex ---------- */
 main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 #tab-meeting.active { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; max-height: none; }

@@ -2,6 +2,19 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-UX-F2 · 固定 Meeting HUD + 席位编辑状态架构 — 2026-08-08
+
+- **目的**：用户裁定 F1「只解决了一半」（顶部利用率 ❌ / 席位可靠编辑 ❌ / 自动化路线 ❌）。本轮仅修会议运行 UI 与席位配置状态；**禁止 Web Automation 开发**（automation/ 行为层零 diff）。
+- **Meeting HUD（T01）**：新 `meeting-hud.js`——标题/议题（ellipsis+title）/Round（相位序号）/Phase/计时器/状态固定顶部，实测 56px ≤ 68px；`#runtime-status` 契约行内嵌 HUD；`setInterval` 1s 局部时钟只改 `#meeting-timer` 文本，**绝不触发全量 render**（T05；TEST-10 唯一白名单 `TIMER_EXEMPT`，注释声明本地 UI 时钟非网络轮询）。
+- **压缩非核心状态（T02）**：能力灯 6 badge 收进「系统 ● 正常/异常」折叠弹层（#capabilities 契约容器在 HUD 内，data-capability/data-ok 保留，D2/B05 零改动）。
+- **会前/运行分离（T03）**：运行态 `ConfigPanel` 折叠为一行摘要（会议名+议题+disabled 创建按钮）；表单字段 display:none 但 cfg-* 契约 DOM 常驻（C10/S10 isDisabled 可查、C15 创建按钮可见保留）；中央省 ~180px。
+- **Seat Edit Draft（T04/T06）**：新 `seat-edit-draft.js`——表单值从独立草稿初始化，change 写草稿并标 dirty；**harness-shell 守卫**：中央正显示该席位表单且任一 dirty 时不重建中央（relay/timer/meeting 状态更新不得覆盖未保存输入）；保存/取消后 clear；换目录 resetAll。
+- **S13 回归根因修复**：F2 顶部增高使 run 内容超中央高度 → exec 卡内嵌自动化卡（315px）挤扁工作区、verdict 盖住 relay-submit。修复：自动化卡拆出 exec 并默认折叠（details）；删除中央 context 卡（状态由 HUD 承担）。实测 submit<verdict 不重叠。
+- **测试**：Node **188/188**；Browser **156/156**（135 零回归 + G01..G09：HUD 占位/高度/系统折叠/Round 显示/运行态摘要/**relay 状态变化编辑框元素引用不变+值保持**/**timer 更新元素引用不变+值保持**/切席草稿保留/保存清草稿/刷新持久化）；Offline **14/14**；Schema PASS；行数红线 PASS（console-actions 110 / harness-shell 103 登记 ≤110 例外）。
+- **测试适配**：TEST-129 断言更新（HUD 容器 + MeetingHud 提供 #runtime-status 契约）；B03/D2/B05/C10/S10/C15 断言零改动（契约 DOM 保留策略）。
+- 新增 `reports/d3-meeting-ux-f2.md`；新增模块 2 个（meeting-hud / seat-edit-draft）；同步 file-tree.md。
+- **状态**：`MEETING-UX-F2: IMPLEMENTED · Node 188/188 · Browser 156/156 · Offline 14/14 · 真机验收（HUD/G 系列截图）待用户复跑`。
+
 ## ONE-SCREEN-F1 · 无滚动工作区 + 席位编辑恢复 — 2026-08-08
 
 - **目的**：用户裁定「两个基础问题没解决之前继续测自动化没有意义」——① 会议页仍存在左右席位列和中央配置区纵向滚动条，必须实现真正 One-Screen；② 会议 frozen/running 后六个席位配置被错误整体锁死，必须恢复席位运行配置编辑能力。本轮严格只修这两个问题（不碰 Web Automation / 会议协议 / 其他 UI）。

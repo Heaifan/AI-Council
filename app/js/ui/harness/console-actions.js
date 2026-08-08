@@ -27,7 +27,8 @@
   function setProfiles(list) { profiles = list; A.SeatSessionStore.saveProfiles(list); }
 
   function resetSessionState() {
-    draft = null; profiles = null; frozen = false;   /* 不清 SeatLocalConfig：立场/备注随 LocalStore 持久化 */
+    draft = null; profiles = null; frozen = false;   /* 不清 SeatLocalConfig：立场/备注随 LocalStore 持久化；草稿废弃 */
+    if (A.SeatEditDraft) A.SeatEditDraft.resetAll();
   }
 
   function getDraft() { return ensureDraft(); } function getProfiles() { return ensureProfiles(); }
@@ -95,7 +96,6 @@
     if (typeof window !== "undefined" && window.open) window.open(url, "_blank");
     return { ok: true, url: url };
   }
-
   A.ConsoleActions = Object.freeze({
     getDraft: getDraft, getProfiles: getProfiles, isFrozen: isFrozen,
     getMode: getMode, getSelectedSeatId: getSelectedSeatId,

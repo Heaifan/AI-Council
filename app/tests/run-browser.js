@@ -690,6 +690,115 @@ async function runF1(page) {
   await page.screenshot({ path: path.join(shotDirD3, "07-one-screen-f1.png"), fullPage: true });
 }
 
+/* ---------- F2：Meeting HUD + Seat Edit Draft（MEETING-UX-F2 方案） ---------- */
+async function runF2(page) {
+  await page.goto(appUrl);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* G01：HUD 存在 + 无会议占位 + 高度 ≤68px */
+  check("G01 · Meeting HUD 存在", await page.locator("#meeting-hud").isVisible());
+  check("G01b · 无会议 HUD 显示占位标题",
+    (await page.locator("#hud-title").innerText()).includes("尚未创建会议"));
+  const hudH = await page.evaluate(() => document.getElementById("meeting-hud").getBoundingClientRect().height);
+  check("G01c · HUD 高度 ≤ 68px", hudH <= 68, "h=" + Math.round(hudH));
+
+  /* G02：系统状态折叠（能力灯收进「系统 ● 正常」） */
+  check("G02 · 系统状态折叠 summary 正常",
+    (await page.locator("#sys-status-summary").innerText()).includes("系统 ● 正常"));
+  const caps = await page.locator("#capabilities .capability").evaluateAll((els) =>
+    els.map((e) => e.getAttribute("data-ok")));
+  check("G02b · 折叠层内 6 灯 data-ok 全部 1", caps.length === 6 && caps.every((v) => v === "1"),
+    JSON.stringify(caps));
+
+  /* G03：创建会议 → HUD 标题/议题/Round/Phase/状态 */
+  await page.fill("#cfg-title", "F2 HUD 验收");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.fill("#cfg-topic", "F2 议题文本");
+  await page.dispatchEvent("#cfg-topic", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#relay-hint");
+  check("G03 · HUD 显示会议标题", (await page.locator("#hud-title").innerText()).includes("F2 HUD 验收"));
+  check("G03b · HUD 显示议题", (await page.locator("#hud-topic").innerText()).includes("F2 议题文本"));
+  check("G03c · HUD 显示 Round/Phase", (await page.locator("#hud-round").innerText()).includes("Round 1"));
+  check("G03d · HUD 显示运行状态", (await page.locator("#hud-status").innerText()).includes("●"));
+
+  /* G04：运行态会议配置折叠为摘要行（表单隐藏但契约 DOM 保留） */
+  check("G04 · 运行态 cfg-title 仍可查 disabled（表单隐藏）", await page.locator("#cfg-title").isDisabled());
+  check("G04b · 运行态创建按钮仍可见（C15 契约）", await page.locator("#cfg-create").isVisible());
+  check("G04c · 运行态显示会议摘要行",
+    (await page.locator("#config-summary-title").innerText()).includes("F2 HUD 验收"));
+
+  /* G05：Seat Draft 防覆盖——A2 编辑中，A1 relay 回答到达（状态变化）不重建表单 */
+  await page.click("#relay-open");                 /* A1 进入 waiting_external */
+  await page.waitForSelector("#relay-prompt");
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  await page.fill("#cfg-model-ref-agent-a2", "deepseek");
+  await page.dispatchEvent("#cfg-model-ref-agent-a2", "change");
+  const refHandle = await page.evaluateHandle(() => document.getElementById("cfg-model-ref-agent-a2"));
+  await page.evaluate(() => {                       /* 模拟后台回答到达（既有动作层，不经 UI） */
+    AICouncil.WebRelayActions.paste("F2 防覆盖验收回答。");
+    AICouncil.WebRelayActions.validate();
+  });
+  await page.waitForFunction(() => {
+    const s = AICouncil.WebRelayActions.activeSession(AICouncil.HarnessStore.get().meeting);
+    return s && s.state === "validated";
+  });
+  const sameRef = await page.evaluate((h) => document.getElementById("cfg-model-ref-agent-a2") === h, refHandle);
+  check("G05 · relay 状态变化后编辑框未被重建", sameRef);
+  const valA = await page.locator("#cfg-model-ref-agent-a2").inputValue();
+  check("G05b · 未保存输入保持（deepseek 不丢）", valA === "deepseek", valA);
+
+  /* G06：timer 局部更新（只改文本，不重建表单） */
+  const t1 = await page.locator("#meeting-timer").innerText();
+  await page.waitForTimeout(2200);
+  const t2 = await page.locator("#meeting-timer").innerText();
+  check("G06 · timer 每秒局部更新", t1 !== t2, t1 + " -> " + t2);
+  const sameRef2 = await page.evaluate((h) => document.getElementById("cfg-model-ref-agent-a2") === h, refHandle);
+  check("G06b · timer 更新不重建编辑框", sameRef2);
+  const valB = await page.locator("#cfg-model-ref-agent-a2").inputValue();
+  check("G06c · timer 更新后输入仍保持", valB === "deepseek", valB);
+
+  /* G07：dirty 草稿跨席位保留（切 A1 再回 A2 值不丢） */
+  await page.click("#seat-A1");
+  await seatConfigShows(page, "A1");
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  const valC = await page.locator("#cfg-model-ref-agent-a2").inputValue();
+  check("G07 · 切席再回草稿保留", valC === "deepseek", valC);
+
+  /* G08：保存 → 草稿清除 → 持久化值落库 */
+  await page.click("#seat-config-save");
+  await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  const valD = await page.locator("#cfg-model-ref-agent-a2").inputValue();
+  check("G08 · 保存后回配置显示持久化值", valD === "deepseek", valD);
+  check("G08b · 保存后草稿已清除",
+    (await page.evaluate(() => AICouncil.SeatEditDraft.isDirty("agent-a2"))) === false);
+
+  /* G09：创建前保存 model_ref → 刷新 → 保持（T07 持久化） */
+  await clickDevBtn(page, "#mt-clear");
+  await page.waitForFunction(() => !document.getElementById("cfg-title").disabled);
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  await page.fill("#cfg-model-ref-agent-a2", "deepseek-v3");
+  await page.dispatchEvent("#cfg-model-ref-agent-a2", "change");
+  await page.click("#seat-config-save");
+  await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  const valE = await page.locator("#cfg-model-ref-agent-a2").inputValue();
+  check("G09 · 刷新后 model_ref 持久化保持", valE === "deepseek-v3", valE);
+  await page.screenshot({ path: path.join(shotDirD3, "08-meeting-hud-f2.png"), fullPage: true });
+}
+
 /* ---------- 自动测试页（D1-R1 用例） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
@@ -718,6 +827,7 @@ async function runChannel(channel) {
   await runD5(page);
   await runD6(page);
   await runF1(page);
+  await runF2(page);
   await runTestPage(page);
 
   await browser.close();

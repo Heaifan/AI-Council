@@ -33,7 +33,6 @@
       !active || !A.RelayProfiles.isSafeUrl(A.RelayProfiles.webUrlFor(profiles, modelRef)),
       function () { A.ConsoleActions.openWeb(modelRef); });
     box.appendChild(open);
-    box.appendChild(A.AutomationView.build(active, modelRef));
     return box;
   }
 
@@ -85,7 +84,9 @@
       return;
     }
     var profiles = A.ConsoleActions.getProfiles();
+    var req = active && active.request;
     host.appendChild(execCard(active, profiles));
+    host.appendChild(A.AutomationView.build(active, req ? req.model_ref : ""));   /* 自动化卡独立（不撑胖 exec） */
     host.appendChild(A.RelayWorkarea.workarea(active));
     host.appendChild(A.RelayVerdict.build(active, check));
     var note = Dom.el("p", "status warn", "注意：此回答尚未写入正式会议记录。");

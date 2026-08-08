@@ -45,9 +45,7 @@
 
   function stepList() {
     var box = Dom.el("div", "auto-steps");
-    (state.steps || []).forEach(function (s) {
-      box.appendChild(Dom.el("p", "note", "✓ " + s.text));
-    });
+    (state.steps || []).forEach(function (s) { box.appendChild(Dom.el("p", "note", "✓ " + s.text)); });
     if (state.stage === "waiting_response" || state.stage === "extracting") {
       box.appendChild(Dom.el("p", "note", "● " + (state.stage === "waiting_response" ? "等待 AI 回答…" : "提取结果…")));
     }
@@ -55,43 +53,46 @@
   }
 
   function build(active, modelRef) {
-    var host = Dom.el("div", "card auto-card");
-    host.appendChild(Dom.el("h2", null, "网页自动化"));
+    var host = Dom.el("details", "card auto-card");
+    host.appendChild(Dom.el("summary", null, "网页自动化 ▾"));   /* F2：默认折叠 */
     if (!active) {
       host.appendChild(Dom.el("p", "note", "当前没有待发送的网页中继请求。"));
       return host;
     }
+    var body = Dom.el("div");
     var running = state.stage !== "idle" && state.stage !== "completed" && state.stage !== "failed";
     if (running) {
-      host.appendChild(stepList());
-      var cancel = btn("auto-cancel", "取消自动化", "secondary", function () {
+      body.appendChild(stepList());
+      body.appendChild(btn("auto-cancel", "取消自动化", "secondary", function () {
         A.AutomationEvents.emitState({ stage: "cancelled", errorCode: "AUTOMATION_CANCELLED", errorZh: "已取消", steps: state.steps });
-      });
-      host.appendChild(cancel);
+      }));
+      host.appendChild(body);
       return host;
     }
     if (state.stage === "failed" || state.errorCode) {
-      host.appendChild(Dom.el("p", "status bad", "自动化失败：" + (state.errorZh || state.errorCode || "未知")));
+      body.appendChild(Dom.el("p", "status bad", "自动化失败：" + (state.errorZh || state.errorCode || "未知")));
       var bar = Dom.el("div", "controls");
       bar.appendChild(btn("auto-retry", "重试自动化", "secondary", function () { fire(active.request.rendered_prompt); }));
       bar.appendChild(btn("auto-fallback", "切换人工中继", "secondary", function () {
         state = { stage: "idle", errorCode: null, errorZh: null, steps: [] };
         A.HarnessStore.notify();
       }));
-      host.appendChild(bar);
+      body.appendChild(bar);
+      host.appendChild(body);
       return host;
     }
     var main = btn("auto-send", "自动发送给 ChatGPT", "primary", function () { fire(active.request.rendered_prompt); });
-    host.appendChild(main);
+    body.appendChild(main);
     var fb = btn("auto-fallback", "切换为人工中继", "secondary", function () {
       state = { stage: "idle", errorCode: null, errorZh: null, steps: [] };
       A.WebRelayActions.say("已切换为人工中继：请复制提示词并粘贴外部 AI 回答。", "info");
       A.HarnessStore.notify();
     });
-    host.appendChild(fb);
+    body.appendChild(fb);
     if (!A.AutomationBridge.isAutomationMode()) {
-      host.appendChild(Dom.el("p", "note", "提示：当前为手动模式（file://）。自动化请用 node automation/start.js 启动后访问 127.0.0.1。"));
+      body.appendChild(Dom.el("p", "note", "提示：当前为手动模式（file://）。自动化请用 node automation/start.js 启动后访问 127.0.0.1。"));
     }
+    host.appendChild(body);
     return host;
   }
 
