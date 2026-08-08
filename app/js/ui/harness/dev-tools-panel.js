@@ -10,6 +10,7 @@
 
   function render(host, hasRegistry, hasMeeting) {
     if (!host) return;
+    A.Dom.clear(host);
     var details = document.createElement("details");
     details.className = "dev-tools";
     details.id = "dev-tools";

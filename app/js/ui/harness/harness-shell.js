@@ -1,6 +1,6 @@
-/* AI Council v0.1 — D3 · 会议控制台 · HarnessShell：开发验证台外壳。
+/* AI Council v0.1 — D3 · 六席会议控制台 · HarnessShell：开发验证台外壳。
  * 顶栏（标题+徽标+项目条）→ 能力灯 → 当前状态行 → 三 Tab（默认「会议」）。
- * 会议 Tab = 三栏控制台：左 ConfigPanel / 中 RelayPanel / 右 StatusPanel（含底部时间线）。
+ * 会议 Tab = 六席控制台：左 3 席（A）| 中央大屏 | 右 3 席（B）+ 底部时间线。
  * 能力灯只表示「模块是否成功装载」；当前进度由「当前状态」行表达。
  */
 (function (root) {
@@ -65,10 +65,11 @@
     var s = A.HarnessStore.get();
     renderRuntimeStatus(s);
     A.ProjectBar.render(document.getElementById("project-bar"), s, onChooseProject);
-    A.ConfigPanel.render(document.getElementById("console-config"), s);
-    A.RelayPanel.render(document.getElementById("console-relay"), s);
-    A.StatusPanel.render(document.getElementById("console-status"), s);
+    A.SeatColumn.render(document.getElementById("console-left"), "A", s);
+    A.CenterStage.render(document.getElementById("console-center"), s);
+    A.SeatColumn.render(document.getElementById("console-right"), "B", s);
     A.TimelinePanel.render(document.getElementById("console-timeline"), s.meeting);
+    A.DevToolsPanel.render(document.getElementById("console-devtools"), !!s.registry, !!s.meeting);
     A.CompilerView.render(document.getElementById("view-compiler"), s);
   }
 
@@ -78,7 +79,7 @@
       var b = document.getElementById("tab-btn-" + t);
       if (b) b.addEventListener("click", function () { select(t); });
     });
-    select("meeting");   /* 会议是主工作区，默认打开（方案 §17） */
+    select("meeting");   /* 会议是主工作区，默认打开 */
     A.HarnessStore.subscribe(refresh);
     refresh();
   }

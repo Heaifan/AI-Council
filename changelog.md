@@ -2,6 +2,18 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D3 · WEB_RELAY — 六席会议控制台重构（Six-Seat Console）— 2026-08-08
+
+- **目的**：把「三栏表单型页面」重构为「会议室操作台」——左右六席摘要卡（A 支持侧 / B 质疑侧）+ 中央唯一操作大屏 + 底部时间线。用户裁定：席位可配置但配置表单不长期铺开，详细配置进中央大屏；底层仍跑 D3 单席位 WEB_RELAY（不做 D4 多 Agent 并发调度）。自动测试基线：Node 179/179、Browser 72/72。
+- **六席布局**：`280px / minmax(0,1fr) / 280px`（≥1440）；席位卡 = 摘要卡（编号/角色/模型/引用/传输/立场/状态/当前轮次 + 选中/编辑/打开网页）；中央大屏双模式（会议运行 / 席位配置）显隐切换；会议配置卡常驻（无会议=可编辑表单+创建按钮，有会议=冻结摘要）；右栏席位下方会议摘要窄卡；底部时间线/审计日志折叠区 + 开发工具条。
+- **SeatLayout（新）**：六席纯逻辑（SEATS 顺序 A1..A3/B1..B3、立场默认 A→支持/B→反对、mapParticipants 映射稳定、stance 覆盖表、sixSeatParticipants 六席默认模板——A1=web_relay+chatgpt-web）。
+- **席位本地配置（新，SeatLocalConfig）**：立场（stance）与备注（note）属席位级本地 UI 配置，**不污染 Participant Schema**；创建后仍可修改（web_url/显示名/立场/备注可改，role/model_ref/transport_kind 冻结）。
+- **中央大屏模式**：创建会议/加载 Demo 后默认进入「会议运行」；点席位卡「编辑」进入「席位配置」；「会议配置」以常驻卡实现（方案 Task3 三模式语义等价，避免占整屏）。
+- **测试**：Node **185/185**（179 零回归 + TEST-155..160：六席顺序/映射/立场覆盖/seat↔participant 双向/六席模板建会 topic 入 Packet）；Browser **86/86**（72 零回归 + S01..S14：六席卡数/左右 3 席/中央大屏宽度/底部折叠区/点击席位进配置/web_url 与显示名可编辑/创建前后冻结/当前席位高亮/议题入 Prompt/response+accept 流程）。
+- **契约兼容**：72 项基线全部 id（mt-*/relay-*/cfg-*/capabilities/runtime-status/project-bar/tab-btn-* 等）保留；删除 config-participant.js/status-panel.js（被 SeatColumn/SeatConfigFields 取代）。
+- 新增 `reports/d3-six-seat-console.md`（A01..A10 真机验收 IPO 清单）；同步 file-tree.md。
+- **状态**：`D3 · 六席会议控制台: IMPLEMENTED · Node 185/185 · Browser 86/86 · 人工真机验收 A01..A10 待执行`。
+
 ## D3 · WEB_RELAY — 会议控制台整改（Console Refactor）— 2026-08-08
 
 - **目的**：把「纵向堆卡片的 Developer Harness 测试页」整改成真正可用的三栏桌面会议控制台。用户裁定：不再小修 CSS，整体重做操作壳。自动测试基线：Node 169/169、Browser 56/56（用户真机复跑）。

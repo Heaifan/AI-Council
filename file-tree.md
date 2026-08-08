@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D3 · WEB_RELAY — 会议控制台整改：Node 179/179 · Browser 72/72 · 人工真机验收 A01..A12 待执行）
+> 最后更新：2026-08-08（D3 · WEB_RELAY — 六席会议控制台重构：Node 185/185 · Browser 86/86 · 人工真机验收 A01..A10 待执行）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -77,19 +77,24 @@ app/
 │       ├── ui-text.js           # ★D3 UI 中文文案单一来源（94 行）：TERM/RELAY_STATE/MEETING_STATUS/CHOICE/TRANSPORT/ERROR 六张映射 + 六个查询函数；机器状态值不经此文件
 │       ├── diagnostic-view.js   # 坏规则诊断渲染
 │       ├── registry-view.js     # 可用规则 / 已隔离规则列表渲染（中文标签 + 中文空状态）
-│       └── harness/             # ★D2-F1 视图层（DOM，只画不判规则）+ ★D3 会议控制台三栏面板
-│           ├── harness-shell.js       # 外壳：能力灯 6 个 + 独立运行状态行 + 三 Tab（默认会议）+ 订阅 Store 全量重绘；装配三栏 + 项目条 + 时间线
+│       └── harness/             # ★D2-F1 视图层（DOM，只画不判规则）+ ★D3 六席会议控制台面板
+│           ├── harness-shell.js       # 外壳：能力灯 6 个 + 独立运行状态行 + 三 Tab（默认会议）+ 订阅 Store 全量重绘；装配六席 + 项目条 + 时间线 + 开发工具条
 │           ├── meeting-actions.js     # 会议按钮行为（中文提示）；含 createRelay + load 后 hydrate
 │           ├── web-relay-actions.js   # ★D3 WEB_RELAY 中继点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
-│           ├── console-actions.js     # ★D3 控制台动作层（98 行）：MeetingDraft 状态持有 / 创建会议冻结 / 打开模型网页 / 清空会议
-│           ├── config-participant.js  # ★D3 左栏与会者配置卡（80 行：角色/模型名称/模型引用/传输方式/模型网页 + 打开）
-│           ├── config-panel.js        # ★D3 左栏会议配置总装（81 行：名称/议题/议事规则 + 创建会议 Primary）
+│           ├── console-actions.js     # ★D3 控制台动作层（100 行）：MeetingDraft 持有 / 创建会议冻结 / 打开模型网页 / 清空会议
+│           ├── seat-local-config.js   # ★D3 席位本地 UI 配置（44 行：立场覆盖/备注/模式/选中席位；不污染 Participant Schema）
+│           ├── seat-status.js         # ★D3 席位状态中文判定 + 当前轮次判定（37 行，纯函数）
+│           ├── seat-card.js           # ★D3 席位摘要卡（76 行：编号/角色/模型/传输/立场/状态 + 选中/编辑/打开网页）
+│           ├── seat-column.js         # ★D3 左右席列装配（90 行：左 A1..A3 / 右 B1..B3 + 右栏会议摘要窄卡 mt-* 契约）
+│           ├── seat-config-fields.js  # ★D3 席位配置表单字段（94 行：角色/模型名/引用/传输/URL/立场/备注；cfg-*-<pid> 契约）
+│           ├── seat-config-panel.js   # ★D3 席位配置模式装配（51 行）
+│           ├── center-stage.js        # ★D3 中央大屏（70 行：模式条/上下文/会议配置卡/运行与席位配置双面板显隐）
+│           ├── config-panel.js        # ★D3 中央会议配置卡（70 行：名称/议题/议事规则 + 创建会议；无会议=表单/有会议=冻结摘要）
 │           ├── relay-workarea.js      # ★D3 中栏 Prompt/Response 大工作区（53 行，页面最大区域）
 │           ├── relay-verdict.js       # ★D3 校验状态行 + 折叠详情（46 行，V01–V05 不霸占页面）
-│           ├── relay-panel.js         # ★D3 中栏总装（96 行：当前执行 + 工作区 + 校验折叠 + 接受/拒绝/重试/取消）
-│           ├── status-panel.js        # ★D3 右栏会议状态（89 行：中文 + 内部小字 + 步进/人工裁定/存档按钮）
+│           ├── relay-panel.js         # ★D3 中央运行模式（96 行：当前执行 + 工作区 + 校验折叠 + 接受/拒绝/重试/取消）
 │           ├── timeline-panel.js      # ★D3 底部会议时间线/审计日志折叠区（40 行）
-│           ├── dev-tools-panel.js     # ★D3 开发工具折叠区（39 行：Demo 装载/清空，退出主流程）
+│           ├── dev-tools-panel.js     # ★D3 开发工具条（40 行：Demo 装载/清空，退出主流程）
 │           ├── project-bar.js         # ★D3 顶栏项目条（85 行：目录压缩为一行 + IndexedDB 记住上次项目）
 │           ├── compiler-view.js       # Compiler Tab 渲染（禁用态 / Participant 下拉 / 角色解析）
 │           └── compiler-packet-view.js# 编译产物渲染（摘要 / Raw JSON / Rendered Prompt 只读 textarea）
@@ -98,8 +103,8 @@ app/
 └── tests/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
-    ├── run-node.js             # Node 入口（自动测试，现 179 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft）
-    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols + D2-F1 Meeting/Compiler + D3 WEB_RELAY B01..B25 + D4 会议控制台 C01..C16 真实点击链路；72 项）
+    ├── run-node.js             # Node 入口（自动测试，现 185 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft + seat-layout）
+    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols + D2 Meeting/Compiler + D3 WEB_RELAY B01..B25 + D4 控制台 C01..C16 + D5 六席 S01..S14；86 项）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
@@ -115,6 +120,7 @@ app/
     ├── protocol-test-cases-web-relay-flow.js       # ★WR-01..05（D3 WEB_RELAY 生命周期：open/validate(V01–V05)/accept/submit；67 行，由 145 行拆分）
     ├── protocol-test-cases-web-relay-recovery.js   # ★WR-06..13（D3 WEB_RELAY 持久化与集成：Save/Load/cancel/retry/step路由/accept写messages；98 行，由 145 行拆分）
     ├── protocol-test-cases-console-draft.js        # ★TEST-147..154（D3 会议控制台：MeetingDraft 校验/一次性创建/议题落库 + RelayProfiles URL 安全/upsert；123 行，测试文件不受 ≤100 约束）
+    ├── protocol-test-cases-seat-layout.js          # ★TEST-155..160（D3 六席：SEATS 顺序/映射/立场覆盖/seat↔participant 双向/六席模板建会 topic 入 Packet；95 行，测试文件不受 ≤100 约束）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/

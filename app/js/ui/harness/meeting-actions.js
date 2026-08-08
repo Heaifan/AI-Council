@@ -22,6 +22,7 @@
     if (!r.ok) { say(r.message, "bad"); A.HarnessStore.notify(); return; }
     say("已创建模拟会议，停在阶段 " + r.meeting.currentPhaseId + "（未预跑任何步骤）。", "ok");
     A.HarnessStore.setMeeting(r.meeting, proto);
+    if (A.ConsoleActions) A.ConsoleActions.setMode("run");
   }
 
   function step(state) {
@@ -38,6 +39,7 @@
     if (!r.ok) { say(r.message, "bad"); A.HarnessStore.notify(); return; }
     say("已创建网页中继会议（委员 A1 走网页中继），停在阶段 " + r.meeting.currentPhaseId + "。", "ok");
     A.HarnessStore.setMeeting(r.meeting, proto);
+    if (A.ConsoleActions) A.ConsoleActions.setMode("run");
   }
 
   /* 人工裁定点只能走这里：模拟 Agent 永远不得代替人类选择 finish / continue / battle。 */

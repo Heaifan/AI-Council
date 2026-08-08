@@ -1,6 +1,6 @@
-/* AI Council v0.1 — D3 · 会议控制台 · ConfigParticipant：左栏「与会者配置」卡片渲染。
- * 每位委员一张卡：角色 / 模型名称 / 模型引用 / 传输方式 / 模型网页 + 打开模型网页。
- * 只读投影 + 事件转发到 ConsoleActions；不持有任何状态。
+/* AI Council v0.1 — D3 · 六席会议控制台 · SeatConfigFields：席位配置表单字段构建（DOM 投影）。
+ * 角色 / 模型名称 / 模型引用 / 传输方式 / 网页 URL / 立场 / 备注 + 打开网页/返回按钮。
+ * 冻结规则：role/model_ref/transport_kind 创建后冻结；web_url/显示名/立场/备注仍可改。
  */
 (function (root) {
   "use strict";
@@ -32,10 +32,9 @@
     return i;
   }
 
-  function render(pt, profile, frozen, actions) {
-    var box = Dom.el("div", "card cfg-participant");
+  /* 构建全部字段到 box；actions 为 ConsoleActions。返回 box（已含按钮行）。 */
+  function build(box, pt, seat, profile, frozen, actions) {
     var pid = pt.participant_id;
-    box.appendChild(Dom.el("h3", null, (pt.alias || pid) + " · 配置"));
 
     var role = selectFor([["advisor", "顾问委员"], ["chair_secretary", "主席兼秘书"]]);
     role.value = pt.role_class || "advisor";
@@ -45,7 +44,7 @@
 
     var name = textInput(profile ? profile.display_name : "", "模型名称（如 ChatGPT）");
     fieldRow(box, "cfg-model-name-" + pid, "模型名称", name);
-    name.disabled = frozen || !profile;
+    name.disabled = !profile;
     name.addEventListener("change", function () {
       if (profile) actions.updateProfile({ profile_id: profile.profile_id, display_name: name.value, model_ref: profile.model_ref, web_url: profile.web_url });
     });
@@ -68,13 +67,28 @@
       if (profile) actions.updateProfile({ profile_id: profile.profile_id, display_name: profile.display_name, model_ref: profile.model_ref, web_url: url.value });
     });
 
+    var stance = selectFor([["support", "支持"], ["oppose", "反对"], ["neutral", "中立"]]);
+    stance.value = seat.stance || "neutral";
+    fieldRow(box, "cfg-stance-" + pid, "立场", stance);
+    stance.addEventListener("change", function () { actions.setStance(pid, stance.value); });
+
+    var note = textInput(actions.getNotes()[pid] || "", "席位备注（可选）");
+    fieldRow(box, "cfg-note-" + pid, "备注", note);
+    note.addEventListener("change", function () { actions.setNote(pid, note.value); });
+
+    var bar = Dom.el("div", "controls");
     var openBtn = Dom.el("button", "btn secondary", "打开模型网页");
     openBtn.id = "cfg-open-web-" + pid;
     openBtn.disabled = !profile || !A.RelayProfiles.isSafeUrl(profile.web_url);
     openBtn.addEventListener("click", function () { actions.openWeb(pt.model_ref); });
-    box.appendChild(openBtn);
+    bar.appendChild(openBtn);
+    var back = Dom.el("button", "btn secondary", "返回会议运行");
+    back.id = "seat-config-back";
+    back.addEventListener("click", function () { actions.setMode("run"); });
+    bar.appendChild(back);
+    box.appendChild(bar);
     return box;
   }
 
-  A.ConfigParticipant = Object.freeze({ render: render });
+  A.SeatConfigFields = Object.freeze({ build: build });
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -37,19 +37,46 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.6 "Micr
 .tab-panel { display: none; padding-top: 16px; }
 .tab-panel.active { display: block; }
 
-/* ---------- D3 会议控制台：三栏 ---------- */
-.console { display: grid; grid-template-columns: 320px minmax(0, 1fr) 320px; gap: 12px; align-items: start; }
-.console-left, .console-right { min-width: 0; }
+/* ---------- D3 六席会议控制台：左 3 席 | 中央大屏 | 右 3 席 ---------- */
+.console { display: grid; grid-template-columns: 280px minmax(0, 1fr) 280px; gap: 12px; align-items: start; }
+.console-left, .console-right { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .console-center { min-width: 0; }
 
 @media (max-width: 1439px) {
-  .console { grid-template-columns: 280px minmax(0, 1fr); }
-  .console-right { grid-column: 1 / -1; }
+  .console { grid-template-columns: 240px minmax(0, 1fr); }
+  .console-right { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
 }
 @media (max-width: 1023px) {
   .console { grid-template-columns: 1fr; }
   .console-left, .console-right { grid-column: 1 / -1; }
 }
+
+/* ---------- 席位卡（摘要卡，不是表单） ---------- */
+.seat-card { padding: 12px 14px; }
+.seat-card.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.seat-card.selected { border-color: var(--ok); }
+.seat-card.empty { opacity: 0.55; }
+.seat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.seat-id { font-weight: 700; font-size: 14px; }
+.seat-current { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 0 6px; }
+.seat-line { display: flex; gap: 8px; font-size: 12px; padding: 1px 0; }
+.seat-key { flex: 0 0 44px; color: var(--muted); }
+.seat-val { flex: 1; word-break: break-all; }
+.seat-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.seat-btn { padding: 3px 10px; font-size: 12px; }
+
+/* 右栏会议摘要窄卡 */
+.summary-card { font-size: 13px; }
+
+/* ---------- 中央大屏 ---------- */
+.mode-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+.mode-btn { padding: 6px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; font-size: 13px; }
+.mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.context-line { margin: 0; font-size: 13px; color: var(--ink); }
+.config-card h2 { margin-bottom: 6px; }
+.seat-config-card h2 { margin-bottom: 6px; }
+
+.devtools-strip { margin-top: 12px; }
 
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
 .card h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }

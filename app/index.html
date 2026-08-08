@@ -35,10 +35,11 @@
   </section>
   <section class="tab-panel active" id="tab-meeting">
     <div class="console" id="console">
-      <aside class="console-left" id="console-config"></aside>
-      <section class="console-center" id="console-relay"></section>
-      <aside class="console-right" id="console-status"></aside>
+      <aside class="console-left" id="console-left"></aside>
+      <section class="console-center" id="console-center"></section>
+      <aside class="console-right" id="console-right"></aside>
     </div>
+    <div id="console-devtools" class="devtools-strip"></div>
     <div id="console-timeline"></div>
   </section>
   <section class="tab-panel" id="tab-compiler">
@@ -90,6 +91,7 @@
 <script src="js/harness/participant-binding.js"></script>
 <script src="js/harness/meeting-draft.js"></script>
 <script src="js/harness/relay-profiles.js"></script>
+<script src="js/harness/seat-layout.js"></script>
 <script src="js/harness/meeting-step-flow.js"></script>
 <script src="js/harness/relay-flow.js"></script>
 <script src="js/harness/compile-flow.js"></script>
@@ -101,12 +103,17 @@
 <script src="js/ui/harness/meeting-actions.js"></script>
 <script src="js/ui/harness/web-relay-actions.js"></script>
 <script src="js/ui/harness/console-actions.js"></script>
-<script src="js/ui/harness/config-participant.js"></script>
+<script src="js/ui/harness/seat-local-config.js"></script>
+<script src="js/ui/harness/seat-status.js"></script>
+<script src="js/ui/harness/seat-card.js"></script>
+<script src="js/ui/harness/seat-column.js"></script>
+<script src="js/ui/harness/seat-config-fields.js"></script>
+<script src="js/ui/harness/seat-config-panel.js"></script>
 <script src="js/ui/harness/config-panel.js"></script>
 <script src="js/ui/harness/relay-verdict.js"></script>
 <script src="js/ui/harness/relay-workarea.js"></script>
 <script src="js/ui/harness/relay-panel.js"></script>
-<script src="js/ui/harness/status-panel.js"></script>
+<script src="js/ui/harness/center-stage.js"></script>
 <script src="js/ui/harness/timeline-panel.js"></script>
 <script src="js/ui/harness/dev-tools-panel.js"></script>
 <script src="js/ui/harness/project-bar.js"></script>

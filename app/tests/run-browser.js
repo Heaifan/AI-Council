@@ -408,6 +408,79 @@ async function runD4(page) {
   await page.screenshot({ path: path.join(shotDirD3, "04-console.png"), fullPage: true });
 }
 
+/* ---------- D5：六席会议控制台（S01..S14，D3 · 六席重构新增） ---------- */
+async function runD5(page) {
+  await page.goto(appUrl);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* 布局：左/中/右三区 + 六席卡 */
+  const seatCards = await page.locator(".seat-card").count();
+  check("S01 · 左右两栏共 6 个席位卡", seatCards === 6, "seat-card 数=" + seatCards);
+  const leftSeats = await page.locator("#console-left .seat-card").count();
+  const rightSeats = await page.locator("#console-right .seat-card").count();
+  check("S02 · 左 3 席 / 右 3 席", leftSeats === 3 && rightSeats === 3,
+    "left=" + leftSeats + " right=" + rightSeats);
+  const centerW = await page.locator("#console-center").evaluate((el) => el.getBoundingClientRect().width);
+  const sideW = await page.locator("#console-left").evaluate((el) => el.getBoundingClientRect().width);
+  check("S03 · 中央大屏宽度明显大于单侧栏", centerW > sideW * 1.8,
+    "center=" + Math.round(centerW) + " side=" + Math.round(sideW));
+
+  /* 底部日志折叠区存在 */
+  check("S04 · 底部时间线/日志折叠区存在", await page.locator("#console-timeline summary").count() === 1);
+
+  /* 席位卡点击选中 → 中央进入席位配置模式 */
+  await page.click("#seat-select-A2");
+  await page.waitForSelector("#seat-config");
+  check("S05 · 点击席位可选中并进入席位配置", await page.locator("#seat-config").isVisible());
+  const seatIdText = await page.locator("#seat-config h2").innerText();
+  check("S06 · 席位配置显示对应 seat_id（A2）", seatIdText.includes("A2"), seatIdText);
+
+  /* 席位配置编辑器：web_url / 模型显示名可编辑（创建前；A1 为 web_relay 带默认 profile） */
+  await page.click("#seat-select-A1");
+  await page.waitForFunction(() => {
+    const h = document.querySelector("#seat-config h2");
+    return h && h.textContent.includes("A1");
+  });
+  check("S07 · web_url 可编辑", !(await page.locator("#cfg-url-agent-a1").isDisabled()));
+  check("S08 · 模型显示名可编辑", !(await page.locator("#cfg-model-name-agent-a1").isDisabled()));
+
+  /* 会议创建前议题可编辑 */
+  check("S09 · 创建前议题可编辑", !(await page.locator("#cfg-topic").isDisabled()));
+
+  /* 会议创建 → 议题只读 + 当前席位高亮 */
+  await page.fill("#cfg-title", "六席控制台验收");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.fill("#cfg-topic", "六席议题进入提示词");
+  await page.dispatchEvent("#cfg-topic", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#relay-hint");
+  check("S10 · 创建后议题只读", await page.locator("#cfg-topic").isDisabled());
+  check("S11 · 当前席位高亮（A1 当前轮次）",
+    (await page.locator("#seat-A1").getAttribute("class")).includes("current"));
+
+  /* 生成提示词仍含会议议题 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  const promptVal = await page.locator("#relay-prompt").inputValue();
+  check("S12 · 生成提示词仍含会议议题", promptVal.includes("六席议题进入提示词"));
+
+  /* response 流程 + accept 仍成立 */
+  await page.fill("#relay-paste", "六席验收回答：同意继续自研。");
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  check("S13 · response 流程仍成立（校验通过）",
+    (await page.locator("#relay-validation").innerText()).includes("通过"));
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-msg");
+    return el && el.textContent.includes("已接受为正式发言");
+  });
+  check("S14 · accept 后仍进入正式记录", true);
+  await page.screenshot({ path: path.join(shotDirD3, "05-six-seats.png"), fullPage: true });
+}
+
 /* ---------- 自动测试页（D1-R1 用例） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
@@ -433,6 +506,7 @@ async function runChannel(channel) {
   await runD2(page);
   await runD3(page);
   await runD4(page);
+  await runD5(page);
   await runTestPage(page);
 
   await browser.close();
