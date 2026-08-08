@@ -23,6 +23,18 @@
 - **测试**：新增 `app/tests/protocol-test-cases-harness.js`（TEST-129..144，共 16 项），覆盖脚本装配 / 冻结 / 无 Meeting 禁用 / Mock 单步 / Human Gate 拦截 / Battle 确定性 / 编译端到端 / 切换重编译 / **Role ≠ Participant 契约** / Save-Load 往返。`run-node.js` 把 `harness/*` 纳入执行、`ui/harness/*` 纳入静态审计。自动测试由 **128 项增至 144 项（144/144 PASS，原 128 零回归）**。`run-browser.js` 扩展为 D1 Protocols + D2-F1 Meeting/Compiler 真实点击链路验收（A01..A15 关键点 + 截图）。
 - **不做的范围**：D3 Transport / 真实 LLM / 正式六席会议室 UI / Battle 人工选人 UI（本轮 Battle 走确定性默认）。
 
+## D2-A1 — Integration Closure Audit（closure 审计，建议 D2 CLOSED）— 2026-08-08
+
+- **目的**：确认 D2 是否具备正式 CLOSED 条件。约束：不新增功能 / 不进 D3 / 不做 Transport / 不做六席 UI。
+- **审计结果全绿**：Git 基线（main@`3de8210`，与 origin/main 0/0，worktree clean）· Node `run-node.js` **144/144 PASS**（原 128 零回归）· Browser `run-browser.js`（chrome 真机）**29/29 PASS**。
+- **浏览器计数澄清（纠正上轮误导）**：29 为**外层驱动断言数** = `runD1`(9) + `runD2F1`(19) + `runTestPage`(1)。其中 `runTestPage` 的 1 条外层断言会打开 `test-runner.html`、其内部运行 **15 条内层用例**（15/15）——15 是嵌套在 1 个外层断言内的内层结果，正确等式为 **29 = 9 + 19 + 1**，而非 9 + 19 + 15。已同步修正 `d2-f1-report.md` 第 85 行。
+- **Script 装配审计**：`index.html` 与 `test-runner.html` 均无漏装 / 顺序错 / 死引用 / 重复；`protocol-semantic-validator.js`（D1-R2 遗留漏装）在两页均已装载。
+- **>100 行文件审计**：7 个 D1 文件（`meeting-runtime.js`274 / `prompt-renderer.js`249 / `protocol-semantic-validator.js`240 / `instruction-compiler.js`188 / `meeting-restore-validator.js`155 / `protocol-registry.js`133 / `protocol-diagnostic.js`117）均为单一职责、仅篇幅偏长，登记技术债、**不阻塞 D2 CLOSED**、不机械拆文件。
+- **边界审计**：Role Card ≠ Participant ≠ Model 三不混（Compiler 可选对象只来自 `meeting.participants[]`，经 `resolveForParticipant` 取角色卡；`MockAgentRuntime` 仅测试路径）；Protocol 不持模型实现、Meeting Runtime 不绑模型 API。
+- **D3 前置兼容**：D3 可由 `pendingAction` 零侵入派生 `AgentInvocationRequest`，Runtime 核心数据模型**无需改动**，向前兼容。
+- **Blocking Issues = 0**。**D2-A1: PASS · Recommendation: D2 CLOSED**。
+- 新增 `reports/d2-a1-closure-audit.md`；工作区干净、已提交推送后停止，不自动进入 D3。
+
 ## D1-R1-F1 — Protocol Registry 收口修复 — 2026-08-07
 
 - 修复切换项目目录后旧 Schema Override 跨目录残留的问题（F01）。

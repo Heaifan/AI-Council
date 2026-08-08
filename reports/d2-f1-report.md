@@ -82,7 +82,7 @@ app/
 - 静态审计（`FORBIDDEN_APIS`）：`app/js/**`、`app/index.html` 对 `fetch / WebSocket / setTimeout / Clipboard / open / XMLHttpRequest` 等**零命中**（local-first 不受破坏）。
 
 ### 5.2 浏览器真机验收（run-browser.js，chrome）
-- **29/29 PASS**（D1 Protocols 9 项 + D2-F1 Meeting/Compiler 19 项 + D1 测试页 15/15）。
+- **29/29 PASS**（29 个外层驱动器断言：D1 Protocols 9 项 + D2-F1 Meeting/Compiler 真实点击 19 项 + 1 项「D1 测试页通过数 ≥ 15 且失败 0」的嵌套校验。其中 `test-runner.html` 自身运行 15 条内层用例，由上述 1 个外层断言统一验证，不计入 29 的加法分项——即 29 = 9 + 19 + 1，而非 9 + 19 + 15）。
 - 截图存于 `reports/d2-f1-screenshots/`（create-demo / compile-a1 / human-gate / finished）。
 
 ### 5.3 人工验收清单 A01..A16（与浏览器验收一一对应）
