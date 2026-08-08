@@ -56,7 +56,10 @@ const RUNTIME = [
   "app/js/invocation/agent-invocation-result.js",
   "app/js/invocation/agent-web-relay-state-machine.js",
   "app/js/invocation/agent-transport-adapter.js",
-  "app/tests/protocol-test-cases-web-relay.js"
+  "app/js/invocation/agent-mock-transport.js",
+  "app/js/invocation/agent-web-relay-transport.js",
+  "app/tests/protocol-test-cases-web-relay-contract.js",
+  "app/tests/protocol-test-cases-web-relay-state.js"
 ];
 
 const AUDITED = [
@@ -102,7 +105,9 @@ const AUDITED = [
   "app/js/invocation/agent-invocation-request.js",
   "app/js/invocation/agent-invocation-result.js",
   "app/js/invocation/agent-web-relay-state-machine.js",
-  "app/js/invocation/agent-transport-adapter.js"
+  "app/js/invocation/agent-transport-adapter.js",
+  "app/js/invocation/agent-mock-transport.js",
+  "app/js/invocation/agent-web-relay-transport.js"
 ];
 
 RUNTIME.forEach((rel) => vm.runInThisContext(read(rel), { filename: rel }));

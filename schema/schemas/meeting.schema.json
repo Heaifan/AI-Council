@@ -210,7 +210,6 @@
               "phase_entered",
               "instruction_compiled",
               "invocation_created",
-              "invocation_waiting",
               "agent_output_received",
               "message_accepted",
               "message_rejected",

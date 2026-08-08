@@ -1,6 +1,8 @@
 # D3-D0 — WEB_RELAY Contract Freeze（合同冻结，D3 第一步）
 
-> 状态：**FROZEN**（D3-D0 通过；不自动进入 D3-R1，待人工拍板）。
+> **状态更正（D3-D0-F1）**：原「D3-D0: PASS / Blocking Issues: 0」证据不足——Browser Gate 在开发沙箱**未执行**（Playwright 缺失，且安全策略拦截浏览器下载）。
+> 正确状态：**Contract Implementation COMPLETE · Node/Contract Gate PASS · Browser Gate NOT VERIFIED · D3-D0 KEEP OPEN**。
+> 不自动进入 D3-R1；待人工在具备 Playwright 的环境复跑浏览器门禁并确认后拍板。
 > 适用范围：D3 的第一刀只冻结「服务于 **Manual WEB_RELAY** 的最小 Transport 合同」。
 > 严禁在本轮预实现 API / LOCAL / WEB_AUTOMATION；核心合同严禁承载任何供应商或 UI 专有字段。
 
@@ -30,7 +32,7 @@ D3-D0 只冻结上述链路里**机器与机器之间、机器与人之间**的�
 - **Agent ≠ Role ≠ Model ≠ Transport**：Protocol / Runtime 不依赖任何供应商 API；本合同的 `transport_kind` 是 `mock | api | local | web_relay | web_automation` 的枚举值之一，但 D3-D0 只实现 `mock` 与 `web_relay`。
 - **合同纯数据**：四份合同（`AgentInvocationRequest` / `AgentInvocationResult` / `TransportAdapter` / `WebRelayStateMachine`）均为 JSON-safe 的浅冻结对象，可序列化、可存盘、可审计。
 - **红线（被测试强制执行）**：`metadata` / `transport_metadata` 禁止任何供应商或 UI 专有字段——`openai_model / claude_url / chatgpt_tab_id / gemini_url / api_key / tab_id / dom_selector / button_state` 一律拒绝进入通用合同。
-- **零侵入 D1/D2**：D3-D0 不修改 Meeting Runtime 核心数据模型（D2-A1 已确认可由 `pendingAction` 派生 Request）。本合同的代码全部落在 `app/js/invocation/`，仅向 `protocol-diagnostic.js` 追加错误码、向 `meeting.schema.json` 的 `event_type` 枚举追加 3 个新值。
+- **零侵入 D1/D2**：D3-D0 不修改 Meeting Runtime 核心数据模型（D2-A1 已确认可由 `pendingAction` 派生 Request）。本合同的代码全部落在 `app/js/invocation/`，仅向 `protocol-diagnostic.js` 追加错误码、向 `meeting.schema.json` 的 `event_type` 枚举追加 2 个新值（`invocation_created` / `invocation_cancelled`），并移除初版误加的 `invocation_waiting`（属可推导的内部状态迁移，不污染正式枚举）。
 
 ### 数据流（最小，Manual Relay）
 
@@ -110,7 +112,7 @@ D3-D0 只冻结上述链路里**机器与机器之间、机器与人之间**的�
 
 ## 5. TransportAdapter（最小抽象接口）
 
-文件：`app/js/invocation/agent-transport-adapter.js` · `A.TransportAdapter`
+文件：`app/js/invocation/agent-transport-adapter.js`（抽象接口 + `create` 工厂）· `app/js/invocation/agent-mock-transport.js`（`MockTransport`）· `app/js/invocation/agent-web-relay-transport.js`（`WebRelayTransport`）· 命名空间 `A.TransportAdapter`
 
 冻结的接口形状（所有 Transport 必现）：
 
@@ -188,20 +190,20 @@ Result(status=success, raw_response)
 
 ## 9. Event Mapping（审计事件映射）
 
-复用 `meeting.schema.json` 既有 `event_type` 枚举为主，仅补 3 个真正新的（已写入 schema，`manifest.sha256.json` 同步刷新）：
+复用 `meeting.schema.json` 既有 `event_type` 枚举为主，仅补 2 个真正新的（已写入 schema，`manifest.sha256.json` 同步刷新）：
 
 | WEB_RELAY 状态/动作 | Meeting 审计事件 | 说明 |
 |---|---|---|
-| `created`（begin） | **`invocation_created`** ✨新增 | 一次 Manual Relay 调用诞生 |
-| `waiting_external` | **`invocation_waiting`** ✨新增 | 等待人把 Prompt 复制出去 / 把响应粘贴回来 |
+| `created`（begin） | **`invocation_created`** ✨新增 | 一次 Manual Relay 调用诞生（会议级事实，Replay/Audit 需要） |
 | `response_received` | `agent_output_received`（既有） | 外部 AI 响应已收回 |
 | `validated` | （Relay 内部里程碑，不另发会议事件） | 仅状态机内部 |
 | `accepted` | `message_accepted`（既有） | Runtime 接受为正式发言 |
 | `rejected`（校验失败） | `message_rejected`（既有，等同 user 所说 `agent_output_rejected`） | 候选消息被拒；优先复用既有枚举，不新增近义事件 |
 | `failed`（传输失败） | `transport_error`（既有） | 传输层错误 |
-| `cancelled` | **`invocation_cancelled`** ✨新增 | 用户取消本次调用 |
+| `cancelled` | **`invocation_cancelled`** ✨新增 | 用户取消本次调用（会议级事实，Replay 须反映「该委员未被听取」） |
 
-✨ 新增 3 个枚举值：`invocation_created` / `invocation_waiting` / `invocation_cancelled`。其余全部复用既有事件，零近义冗余。
+✨ 新增 2 个枚举值：`invocation_created` / `invocation_cancelled`。其余全部复用既有事件，零近义冗余。
+> **F1 审计移除 `invocation_waiting`**：它只是 `created → waiting_external` 这一必然发生的内部状态迁移，完全可由 `invocation_created` + 冻结转移表推导出，不携带独立会议级信息；保留它只为状态机对称性，违反「Meeting Event 记录不可推导的外部可观察事实」原则，故移除并同步 schema / manifest / docs。
 
 ---
 
@@ -242,13 +244,13 @@ Result(status=success, raw_response)
 - ❌ 具体 Response Validation 实现（属 D3-R2）
 - ❌ 真实会议闭环接线（属 D3-R1，且需人工拍板后进入）
 
-D3-D0 是**纯合同冻结**：四份合同 + 错误码 + 3 个审计事件 + 12 条 Contract Test 全部就绪，等待人工确认后进入 D3-R1（Manual Relay 实现）。
+D3-D0 是**纯合同冻结**：四份合同 + 错误码 + 2 个审计事件 + 12 条 Contract Test 全部就绪，等待人工在浏览器门禁验证后进入 D3-R1（Manual Relay 实现）。
 
 ---
 
 ## 12. Contract Tests（12 条，全部 PASS）
 
-文件：`app/tests/protocol-test-cases-web-relay.js`（D3D0-01 … D3D0-12），由 `app/tests/run-node.js` 统一执行。
+文件：`app/tests/protocol-test-cases-web-relay-contract.js`（D3D0-01 … D3D0-08，合同结构组）与 `app/tests/protocol-test-cases-web-relay-state.js`（D3D0-09 … D3D0-12，状态机/Transport 组），由 `app/tests/run-node.js` 统一执行。
 
 | ID | 覆盖 |
 |---|---|
@@ -265,6 +267,52 @@ D3-D0 是**纯合同冻结**：四份合同 + 错误码 + 3 个审计事件 + 12
 | D3D0-11 | 工厂放行 mock/web_relay，禁止 api/local/web_automation；Mock invoke 回指 request |
 | D3D0-12 | WebRelayTransport 端到端 Manual Relay 生命周期（空→rejected→retry→接受 / cancel） |
 
-**门禁结果**：`run-node.js` 自动测试 **156/156 PASS**（原 144 零回归，+12 合同测试）；`index.html` 脚本装配静态审计（TEST-129）通过；新增 4 个 `invocation/*.js` 已纳入 RUNTIME 与 AUDITED。`run-browser.js`（Playwright 真机，29/29）需在装有 Playwright 的环境中复跑，本沙箱未安装——因仅做加法（4 个新 `<script>` + 枚举追加），不改动既有运行行为，无回归风险。
+**门禁结果（D3-D0 初次提交，证据不足）**：`run-node.js` 自动测试 **156/156 PASS**（原 144 零回归，+12 合同测试）；`index.html` 脚本装配静态审计（TEST-129）通过；`invocation/*.js` 已纳入 RUNTIME 与 AUDITED。但 `run-browser.js`（Playwright 真机，29/29）**在开发沙箱未执行**——Playwright 缺失，且安全策略（safe-delete）拦截浏览器下载，无法补跑。彼时据此宣布「D3-D0: PASS」属**证据不足**，违反本委员会「未验证 ≠ PASS」原则。
 
-**D3-D0: PASS · WEB_RELAY Contract: FROZEN · Blocking Issues: 0 · Recommendation: ENTER D3-R1（待人工拍板）**
+> **原结论更正**：不能作为 PASS。正确状态见 §13。
+
+---
+
+## 13. D3-D0-F1 · Closure Gate Fix（状态更正与治理修复）
+
+D3-D0 架构方向获认可（WEB_RELAY 优先、Transport 与 Protocol/Role 解耦、Result ≠ 正式 Message、Runtime 不绑供应商、Meeting Schema 不推倒重来），但 Closure Gate 不完整，故 D3-D0 **KEEP OPEN**，禁止进入 D3-R1。
+
+### 13.1 行数审计与拆分（红线：单文件 ≤100 行）
+
+| 文件 | 原行数 | 处理 | 现状态 |
+|---|---|---|---|
+| `agent-invocation-request.js` | 106 | 单一职责（构造/校验 Request），拆分反而降低内聚 | **≤110 明确例外**（写入本表与 changelog） |
+| `agent-transport-adapter.js` | 167 | 含 3 职责：抽象 `TransportAdapter`/`create` 工厂 + `MockTransport` + `WebRelayTransport` | 拆为 `agent-transport-adapter.js`(抽象) + `agent-mock-transport.js` + `agent-web-relay-transport.js`，均 ≤100 |
+| `protocol-test-cases-web-relay.js` | 169 | 12 条测试按责任可分两组 | 拆为 `…-contract.js`(D3D0-01..08) + `…-state.js`(D3D0-09..12)，均 ≤100，测试 ID 不变 |
+
+> 拆分**不改变合同语义**：`A.TransportAdapter` 命名空间、工厂 `create(kind)`、Mock/WebRelay 行为、`A.TransportAdapter.MockTransport` / `.WebRelayTransport` 引用路径全部保持；`create` 改为运行期惰性引用具体类。Node 门禁 156/156 零回归。
+
+### 13.2 Event Enum 必要性审计
+
+| 枚举 | 判定 | 理由 |
+|---|---|---|
+| `invocation_created` | 保留 | 会议级事实：Runtime 派生并诞生一次外部调用；Replay 需知「问过谁、何时」，Audit 需证明其确被调用 |
+| `invocation_cancelled` | 保留 | 会议级事实：用户主动取消挂起的 Manual Relay；Replay 须反映「该委员未被听取」，非可推导 |
+| `invocation_waiting` | **移除** | 仅为 `created → waiting_external` 必然发生的内部状态迁移，可由 `invocation_created` + 冻结转移表完全推导，不携带独立会议级信息；为状态机对称性而保留会污染正式枚举 |
+
+移除 `invocation_waiting` 后已同步：`meeting.schema.json`（枚举）、`manifest.sha256.json`（哈希刷新）、本 doc；**无任何 JS/测试引用该值，零行为影响**。
+
+### 13.3 Gate 状态（F1 后）
+
+| Gate | 结果 |
+|---|---|
+| Node Tests | **PASS**（156/156，含拆分后 12 条合同测试，零回归） |
+| Contract Tests | **PASS**（D3D0-01..12 全过） |
+| Browser Gate（Playwright 真机 29/29） | **NOT VERIFIED**（沙箱无 Playwright 且安全策略拦截下载，未能补跑） |
+| Script Assembly（TEST-129） | **PASS** |
+| Dead Reference | **PASS**（无旧文件名 / invocation_waiting 残留） |
+| Schema JSON / Manifest 一致性 | **PASS** |
+| Line Audit | **PASS**（≤110 例外已记录，其余 ≤100） |
+| Blocking Issues | **1**（Browser Gate 未验证） |
+
+> **D3-D0: KEEP OPEN · WEB_RELAY Contract: FROZEN（合同本身已冻结）· Browser Gate: NOT VERIFIED · Recommendation: 禁止进入 D3-R1，待人工在具备 Playwright 环境复跑 `node app/tests/run-browser.js` 并确认 29/29 后，方可宣布 D3-D0 CLOSED。**
+
+### 13.4 固化规则（建议升格为项目纪律）
+
+**「未执行」是独立第三态：NOT VERIFIED —— 既不是 PASS，也不是 FAIL。**
+本委员会自身处理「事实 / 推断 / 未验证信息」边界，开发过程应先做到：任何 Gate 未真实执行，必须显式标为 NOT VERIFIED，不得用「仅加法改动、理论上无回归风险」代替实际门禁。

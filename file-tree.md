@@ -52,11 +52,13 @@ app/
 │   ├── instruction-compiler.js      # ★D2-R1 确定性 (Protocol,Meeting,Phase,Participant)→InstructionPacket（D2-F1 改用 resolveForParticipant）
 │   ├── prompt-renderer.js           # ★D2-R2 确定性 InstructionPacket → 人类可读 Prompt 文本（按 Role-Card-Spec §5 红化）
 │   ├── mock-agent-runtime.js        # D1-R3 测试用 Mock Agent 推进（D2-F1 新增 stepOnce 单步语义）
-│   ├── invocation/                  # ★D3-D0 WEB_RELAY Transport 合同（纯数据，不发起网络请求）
-│   │   ├── agent-invocation-request.js     # Meeting→Transport 唯一合同（request_id 内容寻址 + sequence）
+│   ├── invocation/                  # ★D3-D0 WEB_RELAY Transport 合同（纯数据，不发起网络请求）+ D3-D0-F1 行数拆分（单文件≤100，request.js 106 享 ≤110 例外）
+│   │   ├── agent-invocation-request.js     # Meeting→Transport 唯一合同（request_id 内容寻址 + sequence）[106 行，≤110 明确例外]
 │   │   ├── agent-invocation-result.js       # Transport→Meeting 唯一合同（Result≠正式Message，无 message_id）
 │   │   ├── agent-web-relay-state-machine.js # Manual Relay 状态机（8 态，replay 可重放恢复）
-│   │   └── agent-transport-adapter.js      # TransportAdapter 抽象 + Mock + WebRelay（禁 api/local/web_automation）
+│   │   ├── agent-transport-adapter.js      # TransportAdapter 抽象接口 + create 工厂（D3-D0-F1 拆出下列两文件）
+│   │   ├── agent-mock-transport.js          # MockTransport（确定性，无外部调用）
+│   │   └── agent-web-relay-transport.js     # WebRelayTransport（状态机驱动 Manual Relay，禁 api/local/web_automation）
 │   ├── harness/                     # ★D2-F1 无 DOM 流程层（可在 Node 直接测试，每文件 ≤100 行）
 │   │   ├── harness-store.js          # 共享状态 + 订阅；setSession 从 snapshot.assetFiles 冻结装入 Role Card/Schema Pack/Packet Schema
 │   │   ├── participant-binding.js    # Participant 下拉来源（只来自 meeting.participants[]）+ 当前相位 actor 标注 + Compiler 禁用态
@@ -90,7 +92,8 @@ app/
     ├── protocol-test-cases-compiler.js    # TEST-85..109（D2-R1 Instruction Compiler / Role Card）
     ├── protocol-test-cases-renderer.js    # TEST-110..128（D2-R2 Prompt Renderer）
     ├── protocol-test-cases-harness.js     # ★TEST-129..144（D2-F1 接线：脚本装配/冻结/禁用/Mock单步/Human Gate/Role≠Participant/Save-Load）
-    ├── protocol-test-cases-web-relay.js   # ★D3D0-01..12（D3-D0 WEB_RELAY 合同冻结：Request/Result/状态机/TransportAdapter）
+    ├── protocol-test-cases-web-relay-contract.js   # ★D3D0-01..08（D3-D0 合同结构：Request/Result）
+    ├── protocol-test-cases-web-relay-state.js      # ★D3D0-09..12（D3-D0 状态机/TransportAdapter/WebRelay 端到端；D3-D0-F1 由 169 行单文件拆分）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/
@@ -103,7 +106,7 @@ app/
 schema/
 ├── schemas/
 │   ├── protocol.schema.json    # ★ D1-R1 校验依据（未修改）
-│   ├── meeting.schema.json     # ★ D1-R4 存档校验依据（D3-D0 追加 invocation_created/invocation_waiting/invocation_cancelled 三个 event_type 枚举值，manifest 同步刷新）
+│   ├── meeting.schema.json     # ★ D1-R4 存档校验依据（D3-D0 追加 invocation_created/invocation_cancelled 两个 event_type 枚举值；invocation_waiting 经 D3-D0-F1 审计移除，manifest 同步刷新）
 │   ├── role.schema.json  message.schema.json      # D1-R4 作为 $ref Schema Pack 注册
 │   ├── artifact.schema.json  annotation.schema.json
 │   ├── instruction-packet.schema.json # ★ D2-R1 新增（编译产物校验；非冻结 6 份之一）

@@ -85,8 +85,8 @@
     },
     {
       "path": "schemas/meeting.schema.json",
-      "sha256": "13f4f7761f3caf9dde05ce730f24782f4e9969f40bd235e0824fac7c820c47f8",
-      "bytes": 9285
+      "sha256": "b5719eea112b2f05034701b787451fe1f4f85fb5b8ca0a981183a2a873670e5c",
+      "bytes": 9249
     },
     {
       "path": "schemas/message.schema.json",
