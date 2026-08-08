@@ -1,5 +1,5 @@
-/* AI Council v0.1 — D2-F1
- * HarnessStore：Developer Harness 的唯一共享状态容器（无 DOM，可在 Node 中直接测试）。
+/* AI Council v0.1 — D2 HarnessStore（D3 沿用）
+ * 开发验证台的唯一共享状态容器（无 DOM，可在 Node 中直接测试）。
  *
  * 设计边界：
  *  - 只持有状态与订阅，不做任何判定、不编译、不推进会议（那是 participant-binding / *-flow 的事）。
