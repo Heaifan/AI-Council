@@ -430,15 +430,15 @@ async function runD5(page) {
   /* 底部日志折叠区存在 */
   check("S04 · 底部时间线/日志折叠区存在", await page.locator("#console-timeline summary").count() === 1);
 
-  /* 席位卡点击选中 → 中央进入席位配置模式 */
-  await page.click("#seat-select-A2");
+  /* 席位卡点击选中 → 中央进入席位配置模式（One-Screen：点击卡片本身即选中） */
+  await page.click("#seat-A2");
   await page.waitForSelector("#seat-config");
   check("S05 · 点击席位可选中并进入席位配置", await page.locator("#seat-config").isVisible());
   const seatIdText = await page.locator("#seat-config h2").innerText();
   check("S06 · 席位配置显示对应 seat_id（A2）", seatIdText.includes("A2"), seatIdText);
 
   /* 席位配置编辑器：web_url / 模型显示名可编辑（创建前；A1 为 web_relay 带默认 profile） */
-  await page.click("#seat-select-A1");
+  await page.click("#seat-A1");
   await page.waitForFunction(() => {
     const h = document.querySelector("#seat-config h2");
     return h && h.textContent.includes("A1");
@@ -481,6 +481,81 @@ async function runD5(page) {
   await page.screenshot({ path: path.join(shotDirD3, "05-six-seats.png"), fullPage: true });
 }
 
+/* ---------- D6：One-Screen + Clipboard（U17..U22 + 1792×856 无整体滚动门禁） ---------- */
+async function runD6(page) {
+  await page.goto(appUrl);
+  await page.setViewportSize({ width: 1792, height: 856 });
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* One-Screen 门禁：六席全可见 + 无整体纵向滚动 */
+  const scrollable = await page.evaluate(() => document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight);
+  check("U16 · 1792×856 页面无整体纵向滚动", !scrollable);
+  const seats = ["A1", "A2", "A3", "B1", "B2", "B3"];
+  for (const s of seats) {
+    const v = await page.locator("#seat-" + s).isVisible();
+    check("U16b · 席位 " + s + " 可见", v);
+    if (!v) break;
+  }
+
+  /* 创建网页中继会议，进入运行模式 */
+  await page.click("#mt-create-relay");
+  await page.waitForSelector("#relay-open");
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  const promptText = await page.locator("#relay-prompt").inputValue();
+
+  /* U17：复制提示词按钮存在 */
+  check("U17 · 复制提示词按钮存在", await page.locator("#relay-copy").count() === 1);
+
+  /* U18：mock Clipboard 成功 — writeText 收到完整 Rendered Prompt */
+  let copied = null;
+  await page.evaluate(() => {
+    window.__copied = null;
+    navigator.clipboard.writeText = (t) => { window.__copied = t; return Promise.resolve(); };
+  });
+  await page.click("#relay-copy");
+  await page.waitForFunction(() => window.__copied !== null);
+  copied = await page.evaluate(() => window.__copied);
+  check("U18 · mock Clipboard 成功：writeText == 完整 Rendered Prompt", copied === promptText,
+    "len " + (copied ? copied.length : 0) + " vs " + promptText.length);
+
+  /* U19：成功后显示「提示词已复制」 */
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-msg");
+    return el && el.textContent.includes("提示词已复制");
+  });
+  check("U19 · 成功后显示「提示词已复制」", true);
+
+  /* U20：mock Clipboard 拒绝 → 自动 textarea.select() */
+  await page.evaluate(() => {
+    navigator.clipboard.writeText = () => Promise.reject(new Error("denied"));
+  });
+  await page.click("#relay-copy");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-msg");
+    return el && el.textContent.includes("Ctrl+C");
+  });
+  const selRange = await page.evaluate(() => {
+    const ta = document.getElementById("relay-prompt");
+    return [ta.selectionStart, ta.selectionEnd];
+  });
+  check("U20 · mock Clipboard 拒绝：自动执行 textarea.select()", selRange[0] === 0 && selRange[1] === promptText.length,
+    "sel " + JSON.stringify(selRange));
+
+  /* U21：fallback 提示「请按 Ctrl+C」 */
+  const msg = await page.locator("#relay-msg").innerText();
+  check("U21 · fallback 显示「请按 Ctrl+C」", msg.includes("请按 Ctrl+C"), msg);
+
+  /* U22：Clipboard 失败不改变 Invocation 状态 */
+  const stateBefore = await page.locator("#relay-state-raw").innerText();
+  await page.waitForTimeout(300);
+  const stateAfter = await page.locator("#relay-state-raw").innerText();
+  check("U22 · Clipboard 失败：Invocation 状态不改变", stateBefore === stateAfter && stateAfter === "waiting_external",
+    stateBefore + " -> " + stateAfter);
+  await page.screenshot({ path: path.join(shotDirD3, "06-one-screen.png"), fullPage: true });
+}
+
 /* ---------- 自动测试页（D1-R1 用例） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
@@ -507,6 +582,7 @@ async function runChannel(channel) {
   await runD3(page);
   await runD4(page);
   await runD5(page);
+  await runD6(page);
   await runTestPage(page);
 
   await browser.close();

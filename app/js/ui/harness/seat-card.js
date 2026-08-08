@@ -45,6 +45,8 @@
     var box = Dom.el("div", "card seat-card" +
       (isCurrent ? " current" : "") + (selected ? " selected" : "") + (seat.occupied ? "" : " empty"));
     box.id = "seat-" + seat.seat_id;
+    /* 点击卡片本身即选中（用户方案 §六：删除 [选中] 按钮）。 */
+    box.addEventListener("click", function () { actions.setSelectedSeat(seat.seat_id); });
     var head = Dom.el("div", "seat-head");
     head.appendChild(Dom.el("span", "seat-id", seat.seat_id + (seat.occupied ? "" : "（空）")));
     if (isCurrent) head.appendChild(Dom.el("span", "seat-current", "当前轮次"));
@@ -61,9 +63,7 @@
     line(box, "状态", A.SeatStatus.statusText(seat, meeting, relayActive));
 
     var bar = Dom.el("div", "seat-actions");
-    bar.appendChild(btn("seat-select-" + seat.seat_id, "选中", "secondary", !seat.occupied,
-      function () { actions.setSelectedSeat(seat.seat_id); }));
-    bar.appendChild(btn("seat-edit-" + seat.seat_id, "编辑", "secondary", !seat.occupied,
+    bar.appendChild(btn("seat-edit-" + seat.seat_id, "配置", "secondary", !seat.occupied,
       function () { actions.setSelectedSeat(seat.seat_id); }));
     bar.appendChild(btn("seat-openweb-" + seat.seat_id, "打开网页", "secondary",
       !p || !A.RelayProfiles.isSafeUrl(A.RelayProfiles.webUrlFor(actions.getProfiles(), modelRef)),

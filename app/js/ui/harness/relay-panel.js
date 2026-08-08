@@ -40,11 +40,16 @@
 
   function actionsBar(active, check) {
     var bar = Dom.el("div", "controls relay-actions");
-    bar.appendChild(btn("relay-accept", "接受为正式发言", "primary",
-      !(active && check && check.ok), function () { A.WebRelayActions.accept(); }));
-    bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", !active, function () { A.WebRelayActions.reject(); }));
-    bar.appendChild(btn("relay-retry", "重新请求", "secondary",
-      !(active && active.state !== "rejected" && active.state !== "failed"), function () { A.WebRelayActions.retry(); }));
+    /* 状态驱动（方案 §六）：校验通过前不显示「接受」；通过后显示接受/拒绝/重新请求。 */
+    if (check && check.ok) {
+      bar.appendChild(btn("relay-accept", "接受为正式发言", "primary", false, function () { A.WebRelayActions.accept(); }));
+      bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", false, function () { A.WebRelayActions.reject(); }));
+      bar.appendChild(btn("relay-retry", "重新请求", "secondary", false, function () { A.WebRelayActions.retry(); }));
+    } else {
+      var canAlt = !!(active && active.state !== "rejected" && active.state !== "failed");
+      bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", !canAlt, function () { A.WebRelayActions.reject(); }));
+      bar.appendChild(btn("relay-retry", "重新请求", "secondary", !canAlt, function () { A.WebRelayActions.retry(); }));
+    }
     bar.appendChild(btn("relay-cancel", "取消本次请求", "secondary", !active, function () { A.WebRelayActions.cancel(); }));
     return bar;
   }
@@ -82,8 +87,7 @@
     }
     var profiles = A.ConsoleActions.getProfiles();
     host.appendChild(execCard(active, profiles));
-    host.appendChild(A.RelayWorkarea.promptCard(active));
-    host.appendChild(A.RelayWorkarea.responseCard(active));
+    host.appendChild(A.RelayWorkarea.workarea(active));
     host.appendChild(A.RelayVerdict.build(active, check));
     var note = Dom.el("p", "status warn", "注意：此回答尚未写入正式会议记录。");
     note.id = "relay-not-official";
