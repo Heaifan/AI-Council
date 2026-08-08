@@ -2,6 +2,18 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-UX-F2-F1 · Seat Runtime Fields Unlock — 2026-08-08
+
+- **目的**：真人验收发现「模型名称/模型网页仍无法编辑」→ 用户裁定 F2 = FUNCTIONAL PARTIAL PASS。本轮只修席位字段权限；**禁止 Edge Attach / Web Automation / 会议流程**（automation/ 行为层零 diff）。
+- **真实根因（T01）**：不是 frozen 锁的——`seat-config-fields.js` 的 `name.disabled = !profile` / `url.disabled = !profile`：默认 profiles 仅 3 个（chatgpt-web/claude-web/gemini-web），六席模板 A2..B3 model_ref 为空；用户保存自定义 model_ref（如 deepseek）后刷新 → profile 找不到 → 模型名称/网页被 `!profile` 锁死且初始值为空。旧保存链路 `if (prof)` 在无 profile 时不落库显示名/URL（「看起来能编辑，实际只改前端内存」）。
+- **单一字段权限表（T04）**：`SeatConfigRules.FIELD_POLICY`——identity（seatId/camp/roleId）运行中锁 / runtime（modelName/modelRef/modelUrl/transport/stance/note）恒可编辑；`canEdit` 唯一权限入口 + `FIELD_ALIAS` 兼容 participant 字段名；UI 三处 disabled 全部改消费它。
+- **stance 语义核实**：代码证据（seat-layout 覆盖表 + meeting-factory 无 stance 字段）→ 不进 Protocol/snapshot，归 runtime 可编辑（TEST-166 背书）。
+- **保存链路补全**：profile 不存在自动创建（upsert 追加）；新增 `SeatLocalConfig.runtimeConfig`（per-participant model_ref/transport_kind 持久化）→ 刷新后六席运行配置完整恢复（H03：保存→刷新→三字段保持）。
+- **打开模型网页**：仅按 URL 有效性禁用（C06 语义保留）；`openWeb(modelRef, fallbackUrl)` 支持无 profile 直接打开。
+- **测试**：Node **191/191**（TEST-161 重写 + 164 分类完整性 + 165 全矩阵 + 166 stance 不污染）；Browser **197/197**（156 零回归 + H01 六席 30 项 / H02 防覆盖 7 项 / H03 持久化 5 项）；Offline **14/14**；Schema PASS。
+- 新增 `reports/d3-seat-runtime-unlock.md`；同步 file-tree.md。
+- **状态**：`MEETING-UX-F2-F1: IMPLEMENTED · Node 191/191 · Browser 197/197 · Offline 14/14 · 待真人验收`。F2 系列字段权限自此钉死（单一来源，无五六个文件各自判断）。
+
 ## MEETING-UX-F2 · 固定 Meeting HUD + 席位编辑状态架构 — 2026-08-08
 
 - **目的**：用户裁定 F1「只解决了一半」（顶部利用率 ❌ / 席位可靠编辑 ❌ / 自动化路线 ❌）。本轮仅修会议运行 UI 与席位配置状态；**禁止 Web Automation 开发**（automation/ 行为层零 diff）。

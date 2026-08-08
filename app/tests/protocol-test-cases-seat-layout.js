@@ -95,13 +95,51 @@
 
   /* ---------- F1：席位配置冻结规则（SeatConfigRules，ONE-SCREEN-F1 §七/§八） ---------- */
 
-  T.test("TEST-161", "字段级冻结矩阵：冻结只锁 role_class，model_ref/transport 仍可编辑", function () {
+  T.test("TEST-161", "字段级冻结矩阵：identity 锁，runtime 全开（F2-F1 FIELD_POLICY）", function () {
     var R = A.SeatConfigRules;
-    T.assert(!R.canEdit(true, "role_class"), "冻结时角色不可编辑");
-    T.assert(R.canEdit(true, "model_ref"), "冻结时模型引用可编辑");
-    T.assert(R.canEdit(true, "transport_kind"), "冻结时传输方式可编辑");
-    T.assert(R.canEdit(false, "role_class"), "未冻结时角色可编辑");
-    T.assert(R.canEdit(false, "model_ref"), "未冻结时模型引用可编辑");
+    T.assert(!R.canEdit(true, "roleId"), "冻结时角色不可编辑");
+    T.assert(!R.canEdit(true, "seatId"), "冻结时席位 ID 不可编辑");
+    T.assert(!R.canEdit(true, "camp"), "冻结时阵营不可编辑");
+    T.assert(R.canEdit(true, "modelName"), "冻结时模型名称可编辑");
+    T.assert(R.canEdit(true, "modelRef"), "冻结时模型引用可编辑");
+    T.assert(R.canEdit(true, "modelUrl"), "冻结时模型网页可编辑");
+    T.assert(R.canEdit(true, "transport"), "冻结时传输方式可编辑");
+    T.assert(R.canEdit(true, "stance"), "冻结时立场可编辑（本地配置，不进 snapshot）");
+    T.assert(R.canEdit(true, "note"), "冻结时备注可编辑");
+    T.assert(R.canEdit(false, "roleId"), "未冻结时角色可编辑");
+    return Promise.resolve();
+  });
+
+  T.test("TEST-164", "FIELD_POLICY 分类完整性：identity 3 项 / runtime 6 项", function () {
+    var P = A.SeatConfigRules.FIELD_POLICY;
+    var identity = Object.keys(P).filter(function (k) { return P[k] === "identity"; });
+    var runtime = Object.keys(P).filter(function (k) { return P[k] === "runtime"; });
+    T.assertEqual(identity.sort().join(","), "camp,roleId,seatId", "identity 类目完整");
+    T.assertEqual(runtime.sort().join(","), "modelName,modelRef,modelUrl,note,stance,transport", "runtime 类目完整");
+    T.assertEqual(Object.keys(P).length, 9, "字段表共 9 项，无多余字段");
+    return Promise.resolve();
+  });
+
+  T.test("TEST-165", "canEdit 全矩阵：未冻结全开；冻结仅 identity 锁", function () {
+    var R = A.SeatConfigRules;
+    var P = R.FIELD_POLICY;
+    Object.keys(P).forEach(function (k) {
+      T.assert(R.canEdit(false, k), "未冻结全开：" + k);
+      if (P[k] === "identity") T.assert(!R.canEdit(true, k), "冻结 identity 锁：" + k);
+      else T.assert(R.canEdit(true, k), "冻结 runtime 开：" + k);
+    });
+    return Promise.resolve();
+  });
+
+  T.test("TEST-166", "stance 不污染 Participant Schema（本地配置层）", function () {
+    var p = { participant_id: "agent-a2", role_class: "advisor", model_ref: "deepseek", transport_kind: "web_relay" };
+    var before = Object.keys(p).sort().join(",");
+    A.SeatLocalConfig.setStance("agent-a2", "oppose");
+    A.SeatLocalConfig.setNote("agent-a2", "F2-F1 验收备注");
+    var after = Object.keys(p).sort().join(",");
+    T.assertEqual(before, after, "participant 对象未被 stance/note 污染");
+    T.assertEqual(A.SeatLocalConfig.getStanceOverrides()["agent-a2"], "oppose", "立场经本地配置层读写");
+    T.assertEqual(A.SeatLocalConfig.getNotes()["agent-a2"], "F2-F1 验收备注", "备注经本地配置层读写");
     return Promise.resolve();
   });
 

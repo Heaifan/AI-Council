@@ -46,12 +46,12 @@
     var role = selectFor([["advisor", "顾问委员"], ["chair_secretary", "主席兼秘书"]]);
     role.value = edits.role_class;
     fieldRow(grid, "cfg-role-" + pid, "角色", role);
-    role.disabled = frozen;
+    role.disabled = !A.SeatConfigRules.canEdit(frozen, "roleId");   /* identity：运行中锁定 */
     role.addEventListener("change", function () { A.SeatEditDraft.set(pid, "role_class", role.value); });
 
     var name = textInput(edits.display_name, "模型名称（如 ChatGPT）");
     fieldRow(grid, "cfg-model-name-" + pid, "模型名称", name);
-    name.disabled = !profile;
+    name.disabled = !A.SeatConfigRules.canEdit(frozen, "modelName");   /* F2-F1：runtime 恒可编辑（不再随 profile 存在性） */
     name.addEventListener("change", function () { A.SeatEditDraft.set(pid, "display_name", name.value); });
 
     var ref = textInput(edits.model_ref, "model_ref（如 chatgpt-web）");
@@ -60,10 +60,10 @@
 
     var url = textInput(edits.web_url, "@url 例如 https://chatgpt.com/");
     fieldRow(grid, "cfg-url-" + pid, "模型网页", url);
-    url.disabled = !profile;
+    url.disabled = !A.SeatConfigRules.canEdit(frozen, "modelUrl");   /* F2-F1：runtime 恒可编辑（不再随 profile 存在性） */
     url.addEventListener("change", function () {
       A.SeatEditDraft.set(pid, "web_url", url.value);
-      if (openBtn) openBtn.disabled = !profile || !A.RelayProfiles.isSafeUrl(url.value);   /* C06 即时反馈 */
+      if (openBtn) openBtn.disabled = !A.RelayProfiles.isSafeUrl(url.value);   /* C06 即时反馈（仅看 URL 有效性） */
     });
 
     var t = selectFor([["mock", "模拟 Agent"], ["web_relay", "网页中继"]]);
@@ -88,8 +88,8 @@
     save.id = "seat-config-save"; save.addEventListener("click", function () { commit(edits); });
     bar.appendChild(save);
     var openBtn = Dom.el("button", "btn secondary", "打开模型网页");
-    openBtn.id = "cfg-open-web-" + pid; openBtn.disabled = !profile || !A.RelayProfiles.isSafeUrl(edits.web_url);
-    openBtn.addEventListener("click", function () { actions.openWeb(edits.origModelRef); });
+    openBtn.id = "cfg-open-web-" + pid; openBtn.disabled = !A.RelayProfiles.isSafeUrl(edits.web_url);   /* 仅看 URL 有效性 */
+    openBtn.addEventListener("click", function () { actions.openWeb(edits.origModelRef || edits.model_ref, edits.web_url); });
     bar.appendChild(openBtn);
     grid.appendChild(bar);
     box.appendChild(grid);

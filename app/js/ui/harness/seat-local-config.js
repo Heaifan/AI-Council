@@ -12,10 +12,11 @@
   var selectedSeatId = "A1";   /* 当前选中席位（seat_id） */
   var stanceOverrides = {};    /* participant_id -> support|oppose|neutral */
   var notes = {};              /* participant_id -> 备注文本 */
+  var runtimeConfig = {};      /* participant_id -> {model_ref, transport_kind}（F2-F1 席位运行配置持久化） */
 
   function go() { A.HarnessStore.notify(); }
 
-  function save() { A.LocalStore.set(K, { mode: mode, selectedSeatId: selectedSeatId, stanceOverrides: stanceOverrides, notes: notes }); }
+  function save() { A.LocalStore.set(K, { mode: mode, selectedSeatId: selectedSeatId, stanceOverrides: stanceOverrides, notes: notes, runtimeConfig: runtimeConfig }); }
 
   function load() {
     var d = A.LocalStore.get(K);
@@ -24,6 +25,13 @@
     if (d.selectedSeatId) selectedSeatId = d.selectedSeatId;
     stanceOverrides = d.stanceOverrides || {};
     notes = d.notes || {};
+    runtimeConfig = d.runtimeConfig || {};
+  }
+
+  function getRuntimeConfig(participantId) { return runtimeConfig[participantId] || null; }
+
+  function setRuntimeConfig(participantId, modelRef, transportKind) {
+    runtimeConfig[participantId] = { model_ref: modelRef, transport_kind: transportKind }; save(); go();
   }
 
   function getMode() { return mode; }
@@ -52,6 +60,7 @@
   root.AICouncil.SeatLocalConfig = Object.freeze({
     getMode: getMode, getSelectedSeatId: getSelectedSeatId,
     getStanceOverrides: getStanceOverrides, getNotes: getNotes,
+    getRuntimeConfig: getRuntimeConfig, setRuntimeConfig: setRuntimeConfig,
     setMode: setMode, setSelectedSeat: setSelectedSeat,
     setStance: setStance, setNote: setNote, load: load, reset: reset
   });

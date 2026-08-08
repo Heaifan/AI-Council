@@ -2,7 +2,7 @@
  * 设计边界（用户方案 §7/§8/§11）：
  *  - web_url 属于「Transport 配置」，不是会议身份 → 绝不进 Participant / Meeting Schema；
  *    Participant 只引用 model_ref，UI 按 model_ref 找 web_url。
- *  - 会议创建后 web_url 仍可修改（域名变了不该让会议作废）；model_ref 冻结。
+ *  - F1 裁定：model_ref / web_url / 显示名运行中仍可改（Freeze Meeting ≠ Freeze Seat Config）。
  *  - 「打开模型网页」= window.open(url)，必须用户主动点击、仅 http/https、不控制页面。
  */
 (function (root) {

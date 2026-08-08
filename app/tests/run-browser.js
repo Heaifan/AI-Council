@@ -799,6 +799,94 @@ async function runF2(page) {
   await page.screenshot({ path: path.join(shotDirD3, "08-meeting-hud-f2.png"), fullPage: true });
 }
 
+/* ---------- F2-F1：Seat Runtime Fields Unlock（MEETING-UX-F2-F1 真人路径） ---------- */
+async function runF2F1(page) {
+  await page.goto(appUrl);
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* H01：创建会议后六席全部「模型运行字段」可编辑（含无 profile 席位），角色 identity 冻结 */
+  await page.fill("#cfg-title", "F2-F1 席位字段解锁");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#relay-hint");
+  for (const sid of ["A1", "A2", "A3", "B1", "B2", "B3"]) {
+    const pid = PID_OF_SEAT[sid];
+    await page.click("#seat-" + sid);
+    await seatConfigShows(page, sid);
+    check("H01 · " + sid + " 模型名称可编辑", !(await page.locator("#cfg-model-name-" + pid).isDisabled()));
+    check("H01b · " + sid + " 模型网页可编辑", !(await page.locator("#cfg-url-" + pid).isDisabled()));
+    check("H01c · " + sid + " 模型引用可编辑", !(await page.locator("#cfg-model-ref-" + pid).isDisabled()));
+    check("H01d · " + sid + " 传输方式可编辑", !(await page.locator("#cfg-transport-" + pid).isDisabled()));
+    check("H01e · " + sid + " 角色冻结（identity）", await page.locator("#cfg-role-" + pid).isDisabled());
+  }
+
+  /* H02：A2 三字段输入 → timer 2.5s + relay 回答到达 → 值/元素保持 */
+  await page.click("#seat-config-cancel");   /* 退出 H01 遗留的 seat 配置，回运行 */
+  await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  await page.fill("#cfg-model-name-agent-a2", "DeepSeek V4 Flash");
+  await page.dispatchEvent("#cfg-model-name-agent-a2", "change");
+  await page.fill("#cfg-model-ref-agent-a2", "deepseek");
+  await page.dispatchEvent("#cfg-model-ref-agent-a2", "change");
+  await page.fill("#cfg-url-agent-a2", "https://chat.deepseek.com/");
+  await page.dispatchEvent("#cfg-url-agent-a2", "change");
+  const nmHandle = await page.evaluateHandle(() => document.getElementById("cfg-model-name-agent-a2"));
+  const urlHandle = await page.evaluateHandle(() => document.getElementById("cfg-url-agent-a2"));
+  const t1 = await page.locator("#meeting-timer").innerText();
+  await page.waitForTimeout(2500);
+  const t2 = await page.locator("#meeting-timer").innerText();
+  check("H02 · timer 持续变化", t1 !== t2, t1 + " -> " + t2);
+  await page.evaluate(() => {
+    AICouncil.WebRelayActions.paste("F2-F1 验收回答。");
+    AICouncil.WebRelayActions.validate();
+  });
+  await page.waitForFunction(() => {
+    const s = AICouncil.WebRelayActions.activeSession(AICouncil.HarnessStore.get().meeting);
+    return s && s.state === "validated";
+  });
+  check("H02b · 模型名称元素未重建",
+    await page.evaluate((h) => document.getElementById("cfg-model-name-agent-a2") === h, nmHandle));
+  check("H02c · 模型网页元素未重建",
+    await page.evaluate((h) => document.getElementById("cfg-url-agent-a2") === h, urlHandle));
+  check("H02d · 模型名称值保持",
+    (await page.locator("#cfg-model-name-agent-a2").inputValue()) === "DeepSeek V4 Flash");
+  check("H02e · 模型引用值保持",
+    (await page.locator("#cfg-model-ref-agent-a2").inputValue()) === "deepseek");
+  check("H02f · 模型网页值保持",
+    (await page.locator("#cfg-url-agent-a2").inputValue()) === "https://chat.deepseek.com/");
+
+  /* H03：保存 → profile 自动创建 → 席位卡刷新 → 刷新页面三字段保持 */
+  await page.click("#seat-config-save");
+  await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+  const profs = await page.evaluate(() => {
+    const p = AICouncil.RelayProfiles.findByModelRef(AICouncil.ConsoleActions.getProfiles(), "deepseek");
+    return p ? { display_name: p.display_name, web_url: p.web_url } : null;
+  });
+  check("H03 · deepseek profile 自动创建并落库",
+    !!profs && profs.display_name === "DeepSeek V4 Flash" && profs.web_url === "https://chat.deepseek.com/",
+    JSON.stringify(profs));
+  check("H03b · 席位卡立即刷新显示新模型名",
+    (await page.locator("#seat-A2").innerText()).includes("DeepSeek V4 Flash"));
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.click("#seat-A2");
+  await seatConfigShows(page, "A2");
+  check("H03c · 刷新后模型名称保持",
+    (await page.locator("#cfg-model-name-agent-a2").inputValue()) === "DeepSeek V4 Flash");
+  check("H03d · 刷新后模型引用保持",
+    (await page.locator("#cfg-model-ref-agent-a2").inputValue()) === "deepseek");
+  check("H03e · 刷新后模型网页保持",
+    (await page.locator("#cfg-url-agent-a2").inputValue()) === "https://chat.deepseek.com/");
+  await page.screenshot({ path: path.join(shotDirD3, "09-seat-runtime-unlock.png"), fullPage: true });
+}
+
 /* ---------- 自动测试页（D1-R1 用例） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
@@ -828,6 +916,7 @@ async function runChannel(channel) {
   await runD6(page);
   await runF1(page);
   await runF2(page);
+  await runF2F1(page);
   await runTestPage(page);
 
   await browser.close();

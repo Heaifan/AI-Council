@@ -15,6 +15,10 @@
     var saved = A.SeatSessionStore.loadDraft(proto ? proto.protocolId : "");
     if (saved) { draft = saved; }
     else { draft = A.MeetingDraft.create(proto ? proto.protocolId : ""); draft.participants = A.SeatLayout.sixSeatParticipants(); }
+    (draft.participants || []).forEach(function (p) {
+      var cfg = local().getRuntimeConfig(p.participant_id);   /* F2-F1：刷新后恢复席位运行配置 */
+      if (cfg) { p.model_ref = cfg.model_ref; p.transport_kind = cfg.transport_kind; }
+    });
     frozen = false;
     return draft;
   }
@@ -42,28 +46,23 @@
     var d = ensureDraft();
     if (frozen) return { ok: false, message: "会议已创建，核心配置已冻结。请先结束会议再新建。" };
     d[field] = value;
-    persistDraft();
-    go();
+    persistDraft(); go();
     return { ok: true };
   }
 
   function setParticipantField(participantId, field, value) {
     var d = ensureDraft();
-    if (!A.SeatConfigRules.canEdit(frozen, field)) {
-      return { ok: false, message: "会议已创建，角色身份已冻结；模型引用与传输方式仍可修改。" };
-    }
+    if (!A.SeatConfigRules.canEdit(frozen, field)) return { ok: false, message: "会议已创建，角色身份已冻结；模型运行配置仍可修改。" };
     var p = (d.participants || []).filter(function (x) { return x.participant_id === participantId; })[0];
     if (!p) return { ok: false, message: "找不到与会者：" + participantId };
     p[field] = value;
-    persistDraft();
-    go();
+    persistDraft(); go();
     return { ok: true };
   }
 
   function updateProfile(profile) {
     profiles = A.RelayProfiles.upsert(ensureProfiles(), profile);
-    A.SeatSessionStore.saveProfiles(profiles);
-    go();
+    A.SeatSessionStore.saveProfiles(profiles); go();
     return { ok: true };
   }
 
@@ -90,8 +89,8 @@
     go();
   }
 
-  function openWeb(modelRef) {
-    var url = A.RelayProfiles.webUrlFor(getProfiles(), modelRef);
+  function openWeb(modelRef, fallbackUrl) {
+    var url = A.RelayProfiles.webUrlFor(getProfiles(), modelRef) || fallbackUrl || "";
     if (!A.RelayProfiles.isSafeUrl(url)) return { ok: false, message: "没有可安全打开的模型网页（仅 http/https）。" };
     if (typeof window !== "undefined" && window.open) window.open(url, "_blank");
     return { ok: true, url: url };

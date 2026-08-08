@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（MEETING-UX-F2 · Meeting HUD + 席位编辑状态架构：Node 188/188 · Browser 156/156 · Offline 14/14）
+> 最后更新：2026-08-08（MEETING-UX-F2-F1 · Seat Runtime Fields Unlock：Node 191/191 · Browser 197/197 · Offline 14/14）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -69,7 +69,7 @@ app/
 │   │   ├── meeting-draft.js          # ★D3 会议控制台 MeetingDraft（81 行）：创建前草稿模型 + 校验 + 一次性创建（Draft 非事实源，创建后冻结）
 │   │   ├── relay-profiles.js         # ★D3 WebRelayTargetProfile（66 行）：Transport 本地配置（web_url 不进 Schema）+ URL 安全校验 + upsert
 │   │   ├── local-store.js            # ★F1 localStorage 封装（35 行：JSON 读写 + 异常静默降级；键前缀 ai-council:v1:）
-│   │   ├── seat-config-rules.js      # ★F1 席位配置冻结规则（35 行：FROZEN_FIELDS 字段级权限 + applyToParticipant，Node 可测）
+│   │   ├── seat-config-rules.js     # ★F1 席位配置字段权限（51 行：FIELD_POLICY identity/runtime + FIELD_ALIAS 别名，T04 单一来源）
 │   │   ├── seat-session-store.js     # ★F1 创建前草稿/Transport Profile 持久化（40 行：draft 一次性创建 + profiles 落盘）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
@@ -85,7 +85,7 @@ app/
 │           ├── meeting-actions.js     # 会议按钮行为（中文提示）；含 createRelay + load 后 hydrate
 │           ├── web-relay-actions.js   # ★D3 WEB_RELAY 中继点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
 │           ├── console-actions.js     # ★D3 控制台动作层（110 行 ≤110 例外）：MeetingDraft 持有 / F1 字段级冻结 / 持久化委托 SeatSessionStore / 打开模型网页 / 清空会议
-│           ├── seat-local-config.js   # ★D3 席位本地 UI 配置（44 行：立场覆盖/备注/模式/选中席位；不污染 Participant Schema）
+│           ├── seat-local-config.js   # ★D3 席位本地 UI 配置（67 行：立场覆盖/备注/模式/选中席位/运行配置；F2-F1 runtimeConfig 持久化）
 │           ├── seat-edit-draft.js     # ★F2 席位编辑草稿（47 行：get/init/set/dirty/clear；runtime 刷新不得覆盖未保存输入）
 │           ├── meeting-hud.js         # ★F2 Meeting HUD（91 行：标题/议题/Round/Phase/计时器/状态；1s 局部时钟，TEST-10 唯一 setInterval 白名单）
 │           ├── seat-status.js         # ★D3 席位状态中文判定 + 当前轮次判定（37 行，纯函数）

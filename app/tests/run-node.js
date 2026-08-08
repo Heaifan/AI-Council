@@ -46,6 +46,7 @@ const RUNTIME = [
   "app/js/harness/seat-config-rules.js",
   "app/js/harness/seat-session-store.js",
   "app/js/ui/harness/seat-edit-draft.js",
+  "app/js/ui/harness/seat-local-config.js",
   "app/js/harness/meeting-step-flow.js",
   "app/js/harness/relay-flow.js",
   "app/js/harness/compile-flow.js",

@@ -28,17 +28,17 @@
       actions.persistDraft();
     }
 
-    /* 显示名 / 网页 URL 属于 Transport Profile（按表单加载时的 model_ref 归属）。 */
+    /* 显示名 / 网页 URL 属于 Transport Profile；profile 不存在（如自定义 model_ref）时自动创建（F2-F1）。 */
     var profiles = actions.getProfiles();
-    var prof = A.RelayProfiles.findByModelRef(profiles, edits.origModelRef || edits.model_ref);
-    if (prof) {
-      actions.setProfiles(A.RelayProfiles.upsert(profiles, {
-        profile_id: prof.profile_id, display_name: edits.display_name,
-        model_ref: prof.model_ref, web_url: edits.web_url
-      }));
-    }
+    var targetRef = (edits.origModelRef || edits.model_ref || "").trim();
+    var prof = A.RelayProfiles.findByModelRef(profiles, targetRef);
+    actions.setProfiles(A.RelayProfiles.upsert(profiles, {
+      profile_id: prof ? prof.profile_id : ("seat-" + pid),
+      display_name: edits.display_name, model_ref: targetRef, web_url: edits.web_url
+    }));
     A.SeatLocalConfig.setStance(pid, edits.stance);
     A.SeatLocalConfig.setNote(pid, edits.note);
+    A.SeatLocalConfig.setRuntimeConfig(pid, edits.model_ref, edits.transport_kind);   /* F2-F1：席位运行配置持久化 */
     A.SeatEditDraft.clear(pid);   /* 保存成功：草稿落库并清除（G06） */
     A.WebRelayActions.say(seatId + " 配置已保存。", "ok");
     actions.setMode("run");   /* 保存后自动返回会议界面（§十） */
