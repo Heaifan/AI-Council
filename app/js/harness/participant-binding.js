@@ -56,19 +56,19 @@
     });
   }
 
-  /* Compiler Tab 是否可用。无 Meeting → 明确禁用并提示先去 Meeting 页建会。 */
+  /* 指令编译页是否可用。无会议 → 明确禁用并给出中文操作指引（禁止只留一片空白）。 */
   function compilerState(meeting) {
     if (!meeting) {
-      return { enabled: false, reason: "请先在 Meeting 页创建 Demo Meeting。" };
+      return { enabled: false, reason: "当前没有可编译的会议步骤。请先：1. 选择项目目录；2. 创建会议；3. 推进到需要 AI 委员发言的步骤。" };
     }
     if (meeting.status === STATUS.FAILED) {
-      return { enabled: false, reason: "会议处于 failed 状态，无可编译的指令。" };
+      return { enabled: false, reason: "会议处于执行失败状态，没有可编译的指令。" };
     }
     if (!meeting.currentPhaseId) {
-      return { enabled: false, reason: "会议已结束（无当前 Phase），无可编译的指令。" };
+      return { enabled: false, reason: "会议已结束（没有当前阶段），没有可编译的指令。" };
     }
     if (!Array.isArray(meeting.participants) || meeting.participants.length === 0) {
-      return { enabled: false, reason: "当前会议没有 Participant。" };
+      return { enabled: false, reason: "当前会议没有与会者，无法编译指令。" };
     }
     return { enabled: true, reason: null };
   }

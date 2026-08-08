@@ -2,17 +2,20 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>AI顾问委员会 · Developer Harness (D2-F1)</title>
+<title>AI 顾问委员会 · 开发验证台</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
 <header class="top">
-  <h1>AI顾问委员会 · Developer Harness</h1>
-  <span class="badge">D2-F1 Integration Harness</span>
+  <h1>AI 顾问委员会 · 开发验证台</h1>
+  <span class="badge">人工网页中继</span>
 </header>
 
+<p class="workitem">当前工作项：D3 · WEB_RELAY</p>
+
 <div id="capabilities" class="capability-row"></div>
+<div id="runtime-status" class="runtime-status">当前状态：等待选择项目目录</div>
 
 <section class="controls">
   <label class="btn">
@@ -20,22 +23,22 @@
     <input type="file" id="dir-input" webkitdirectory directory multiple hidden>
   </label>
   <label class="btn secondary">
-    指定正式 protocol.schema.json
+    指定正式规则 Schema
     <input type="file" id="schema-input" accept="application/json,.json" hidden>
   </label>
-  <span class="current">当前：<code id="dir-current">（未选择）</code></span>
+  <span class="current">当前目录：<code id="dir-current">（未选择）</code></span>
   <p class="hint">
-    浏览器没有权限自动扫描磁盘，必须由用户主动选择目录。请选择仓库根目录 <code>AI-Council/</code>，
-    其中需包含 <code>protocols/**/protocol.json</code>、<code>schema/schemas/*.schema.json</code> 与 <code>roles/*.json</code>。
+    浏览器无法自动扫描本地磁盘，请手动选择 AI-Council 项目根目录。目录中应包含：
+    <code>protocols/**/protocol.json</code>、<code>schema/schemas/*.schema.json</code> 与 <code>roles/*.json</code>。
   </p>
 </section>
 
 <div id="status" class="status info">正在加载…</div>
 
 <nav class="tabs" role="tablist">
-  <button type="button" class="tab active" id="tab-btn-protocols" role="tab">Protocols</button>
-  <button type="button" class="tab" id="tab-btn-meeting" role="tab">Meeting</button>
-  <button type="button" class="tab" id="tab-btn-compiler" role="tab">Compiler</button>
+  <button type="button" class="tab active" id="tab-btn-protocols" role="tab">议事规则</button>
+  <button type="button" class="tab" id="tab-btn-meeting" role="tab">会议</button>
+  <button type="button" class="tab" id="tab-btn-compiler" role="tab">指令编译</button>
 </nav>
 
 <main>
@@ -51,13 +54,10 @@
 </main>
 
 <footer class="foot">
-  <p><strong>不热加载（第42题）</strong>：目录选择完成的瞬间即建立 File Snapshot 并冻结本 Session。
-     之后无论磁盘上的 <code>protocol.json</code> / <code>roles/*.json</code> 如何修改，本页结果都不会变化。
-     需要重新读取请<strong>重新选择目录（=新建 Session）</strong>。本应用不提供“热刷新”按钮。</p>
-  <p><strong>范围</strong>：D2-F1 只做接线——把已完成的 Protocol Kernel / Meeting Runtime / Persistence /
-     Instruction Compiler / Prompt Renderer 接进同一个浏览器 Harness，做到点得到、看得到、验得到。
-     本轮<strong>不</strong>实现 D3 Transport、<strong>不</strong>接真实 LLM、<strong>不</strong>做正式六席会议室 UI。
-     Rendered Prompt 只能人工复制到外部模型，本应用不发起任何网络请求。</p>
+  <p><strong>运行规则</strong>：目录选择后建立只读快照。磁盘文件变化不会影响当前 Session；
+     重新选择项目目录后才重新加载。本应用不提供热刷新，也不发起任何网络请求。</p>
+  <p><strong>当前能力</strong>：议事规则 / 会议运行时 / 会议存档 / 指令编译器 / 提示词渲染器 / 网页中继。
+     网页中继由人工搬运提示词与回答，系统不会自动相信外部 AI 的输出。</p>
 </footer>
 
 <script src="vendor/ajv2020.bundle.js"></script>
@@ -90,6 +90,7 @@
 <script src="js/invocation/agent-transport-adapter.js"></script>
 <script src="js/invocation/agent-mock-transport.js"></script>
 <script src="js/invocation/agent-web-relay-transport.js"></script>
+<script src="js/invocation/agent-web-relay-controller.js"></script>
 <script src="js/invocation/invocation-message-factory.js"></script>
 <script src="js/mock-agent-runtime.js"></script>
 <script src="js/harness/harness-store.js"></script>
@@ -97,14 +98,15 @@
 <script src="js/harness/meeting-step-flow.js"></script>
 <script src="js/harness/relay-flow.js"></script>
 <script src="js/harness/compile-flow.js"></script>
-<script src="js/ui/harness/web-relay-actions.js"></script>
-<script src="js/ui/harness/web-relay-view.js"></script>
 <script src="js/harness/archive-flow.js"></script>
 <script src="js/ui/dom.js"></script>
+<script src="js/ui/ui-text.js"></script>
 <script src="js/ui/diagnostic-view.js"></script>
 <script src="js/ui/registry-view.js"></script>
 <script src="js/ui/harness/meeting-actions.js"></script>
 <script src="js/ui/harness/meeting-runtime-view.js"></script>
+<script src="js/ui/harness/web-relay-actions.js"></script>
+<script src="js/ui/harness/web-relay-view.js"></script>
 <script src="js/ui/harness/compiler-packet-view.js"></script>
 <script src="js/ui/harness/compiler-view.js"></script>
 <script src="js/ui/harness/harness-shell.js"></script>

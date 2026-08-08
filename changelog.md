@@ -2,6 +2,25 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D3 · WEB_RELAY — 中文 UI + 浏览器测试补齐 + 测试治理 — 2026-08-08
+
+- **目的**：Manual Relay 真机收口的最后一轮——WebRelay 红叉根因修复、全量 UI 中文化、浏览器测试从 0 补到 25 条（B01..B25）、145 行测试文件治理拆分。**机器合同保持英文，用户界面全面中文。**
+- **WebRelay 红叉根因**：`index.html` 未装配 `web-relay-actions.js` / `web-relay-view.js` / `ui-text.js` / `meeting-state.js` / 全部 `invocation/*` 脚本 → `A.WebRelayController` / `A.RelayFlow` / `A.WebRelayView` 在能力灯渲染时为 `undefined` → ❌。修复：补齐全部缺失 `<script>` 标签（共 50 个脚本，0 缺失 0 孤立）。
+- **能力灯语义冻结**：只表示「模块是否成功装载」，与是否已选目录 / 是否已建会议无关。运行进度由独立「当前状态」行表达（`#runtime-status`），绝不用红叉表示「还没开始」。
+- **新增 `app/js/ui/ui-text.js`（94 行）**：UI 中文文案单一来源。`TERM` / `RELAY_STATE` / `MEETING_STATUS` / `CHOICE` / `TRANSPORT` / `ERROR` 六张映射表 + `term()` / `relayState()` / `meetingStatus()` / `choice()` / `transport()` / `error()` 六个查询函数。**机器状态值不经此文件**——Schema enum / class name / file name / `transport_kind` / `waiting_external` 等保持英文。
+- **状态映射表（机器→中文）**：created→已创建 / waiting_external→等待外部 AI 回答 / response_received→已收到外部 AI 回答 / validated→校验通过 / accepted→已接受并写入会议 / rejected→已拒绝 / failed→执行失败 / cancelled→已取消。
+- **错误码人话**：`web-relay-actions.js` 的 `fail(r)` 把诊断码翻成 `UIText.error(code)` 中文解释 + `（错误代码：CODE）`，禁止 alert、禁止静默失败。
+- **Copy Prompt 语义修正**：不使用 Clipboard API（零权限申请），按钮文案为「选中全部提示词」（focus+select），非「复制 Prompt」。
+- **过期 D2-F1 文案清理**：`index.html` 顶部从 `D2-F1 Integration Harness` → `AI 顾问委员会 · 开发验证台` + 徽标 `人工网页中继`；footer 重写为运行规则 + 当前能力（含网页中继）；`app.js` 状态栏文案全中文（`Available` → `可用规则`、`Invalid` → `已隔离`、`Session` → `会话`）；CSS 注释、`registry-view.js`、`meeting-runtime-view.js`、`compiler-view.js`、`compiler-packet-view.js`、`participant-binding.js` 均清理过期文案 + 补中文空状态。
+- **145 行测试文件治理**：`protocol-test-cases-web-relay-flow.js`（145 行）拆为 `…-flow.js`（67 行，WR-01..05 生命周期）+ `…-recovery.js`（98 行，WR-06..13 持久化与集成）。测试 ID 不变、Node 总数不变（169）。
+- **浏览器测试补齐**：`run-browser.js` 从 233 行重写为含 D3 Manual Relay B01..B25 的完整版。修复 D1/D2 断言适配中文状态文本（`#mt-status-raw` 取机器值、`可用规则/已隔离` 替换 `Available/Invalid`、能力灯 5→6）；新增 25 条 D3 断言覆盖中文 UI 审计 / 能力灯 / 空状态 / 中继生命周期 / V01–V05 校验 / 状态映射 / 接受写入 / 空响应拒绝 / 取消。
+- **`web-relay-view.js` 行数治理**：从 107 行压缩至 92 行（合并 var 声明、压缩 helper、去冗余注释），回归 ≤100 红线。
+- **测试断言更新**：TEST-129 从检查 `D2-F1 Integration Harness` 改为检查中文标题 + 徽标 + 6 能力灯 + 过期文案归零；TEST-131 从 `includes("Meeting")` 改为 `includes("创建会议")`。
+- **验证**：Node **169/169 PASS**（零回归）；Script Assembly PASS（50 脚本 0 缺失 0 孤立）；Dead Reference PASS；Line Audit PASS（`web-relay-view.js` 92 行回归 ≤100）。**Browser Gate：NOT VERIFIED（沙箱无 Playwright，B01..B25 + A01..A10 待开发机复跑）**。
+- **新增**：`app/js/ui/ui-text.js`（94）、`app/tests/protocol-test-cases-web-relay-recovery.js`（98）、`reports/d3-web-relay-acceptance-checklist.md`。
+- **修改**：`index.html` / `app.css` / `app.js` / `harness-shell.js` / `meeting-runtime-view.js` / `meeting-actions.js` / `web-relay-actions.js` / `web-relay-view.js` / `compiler-view.js` / `compiler-packet-view.js` / `participant-binding.js` / `registry-view.js` / `protocol-test-cases-harness.js` / `protocol-test-cases-web-relay-flow.js` / `run-node.js` / `run-browser.js`。
+- **状态**：`D3 · WEB_RELAY: IMPLEMENTED + 中文 UI · Node 169/169 PASS · Browser Gate: NOT VERIFIED · 不得宣布 CLOSED 直至开发机复跑 Browser B01..B25 + 人工验收 A01..A10`。
+
 ## D3 · WEB_RELAY — Manual Relay（实现完成，Browser Gate NOT VERIFIED）— 2026-08-08
 
 - **目的**：把系统从「只能跑 Mock 会议」推进为「能接一个真实外部 AI 的回答并写进会议」，但**系统绝不自动相信外部 AI**。四道闸门：①复制 Prompt → ②粘贴 Response → ③V01–V05 硬校验 → ④Accept 后才落成正式会议消息 → Runtime 继续。对应最初验收标准：复制 Prompt 给你、你粘回回答、校验并经 Accept 后才写入会议、Runtime 继续。

@@ -16,7 +16,7 @@
 
   function disabledCard(reason) {
     var box = Dom.el("div", "card blocked");
-    box.appendChild(Dom.el("h2", null, "Instruction Compiler"));
+    box.appendChild(Dom.el("h2", null, "指令编译器"));
     var p = Dom.el("p", "empty", reason);
     p.id = "cp-disabled";
     box.appendChild(p);
@@ -35,7 +35,7 @@
 
   function selector(opts) {
     var box = Dom.el("div", "card");
-    box.appendChild(Dom.el("h2", null, "Participant（来自当前 Meeting 的 participants[]）"));
+    box.appendChild(Dom.el("h2", null, "与会者（来自当前会议的 participants[]）"));
     var sel = document.createElement("select");
     sel.id = "cp-participant-select";
     sel.className = "select";
@@ -49,13 +49,13 @@
     box.appendChild(sel);
     var cur = opts.filter(function (o) { return o.participant_id === view.participantId; })[0];
     if (cur) {
-      var f = Dom.field("Role 解析", (cur.declared_role_id || "（未声明 role_id）") + " → " +
+      var f = Dom.field("角色解析", (cur.declared_role_id || "（未声明 role_id）") + " → " +
         (cur.role_id || "（未命中）") + "（按 " + cur.resolved_by + "）");
       f.lastChild.id = "cp-role-resolution";
       box.appendChild(f);
     }
     box.appendChild(Dom.el("p", "note",
-      "Role ≠ Participant ≠ Model：这里列的是与会者，不是 roles/ 目录里的岗位说明书。"));
+      "角色卡 ≠ 与会者 ≠ 模型：这里列的是本场会议的与会者，不是 roles/ 目录里的岗位说明书。"));
     return box;
   }
 

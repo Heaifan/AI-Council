@@ -62,6 +62,7 @@ const RUNTIME = [
   "app/js/invocation/agent-web-relay-controller.js",
   "app/js/invocation/invocation-message-factory.js",
   "app/tests/protocol-test-cases-web-relay-flow.js",
+  "app/tests/protocol-test-cases-web-relay-recovery.js",
   "app/tests/protocol-test-cases-web-relay-contract.js",
   "app/tests/protocol-test-cases-web-relay-state.js"
 ];
@@ -100,6 +101,7 @@ const AUDITED = [
   "app/js/harness/compile-flow.js",
   "app/js/harness/archive-flow.js",
   "app/js/ui/dom.js",
+  "app/js/ui/ui-text.js",
   "app/js/ui/diagnostic-view.js",
   "app/js/ui/registry-view.js",
   "app/js/ui/harness/meeting-actions.js",

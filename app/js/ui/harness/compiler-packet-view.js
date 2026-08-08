@@ -9,14 +9,14 @@
   var Dom = A.Dom;
 
   var DIGEST_ROWS = [
-    ["cp-packet-id", "packet_id", "packet_id"],
-    ["cp-protocol", "Protocol", "protocol"],
-    ["cp-meeting", "Meeting", "meeting_id"],
-    ["cp-phase", "Phase", "phase"],
-    ["cp-participant", "Participant", "participant"],
-    ["cp-role", "Role Card", "role"],
-    ["cp-visibility", "Visibility", "visibility"],
-    ["cp-task", "Task", "task"]
+    ["cp-packet-id", "指令包编号", "packet_id"],
+    ["cp-protocol", "议事规则", "protocol"],
+    ["cp-meeting", "会议", "meeting_id"],
+    ["cp-phase", "阶段", "phase"],
+    ["cp-participant", "与会者", "participant"],
+    ["cp-role", "角色卡", "role"],
+    ["cp-visibility", "可见范围", "visibility"],
+    ["cp-task", "本轮任务", "task"]
   ];
 
   function row(box, id, label, value) {
@@ -28,8 +28,8 @@
   function errorCard(res) {
     var box = Dom.el("div", "card blocked");
     box.appendChild(Dom.el("h2", null, "编译失败"));
-    row(box, "cp-error-stage", "阶段", res.stage);
-    row(box, "cp-error-msg", "诊断", res.message);
+    row(box, "cp-error-stage", "失败环节", res.stage);
+    row(box, "cp-error-msg", "诊断说明", res.message);
     if (res.diagnostics && res.diagnostics.length) {
       box.appendChild(A.DiagnosticView.renderList(res.diagnostics));
     }
@@ -38,14 +38,14 @@
 
   function digestCard(res, rawOpen, onToggleRaw) {
     var box = Dom.el("div", "card");
-    box.appendChild(Dom.el("h2", null, "InstructionPacket 摘要"));
+    box.appendChild(Dom.el("h2", null, "指令包摘要"));
     DIGEST_ROWS.forEach(function (r) { row(box, r[0], r[1], res.digest[r[2]]); });
     var chk = res.schemaCheck;
     var kind = chk.checked ? (chk.ok ? "ok" : "bad") : "warn";
     var line = Dom.el("div", "status " + kind, chk.message);
     line.id = "cp-schema-check";
     box.appendChild(line);
-    var t = Dom.el("button", "btn secondary", rawOpen ? "隐藏 Raw JSON" : "查看 Raw JSON");
+    var t = Dom.el("button", "btn secondary", rawOpen ? "隐藏原始 JSON" : "查看原始 JSON");
     t.id = "cp-raw-toggle";
     t.addEventListener("click", onToggleRaw);
     box.appendChild(t);
@@ -57,11 +57,11 @@
     return box;
   }
 
-  /* Rendered Prompt 用只读 textarea：Ctrl+A / Ctrl+C 即可复制。
+  /* 已渲染提示词用只读 textarea：Ctrl+A / Ctrl+C 即可复制。
    * 刻意不使用 Clipboard API——它会触发权限申请，破坏 local-first 与 file:// 下的确定性。 */
   function promptCard(res) {
     var box = Dom.el("div", "card");
-    box.appendChild(Dom.el("h2", null, "Rendered Prompt"));
+    box.appendChild(Dom.el("h2", null, "已渲染提示词"));
     var ta = document.createElement("textarea");
     ta.id = "cp-prompt";
     ta.className = "prompt-box";

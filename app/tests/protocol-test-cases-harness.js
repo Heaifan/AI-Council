@@ -1,4 +1,4 @@
-/* AI Council v0.1 — D2-F1 用例：Developer Harness 接线（TEST-129..143）。
+/* AI Council v0.1 — 开发验证台接线用例（建于 D2-F1，D3 沿用；TEST-129..144）。
  *
  * 本组测试守三条底线：
  *  1. Role ≠ Participant ≠ Model —— Compiler 的可选对象只能来自 meeting.participants[]。
@@ -60,22 +60,31 @@
     return false;
   }
 
-  T.test("TEST-129", "index.html 必须装配 D2-F1 全链路脚本，且不得残留已删除面板", function (ctx) {
+  T.test("TEST-129", "index.html 必须装配 D3 全链路脚本、中文顶栏，且不得残留过期文案", function (ctx) {
     var html = (ctx.appSources || {})["app/index.html"];
     T.assert(typeof html === "string", "未采集到 app/index.html");
     [
       "js/instruction-compiler.js", "js/prompt-renderer.js", "js/role-card-registry.js",
       "js/instruction-packet-schema.js",
+      "js/invocation/agent-web-relay-controller.js", "js/invocation/invocation-message-factory.js",
       "js/harness/harness-store.js", "js/harness/participant-binding.js",
-      "js/harness/meeting-step-flow.js", "js/harness/compile-flow.js", "js/harness/archive-flow.js",
+      "js/harness/meeting-step-flow.js", "js/harness/relay-flow.js",
+      "js/harness/compile-flow.js", "js/harness/archive-flow.js",
+      "js/ui/ui-text.js",
       "js/ui/harness/meeting-actions.js", "js/ui/harness/meeting-runtime-view.js",
+      "js/ui/harness/web-relay-actions.js", "js/ui/harness/web-relay-view.js",
       "js/ui/harness/compiler-packet-view.js", "js/ui/harness/compiler-view.js",
       "js/ui/harness/harness-shell.js"
     ].forEach(function (src) {
       T.assert(html.indexOf('src="' + src + '"') >= 0, "index.html 缺少脚本：" + src);
     });
     T.assert(html.indexOf("meeting-persistence-ui.js") < 0, "index.html 不得再引用已删除的 D1-R4 面板");
-    T.assert(html.indexOf("D2-F1 Integration Harness") >= 0, "顶部阶段徽标必须是 D2-F1 Integration Harness");
+    T.assert(html.indexOf("AI 顾问委员会 · 开发验证台") >= 0, "顶部标题必须是中文「AI 顾问委员会 · 开发验证台」");
+    T.assert(html.indexOf('class="badge">人工网页中继') >= 0, "顶部徽标必须是中文「人工网页中继」");
+    T.assert(html.indexOf('id="runtime-status"') >= 0, "必须有与能力灯分开的独立「当前状态」行");
+    ["D2-F1", "Developer Harness", "Integration Harness"].forEach(function (dead) {
+      T.assert(html.indexOf(dead) < 0, "index.html 不得残留过期文案：" + dead);
+    });
     ["tab-btn-protocols", "tab-btn-meeting", "tab-btn-compiler"].forEach(function (id) {
       T.assert(html.indexOf('id="' + id + '"') >= 0, "缺少 Tab 按钮：" + id);
     });
@@ -98,7 +107,7 @@
     return openProject(ctx).then(function (state) {
       var gate = A.ParticipantBinding.compilerState(state.meeting);
       T.assertEqual(gate.enabled, false, "无 Meeting 时必须禁用");
-      T.assert(gate.reason.indexOf("Meeting") >= 0, "禁用理由必须指向 Meeting 页：" + gate.reason);
+      T.assert(gate.reason.indexOf("创建会议") >= 0, "禁用理由必须用中文指引去「会议」页建会：" + gate.reason);
       T.assertEqual(A.ParticipantBinding.options(state.meeting, state.roleRegistry, null).length, 0, "不得列出任何可选对象");
     });
   });

@@ -1,12 +1,15 @@
-/* AI Council v0.1 — D2-F1
- * MeetingActions：Meeting Tab 的按钮行为（点击 → 调用无 DOM 流程 → 回写 Store）。
+/* AI Council v0.1 — D3 · WEB_RELAY
+ * MeetingActions：会议页的按钮行为（点击 → 调用无 DOM 流程 → 回写 Store）。
  * 与 MeetingRuntimeView 分离：视图只管画，本文件只管做，二者都不含业务规则。
+ * 所有提示文字面向用户，一律中文；机器状态值经 UIText 翻译。
  */
 (function (root) {
   "use strict";
 
   var A = root.AICouncil;
-  var msg = { text: "选择项目目录后，点 Create Demo Meeting 生成会议。", kind: "info" };
+  var msg = { text: "请先选择项目目录，然后创建会议。", kind: "info" };
+
+  var NO_PROTOCOL = "可用议事规则里找不到 committee-mvp，请选择包含 protocols/committee-mvp/ 的项目目录。";
 
   function message() { return msg; }
   function say(text, kind) { msg = { text: text, kind: kind || "info" }; }
@@ -14,38 +17,34 @@
 
   function create() {
     var proto = A.HarnessStore.availableProtocol("committee-mvp");
-    if (!proto) {
-      say("Available 中找不到 committee-mvp，请选择包含 protocols/committee-mvp/ 的项目目录。", "warn");
-      A.HarnessStore.notify();
-      return;
-    }
+    if (!proto) { say(NO_PROTOCOL, "warn"); A.HarnessStore.notify(); return; }
     var r = A.MeetingStepFlow.createDemo(proto);
     if (!r.ok) { say(r.message, "bad"); A.HarnessStore.notify(); return; }
-    say("已创建 Demo Meeting，停在 " + r.meeting.currentPhaseId + "（未预跑任何步骤）。", "ok");
+    say("已创建模拟会议，停在阶段 " + r.meeting.currentPhaseId + "（未预跑任何步骤）。", "ok");
     A.HarnessStore.setMeeting(r.meeting, proto);
   }
 
   function step(state) {
     var r = A.MeetingStepFlow.step(state.meeting, state.protocol);
-    say(r.ok ? ("已推进一步：" + r.participantId + " 完成 " + r.phaseId + "。") : r.message, r.ok ? "ok" : "warn");
+    say(r.ok ? ("已推进一步：" + r.participantId + " 完成阶段 " + r.phaseId + "。") : r.message, r.ok ? "ok" : "warn");
     A.HarnessStore.setMeeting(state.meeting);
   }
 
-  /* 生成含 web_relay 参与者的演示会议（agent-a1=web_relay），用于演练 Manual Relay。 */
+  /* 生成含 web_relay 委员的演示会议（agent-a1=web_relay），用于走通人工网页中继。 */
   function createRelay() {
     var proto = A.HarnessStore.availableProtocol("committee-mvp");
-    if (!proto) { say("Available 中找不到 committee-mvp，请选择包含 protocols/committee-mvp/ 的项目目录。", "warn"); A.HarnessStore.notify(); return; }
+    if (!proto) { say(NO_PROTOCOL, "warn"); A.HarnessStore.notify(); return; }
     var r = A.RelayFlow.createRelayDemo(proto);
     if (!r.ok) { say(r.message, "bad"); A.HarnessStore.notify(); return; }
-    say("已创建 Relay Demo（agent-a1 为 web_relay），停在 " + r.meeting.currentPhaseId + "。", "ok");
+    say("已创建网页中继会议（委员 A1 走网页中继），停在阶段 " + r.meeting.currentPhaseId + "。", "ok");
     A.HarnessStore.setMeeting(r.meeting, proto);
   }
 
-  /* Human Gate 只能走这里：Mock 永远不得代替人类选择 finish / continue / battle。 */
+  /* 人工裁定点只能走这里：模拟 Agent 永远不得代替人类选择 finish / continue / battle。 */
   function decide(state, choice) {
     var r = A.MeetingStepFlow.decide(state.meeting, state.protocol, choice);
-    say(r.ok ? ("人工决策 " + choice + " 已提交，当前 Phase：" + (state.meeting.currentPhaseId || "—") + "。" +
-      (r.note ? " " + r.note : "")) : r.message, r.ok ? "ok" : "warn");
+    say(r.ok ? ("人工裁定「" + A.UIText.choice(choice) + "」已提交，当前阶段：" +
+      (state.meeting.currentPhaseId || "—") + "。" + (r.note ? " " + r.note : "")) : r.message, r.ok ? "ok" : "warn");
     A.HarnessStore.setMeeting(state.meeting);
   }
 

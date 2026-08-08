@@ -1,5 +1,5 @@
-/* AI Council v0.1 — D2-F1 Developer Harness
- * 唯一职责：把用户的一次目录选择接到 ProtocolSession，渲染 Protocols Tab，并把 Session 交给 HarnessStore。
+/* AI Council v0.1 — 开发验证台入口（建于 D2-F1，D3 沿用）
+ * 唯一职责：把用户的一次目录选择接到 ProtocolSession，渲染「议事规则」Tab，并把 Session 交给 HarnessStore。
  * 本文件不含任何定时器、轮询、watcher 或网络请求，也不参与会议推进 / 编译（那是 harness/* 的事）。
  */
 (function (root) {
@@ -29,19 +29,19 @@
      * Meeting 与 Compiler 两个 Tab 只从 Store 取状态，绝不各自再去碰 snapshot。 */
     A.HarnessStore.setSession(state.snapshot, session);
     if (!session.registry) {
-      status("Session 未初始化：缺少可用的正式 Schema。", "warn");
+      status("本次会话未能初始化：缺少可用的正式 Schema 文件。", "warn");
       return;
     }
     var c = session.registry.counts;
-    status("Session " + session.sessionId + " 已冻结 · Available " + c.available +
-      " · Invalid " + c.invalid + " · Diagnostics " + c.diagnostics,
+    status("会话 " + session.sessionId + " 已冻结 · 可用规则 " + c.available +
+      " · 已隔离 " + c.invalid + " · 诊断 " + c.diagnostics,
       c.invalid ? "warn" : "ok");
   }
 
   function onDirectoryChosen(event) {
     var files = event.target.files;
     if (!files || !files.length) return;
-    status("正在建立 File Snapshot…（本次读取后不再访问磁盘）", "info");
+    status("正在建立目录只读快照…（本次读取后不再访问磁盘）", "info");
     A.FileSource.fromFileList(files).then(function (snapshot) {
       state.snapshot = snapshot;
       // F01: 重新选择目录必须结束旧 Schema Override，让新目录自行发现自身 Schema。

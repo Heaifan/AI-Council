@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D3 · WEB_RELAY — Manual Relay 实现完成：169/169 Node PASS；Browser Gate 因沙箱无 Playwright NOT VERIFIED，待开发机复跑）
+> 最后更新：2026-08-08（D3 · WEB_RELAY — 中文 UI + 浏览器测试补齐 + 测试治理：169/169 Node PASS；Browser Gate 因沙箱无 Playwright NOT VERIFIED，待开发机复跑 B01..B25 + A01..A10）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -25,11 +25,11 @@ AI-Council/
 
 ```text
 app/
-├── index.html                 # 双击即运行入口（D2-F1 Developer Harness：能力灯 + Protocols/Meeting/Compiler 三 Tab）
+├── index.html                 # 双击即运行入口（AI 顾问委员会 · 开发验证台：能力灯 6 个 + 议事规则/会议/指令编译 三 Tab + 独立运行状态行）
 ├── css/
-│   └── app.css                # 浅色简洁样式（含 .tabs / .capability / .prompt-box 等 D2-F1 样式）
+│   └── app.css                # 浅色简洁样式（含 .tabs / .capability / .runtime-status / .workitem 等）
 ├── js/
-│   ├── app.js                 # 启动编排：选目录 → 建 Snapshot → 初始化 Session → 交给 HarnessStore
+│   ├── app.js                 # 启动编排：选目录 → 建 Snapshot → 初始化 Session → 交给 HarnessStore（D3 中文状态文案）
 │   ├── protocol-loader.js        # File → 文本 → JSON.parse → Parsed Object
 │   ├── protocol-schema-validator.js  # Ajv 2020 封装，加载正式 Schema
 │   ├── protocol-semantic-validator.js  # D1-R2 确定性语义校验（可达性/Human Gate/Side/Role）
@@ -72,14 +72,15 @@ app/
 │   │   └── archive-flow.js           # buildArchive / restoreFrom（Schema + Restore 语义校验 + 原子恢复）
 │   └── ui/
 │       ├── dom.js               # 轻量 DOM 工具
+│       ├── ui-text.js           # ★D3 UI 中文文案单一来源（94 行）：TERM/RELAY_STATE/MEETING_STATUS/CHOICE/TRANSPORT/ERROR 六张映射 + 六个查询函数；机器状态值不经此文件
 │       ├── diagnostic-view.js   # 坏规则诊断渲染
-│       ├── registry-view.js     # Available / Invalid 列表渲染（Protocols Tab）
+│       ├── registry-view.js     # 可用规则 / 已隔离规则列表渲染（中文标签 + 中文空状态）
 │       └── harness/             # ★D2-F1 视图层（DOM，只画不判规则）
-│           ├── harness-shell.js       # 能力灯（含 WebRelay）+ 三 Tab 切换 + 订阅 Store 全量重绘；Meeting Tab 内嵌 RuntimeView + WebRelayView
-│           ├── meeting-actions.js     # Meeting Tab 按钮行为（点击→调流程层→回写 Store）；含 createRelay + load 后 hydrate
-│           ├── meeting-runtime-view.js# Meeting Tab 渲染（状态卡 + 步进/Human Gate/Create Relay Demo 按钮启用规则）
-│           ├── web-relay-actions.js   # ★D3 WEB_RELAY 面板点击行为（37 行，模块内持有 handle/最近校验）
-│           ├── web-relay-view.js      # ★D3 WEB_RELAY 面板渲染（57 行：readonly Prompt + 复制 / 粘贴 / V01–V05 清单 / 接受·拒绝·重试·取消）
+│           ├── harness-shell.js       # 能力灯 6 个（含 WebRelay）+ 独立运行状态行 + 三 Tab 切换 + 订阅 Store 全量重绘
+│           ├── meeting-actions.js     # Meeting Tab 按钮行为（中文提示）；含 createRelay + load 后 hydrate
+│           ├── meeting-runtime-view.js# Meeting Tab 渲染（中文状态 + 内部状态双行 + Create Relay Demo 按钮启用规则）
+│           ├── web-relay-actions.js   # ★D3 WEB_RELAY 面板点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
+│           ├── web-relay-view.js      # ★D3 WEB_RELAY 面板渲染（92 行：选中全部提示词 / 粘贴 / V01–V05 清单 / 接受·拒绝·重试·取消；中文状态 + 内部状态双行）
 │           ├── compiler-view.js       # Compiler Tab 渲染（禁用态 / Participant 下拉 / 角色解析）
 │           └── compiler-packet-view.js# 编译产物渲染（摘要 / Raw JSON / Rendered Prompt 只读 textarea）
 ├── vendor/
@@ -87,8 +88,8 @@ app/
 └── tests/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
-    ├── run-node.js             # Node 入口（自动测试，现 169 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow）
-    ├── run-browser.js          # Playwright 真机验收入口（覆盖 D1 Protocols + D2-F1 Meeting/Compiler + ★D3 WEB_RELAY Manual Relay B01..B20 真实点击链路；沙箱无 Playwright → NOT VERIFIED）
+    ├── run-node.js             # Node 入口（自动测试，现 169 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery）
+    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols 7 + D2 Meeting/Compiler 19 + ★D3 WEB_RELAY B01..B25 + 测试页 1 + JS错误 2 = ≥54；沙箱无 Playwright → NOT VERIFIED）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
@@ -101,7 +102,8 @@ app/
     ├── protocol-test-cases-harness.js     # ★TEST-129..144（D2-F1 接线：脚本装配/冻结/禁用/Mock单步/Human Gate/Role≠Participant/Save-Load）
     ├── protocol-test-cases-web-relay-contract.js   # ★D3D0-01..08（D3-D0 合同结构：Request/Result）
     ├── protocol-test-cases-web-relay-state.js      # ★D3D0-09..12（D3-D0 状态机/TransportAdapter/WebRelay 端到端；D3-D0-F1 由 169 行单文件拆分）
-    ├── protocol-test-cases-web-relay-flow.js       # ★WR-01..13（D3 WEB_RELAY Manual Relay 流程：open/validate(V01–V05)/accept/reject/retry/cancel/Save-Load/hydrate/step 路由）
+    ├── protocol-test-cases-web-relay-flow.js       # ★WR-01..05（D3 WEB_RELAY 生命周期：open/validate(V01–V05)/accept/submit；67 行，由 145 行拆分）
+    ├── protocol-test-cases-web-relay-recovery.js   # ★WR-06..13（D3 WEB_RELAY 持久化与集成：Save/Load/cancel/retry/step路由/accept写messages；98 行，由 145 行拆分）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/
@@ -173,6 +175,6 @@ docs/
 - **AI 回答不直接成为会议事实**：禁止 `Paste → meeting.messages.push(...)` 捷径；必经 `WebRelayController.validate`（V01–V05）→ `accept`，再由 `InvocationMessageFactory` 落成 `accepted_by_runtime=true` 的正式 Message。
 - **Human Gate 仍不是 Transport**：`waiting_human` 时 WEB_RELAY 必须完全停下；`MeetingStepFlow.step` 遇 web_relay 参与者返回 `{ok:false, reason:"web_relay"}`，绝不替外部 AI 推进会议。
 - **Schema 零改动**：复用既有 `event_type`（agent_output_received 等）、`participants[].transport_kind`、`meeting.state_data`（开放袋存 web_relay 运行态 + hydrate 断点续传）；不新增事件枚举（延续 D3-D0-F1 移除 invocation_waiting 的治理）。
-- **能力灯**：WebRelay ✅（`HarnessShell` 按 `A.WebRelayController && A.RelayFlow` 存在性判定）。
-- **红线**：核心文件均 ≤100 行（controller 56 / message-factory 43 / relay-flow 82 / web-relay-view 57 / web-relay-actions 37；request.js 106 享 ≤110 例外）；测试文件 WR 145 行（仓库既有测试文件已不受此约束）。
-- **完成门禁**：Node 169/169 PASS、Contract 12/12、Line Audit / Dead Reference / Script Assembly / Schema·Manifest 均 PASS；**Browser Gate NOT VERIFIED（沙箱无 Playwright，待开发机复跑 run-browser.js B01..B20 + 人工验收 A01..A10）**。
+- **能力灯**：Protocol ✅ Runtime ✅ Persistence ✅ Compiler ✅ Renderer ✅ WebRelay ✅（6 个，HarnessShell 按模块存在性判定，与是否已建会议无关）。
+- **红线**：核心文件均 ≤100 行（controller 56 / message-factory 43 / relay-flow 82 / web-relay-view 92 / web-relay-actions 78 / ui-text 94；request.js 106 享 ≤110 例外）；测试文件 WR flow 67 + recovery 98（由 145 行拆分，均 ≤100）。
+- **完成门禁**：Node 169/169 PASS、Contract 12/12、Line Audit / Dead Reference / Script Assembly / Schema·Manifest 均 PASS；中文 UI 审计 PASS（0 处过期 D2-F1 文案）；**Browser Gate NOT VERIFIED（沙箱无 Playwright，待开发机复跑 run-browser.js B01..B25 + 人工验收 A01..A10）**。
