@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .idea/
 .vscode/
+node_modules/
 
 ## WorkBuddy 工作区数据（项目相关，不是缓存，勿删；但不入库）
 .workbuddy/

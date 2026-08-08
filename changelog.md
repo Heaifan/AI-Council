@@ -2,7 +2,15 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
-## D3-D0-F1 — Closure Gate Fix（门禁与治理修复，D3-D0 不 CLOSED）— 2026-08-08
+## D3-D0-F2 — Browser Gate Closure（最终收口，D3-D0 CLOSED）— 2026-08-08
+
+- **背景**：用户在正式开发机真实执行 `node app/tests/run-browser.js`，得 **29/29 PASS**（真机 Chrome，非静态审计、非预计）。据此把 Browser Gate 由 `NOT VERIFIED` 翻为正式 `PASS`，唯一 Blocking Issue 清除。本轮**仅做仓库收口，无任何功能开发**，禁止自动进入 D3-R1。
+- **依赖正式化**：`app/tests/run-browser.js` 正式依赖 `playwright-core`，已写入 `devDependencies`（`^1.62.1`）+ 保留 `package-lock.json`；新增 `.gitignore` 忽略 `node_modules/`（依赖经 `npm install` 恢复，不入库）。新开发机可 `npm install` 直接恢复 Browser Gate 依赖。
+- **验证（F2 后新鲜复跑）**：`run-node.js` **156/156 PASS**（零回归）；Browser Gate **29/29 PASS**（D1 Protocol / D2-F1 Integration / D1 nested test page 均无浏览器回归）；Script Assembly / Dead Reference / Schema·Manifest / Line Audit 均 PASS；Git clean（HEAD == origin/main 0/0，`node_modules/` 已忽略）。
+- **状态**：`D3-D0-F2: PASS · D3-D0: CLOSED · WEB_RELAY Contract: FROZEN · Browser Gate: PASS · 29/29 · Blocking Issues: 0 · Recommendation: ENTER D3-R1`。`NOT VERIFIED` 第三态纪律保留为项目长期规则（本次反向验证其价值：初版非测试失败，而是缺依赖；补齐后直接 29/29）。
+- 更新 `docs/d3-web-relay-contract.md`（§14 D3-D0-F2 最终收口 + 状态翻 PASS）、`changelog.md`、`file-tree.md`、`.gitignore`。
+
+## D3-D0-F1 — Closure Gate Fix（门禁与治理修复，已由 D3-D0-F2 翻为 CLOSED）— 2026-08-08
 
 - **背景**：D3-D0 架构方向获认可，但 Closure Gate 不完整，裁定 **D3-D0 KEEP OPEN**，禁止进入 D3-R1。本轮只修门禁与治理问题，不改架构。
 - **门禁纠正**：D3-D0 初次提交宣布 `D3-D0: PASS` 证据不足——`run-browser.js`（Playwright 真机 29/29）在开发沙箱**未执行**（Playwright 缺失，且 safe-delete 拦截浏览器下载）。固化规则：**「未执行」= NOT VERIFIED，既非 PASS 也非 FAIL**。

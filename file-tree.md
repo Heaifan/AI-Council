@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D2-F1 Integration Harness + D3-D0 WEB_RELAY Contract Freeze 更新）
+> 最后更新：2026-08-08（D3-D0-F2 Browser Gate Closure：playwright-core 入 devDependencies + .gitignore 忽略 node_modules）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -16,7 +16,9 @@ AI-Council/
 ├── reports/                   # 开发报告 + 真机验收截图（d1-r1-screenshots/ / d2-f1-screenshots/）
 ├── file-tree.md               # 本文件
 ├── changelog.md
-└── .gitignore
+├── package.json               # ★D3-D0-F2：devDependencies 含 playwright-core（run-browser.js 正式依赖）
+├── package-lock.json          # ★D3-D0-F2：lockfile（node_modules/ 经 npm install 恢复，不入 git）
+└── .gitignore                 # ★D3-D0-F2：忽略 node_modules/
 ```
 
 ## app/（D1-R1 / D1-R2 / D1-R3 / D1-R4 / D2-R1 / D2-R2 / D2-F1 正式实现，核心目录）

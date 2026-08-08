@@ -1,8 +1,7 @@
 # D3-D0 — WEB_RELAY Contract Freeze（合同冻结，D3 第一步）
 
-> **状态更正（D3-D0-F1）**：原「D3-D0: PASS / Blocking Issues: 0」证据不足——Browser Gate 在开发沙箱**未执行**（Playwright 缺失，且安全策略拦截浏览器下载）。
-> 正确状态：**Contract Implementation COMPLETE · Node/Contract Gate PASS · Browser Gate NOT VERIFIED · D3-D0 KEEP OPEN**。
-> 不自动进入 D3-R1；待人工在具备 Playwright 的环境复跑浏览器门禁并确认后拍板。
+> **最终状态（D3-D0-F2，2026-08-08）**：**D3-D0: CLOSED · WEB_RELAY Contract: FROZEN · Browser Gate: PASS · 29/29 · Blocking Issues: 0 · Recommendation: ENTER D3-R1**。
+> 历史更正记录（保留不删）：D3-D0 初版曾误宣布 `PASS / Blocking=0`，但 Browser Gate 当时在沙箱**未执行**（Playwright 缺失）；D3-D0-F1 据「NOT VERIFIED 第三态」纪律将其纠正为 `KEEP OPEN / Browser NOT VERIFIED`。后用户在正式开发机真实执行 `node app/tests/run-browser.js` 得 **29/29 PASS**，F2 据此把 Browser Gate 翻为正式 PASS 并收口依赖。
 > 适用范围：D3 的第一刀只冻结「服务于 **Manual WEB_RELAY** 的最小 Transport 合同」。
 > 严禁在本轮预实现 API / LOCAL / WEB_AUTOMATION；核心合同严禁承载任何供应商或 UI 专有字段。
 
@@ -297,22 +296,57 @@ D3-D0 架构方向获认可（WEB_RELAY 优先、Transport 与 Protocol/Role 解
 
 移除 `invocation_waiting` 后已同步：`meeting.schema.json`（枚举）、`manifest.sha256.json`（哈希刷新）、本 doc；**无任何 JS/测试引用该值，零行为影响**。
 
-### 13.3 Gate 状态（F1 后）
+### 13.3 Gate 状态（F1 后 · 历史快照，保留）
 
 | Gate | 结果 |
 |---|---|
 | Node Tests | **PASS**（156/156，含拆分后 12 条合同测试，零回归） |
 | Contract Tests | **PASS**（D3D0-01..12 全过） |
-| Browser Gate（Playwright 真机 29/29） | **NOT VERIFIED**（沙箱无 Playwright 且安全策略拦截下载，未能补跑） |
+| Browser Gate（Playwright 真机 29/29） | **NOT VERIFIED（历史）**——沙箱无 Playwright 且安全策略拦截下载，未能补跑 |
 | Script Assembly（TEST-129） | **PASS** |
 | Dead Reference | **PASS**（无旧文件名 / invocation_waiting 残留） |
 | Schema JSON / Manifest 一致性 | **PASS** |
 | Line Audit | **PASS**（≤110 例外已记录，其余 ≤100） |
 | Blocking Issues | **1**（Browser Gate 未验证） |
 
-> **D3-D0: KEEP OPEN · WEB_RELAY Contract: FROZEN（合同本身已冻结）· Browser Gate: NOT VERIFIED · Recommendation: 禁止进入 D3-R1，待人工在具备 Playwright 环境复跑 `node app/tests/run-browser.js` 并确认 29/29 后，方可宣布 D3-D0 CLOSED。**
+> **（历史）D3-D0: KEEP OPEN · WEB_RELAY Contract: FROZEN（合同本身已冻结）· Browser Gate: NOT VERIFIED · Recommendation: 禁止进入 D3-R1，待人工在具备 Playwright 环境复跑 `node app/tests/run-browser.js` 并确认 29/29 后，方可宣布 D3-D0 CLOSED。**
 
-### 13.4 固化规则（建议升格为项目纪律）
+### 13.4 固化规则（升格为项目纪律）
 
 **「未执行」是独立第三态：NOT VERIFIED —— 既不是 PASS，也不是 FAIL。**
 本委员会自身处理「事实 / 推断 / 未验证信息」边界，开发过程应先做到：任何 Gate 未真实执行，必须显式标为 NOT VERIFIED，不得用「仅加法改动、理论上无回归风险」代替实际门禁。
+
+---
+
+## 14. D3-D0-F2 · Browser Gate Closure（最终收口，D3-D0 CLOSED）
+
+用户在正式开发机真实执行 `node app/tests/run-browser.js`，得到 **29/29 PASS**（非静态审计、非预计）。据此把 Browser Gate 由 `NOT VERIFIED` 翻为正式 `PASS`，并做仓库收口：`playwright-core` 正式写入 `devDependencies`（lockfile 保留，`node_modules/` 入库忽略），新开发机可经 `npm install` 恢复 Browser Gate 依赖。本轮仅收口，**无任何功能开发**，不自动进入 D3-R1。
+
+**F2 用户提供的新鲜真机证据：**
+```
+=== chrome ===
+D1 Protocol checks             PASS
+D2-F1 Integration checks      PASS
+D1 nested test page           PASS
+总计 29 · 通过 29 · 失败 0
+```
+
+### 14.1 最终 Gate 状态（F2 后 · CLOSED）
+
+| Gate | 结果 |
+|---|---|
+| Node Tests | **PASS**（156/156，新鲜复跑，零回归） |
+| Contract Tests | **PASS**（D3D0-01..12，12/12） |
+| Browser Gate（Playwright 真机） | **PASS · 29/29**（用户真机证据，D1 Protocol / D2-F1 / 内嵌 D1 测试页均无浏览器回归） |
+| Script Assembly（TEST-129） | **PASS** |
+| Dead Reference | **PASS** |
+| Schema JSON / Manifest 一致性 | **PASS** |
+| Line Audit | **PASS**（≤110 例外已记录，其余 ≤100） |
+| Git / 依赖 | **clean**（`playwright-core` 入 devDependencies + lockfile；`node_modules/` 已 gitignore；HEAD == origin/main，0/0） |
+| Blocking Issues | **0** |
+
+> **D3-D0-F2: PASS · D3-D0: CLOSED · WEB_RELAY Contract: FROZEN · Browser Gate: PASS · 29/29 · Blocking Issues: 0 · Recommendation: ENTER D3-R1。**
+
+### 14.2 NOT VERIFIED 第三态的闭环验证
+
+本次也反向验证了该纪律的价值：D3-D0 初版并非测试失败，而是环境缺依赖；把 `playwright-core` 正式补齐、在具备依赖的环境真实跑测试后直接 29/29。若当初允许把「未执行」写成 PASS，这一真实证据缺口会被掩盖。故 NOT VERIFIED 第三态保留为项目长期纪律。
