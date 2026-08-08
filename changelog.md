@@ -2,6 +2,19 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D3 · WEB_RELAY — 会议控制台整改（Console Refactor）— 2026-08-08
+
+- **目的**：把「纵向堆卡片的 Developer Harness 测试页」整改成真正可用的三栏桌面会议控制台。用户裁定：不再小修 CSS，整体重做操作壳。自动测试基线：Node 169/169、Browser 56/56（用户真机复跑）。
+- **Schema 最小变更（Stop Condition #1 处置，用户批准方案 A）**：`meeting.schema.json` 新增 `topic`（optional 1–2000）、`instruction-packet.schema.json` 的 `meeting` 对象新增 `topic`、`manifest.sha256.json` 同步哈希；数据链 `Draft → Meeting.topic → packet.meeting.topic → Prompt「## 会议议题」段` 完整贯通；**严格只加 topic**（未顺手加 goal/agenda/description），Runtime 核心职责零改动；空议题不落字段（避免 minLength:1 违规）。
+- **三栏布局**：`320px / minmax(0,1fr) / 320px`（≥1440）；1024–1439 右栏降底；<1024 单栏。左栏会议配置（名称/议题/议事规则/与会者模型配置/创建会议），中栏当前执行 + Prompt/Response 大工作区（min-height 220px 占满中栏），右栏会议状态 + 步进/人工裁定/存档按钮，底部时间线/审计日志折叠区；顶栏项目条压缩（项目：AI-Council ✅ [更换]）+ IndexedDB 记住上次项目名（file:// 安全模型无法自动恢复读取 → 「上次项目：X [重新授权]」）。
+- **MeetingDraft（新）**：创建前草稿模型（title/topic/protocolId/participants），**不是事实源**——创建后核心配置冻结，Runtime 不回读 Draft；Demo（Mock/Relay）降级到「开发工具」独立区块，主操作只有「创建会议」。
+- **WebRelayTargetProfile（新）**：web_url 属 Transport 配置（**不污染 Participant Schema**，audit 确认 `additionalProperties:false` 本就禁止）；默认 ChatGPT/Claude/Gemini 三 Profile，Participant 只引用 `model_ref`；「打开模型网页」=`window.open(url)`，仅 http/https、空/非法 URL 按钮禁用（C06/C07 测试）。
+- **Validation 折叠**：普通状态单行「校验通过/失败 + 错误码」，V01–V05 折叠进「查看校验详情」；内部状态小字单列；完整运行状态可折叠。
+- **测试**：Node **179/179**（新增 TEST-145/146 议题数据链、TEST-147..154 Draft/Profile 模型）；Browser **72/72**（原 56 零回归 + C01..C16 控制台新增：议题可编辑/创建后冻结/URL 可编辑/打开参数正确/三栏存在/Prompt 工作区 ≥500px/Demo 退出主操作区/默认会议 Tab）；Schema 验证 PASS。run-browser.js 的 D1 段开头加一次显式切回「议事规则」Tab（默认 Tab 已按方案改「会议」，断言零改动）。
+- **已知取舍（如实报告）**：① 开发工具默认展开（56 基线直接点击 Demo 按钮的可见性契约使「默认折叠」不可行，取独立次级区块妥协）；② 上次项目只记名不自动恢复（file:// 安全模型）；③ 默认 Tab 改「会议」。
+- 新增 `reports/d3-console-refactor.md`（A01..A12 真机验收 IPO 清单）；同步 file-tree.md。
+- **状态**：`D3 · 会议控制台整改: IMPLEMENTED · Node 179/179 · Browser 72/72 · 人工真机验收 A01..A12 待执行`。
+
 ## D3 · WEB_RELAY — 中文 UI + 浏览器测试补齐 + 测试治理 — 2026-08-08
 
 - **目的**：Manual Relay 真机收口的最后一轮——WebRelay 红叉根因修复、全量 UI 中文化、浏览器测试从 0 补到 25 条（B01..B25）、145 行测试文件治理拆分。**机器合同保持英文，用户界面全面中文。**

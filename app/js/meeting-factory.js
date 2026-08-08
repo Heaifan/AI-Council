@@ -50,6 +50,7 @@
       protocolId: doc.protocol_id,
       protocolVersion: doc.version,
       title: config.title || (doc.name || doc.protocol_id),
+      topic: (config.topic === undefined ? "" : String(config.topic)),
       visibilityMode: config.visibilityMode || doc.default_visibility_mode || null,
       /* seed 必须是 >=0 的整数（meeting.schema.json 要求 required + integer + minimum:0）。
        * 确定性 Runtime 的默认种子取 0，不使用 null，避免 Archive 出现不可存档状态。 */

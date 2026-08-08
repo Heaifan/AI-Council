@@ -36,6 +36,8 @@ const waitStatus = (page, re) =>
 /* ---------- D1-R1：Protocols Tab ---------- */
 async function runD1(page) {
   await page.goto(appUrl);
+  /* D3 起默认 Tab 是「会议」（主工作区）；D1 断言议事规则页内容，先显式切回。 */
+  await page.click("#tab-btn-protocols");
   await page.setInputFiles("#dir-input", repoRoot);
   await waitStatus(page, /可用规则 1 · 已隔离 0/);
   let text = await statusText(page);
@@ -323,6 +325,89 @@ async function runD3(page) {
   await page.screenshot({ path: path.join(shotDirD3, "03-cancelled.png"), fullPage: true });
 }
 
+/* ---------- D4：会议控制台（C01..C16，D3 · 会议控制台整改新增） ---------- */
+async function runD4(page) {
+  await page.goto(appUrl);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+
+  /* C16：默认打开会议 Tab（方案 §17） */
+  const mtTabClass = await page.locator("#tab-btn-meeting").getAttribute("class");
+  check("C16 · 默认打开「会议」Tab（主工作区）", (mtTabClass || "").includes("active"));
+
+  /* C12：三栏布局存在（方案 §三：320 | flexible | 320） */
+  const cols = await page.locator("#console").evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+  check("C12 · 会议控制台为三栏 grid 布局", cols === 3, "列数=" + cols);
+
+  /* C13/C14：Prompt / Response 是主工作区（1920 下中栏大幅宽） */
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.fill("#cfg-title", "玄域引擎战略评审");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.fill("#cfg-topic", "是否应该继续自研玄域引擎？");
+  await page.dispatchEvent("#cfg-topic", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#relay-hint");
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  const promptW = await page.locator("#relay-prompt").evaluate((el) => el.getBoundingClientRect().width);
+  const respW = await page.locator("#relay-paste").evaluate((el) => el.getBoundingClientRect().width);
+  check("C13 · Prompt 工作区为主区域（宽度 ≥ 500px）", promptW >= 500, "width=" + Math.round(promptW));
+  check("C14 · Response 工作区为主区域（宽度 ≥ 500px）", respW >= 500, "width=" + Math.round(respW));
+
+  /* C08/C09：议题进入会议与 Prompt（方案 §21 核心测试） */
+  const meetingTopic = await page.evaluate(() => (AICouncil.HarnessStore.get().meeting || {}).topic || "");
+  check("C08 · 创建会议使用编辑后的议题", meetingTopic === "是否应该继续自研玄域引擎？", meetingTopic);
+  const promptVal = await page.locator("#relay-prompt").inputValue();
+  check("C09 · Prompt 真实包含编辑后的议题", promptVal.includes("是否应该继续自研玄域引擎？"));
+
+  /* C10：创建后核心配置冻结（会议名称/议题不可再编辑） */
+  check("C10 · 创建后核心配置冻结（名称/议题输入禁用）",
+    await page.locator("#cfg-title").isDisabled() && await page.locator("#cfg-topic").isDisabled());
+
+  /* C11：Web URL 创建后仍允许修改（Transport 便利配置例外，方案 §11） */
+  check("C11 · 创建后模型网页 URL 仍可编辑",
+    !(await page.locator("#cfg-url-agent-a1").isDisabled()));
+
+  /* C01/C02/C03：会议名称 / 议题 / 议事规则 可编辑（创建前） */
+  await page.click("#mt-clear");
+  await page.waitForFunction(() => !document.getElementById("cfg-title").disabled);
+  check("C01 · 会议名称可编辑", !(await page.locator("#cfg-title").isDisabled()));
+  check("C02 · 议题可编辑", !(await page.locator("#cfg-topic").isDisabled()));
+  check("C03 · 议事规则可选择",
+    await page.locator("#cfg-protocol").evaluate((el) => el.options.length >= 1 && !el.disabled));
+
+  /* C04/C05：model_ref / Web URL 可编辑（创建前） */
+  check("C04 · model_ref 可编辑", !(await page.locator("#cfg-model-ref-agent-a1").isDisabled()));
+  check("C05 · 模型网页 URL 可编辑", !(await page.locator("#cfg-url-agent-a1").isDisabled()));
+
+  /* C06：非法 URL 时按钮禁用（非 http/https 不允许打开） */
+  await page.fill("#cfg-url-agent-a1", "not-a-url");
+  await page.dispatchEvent("#cfg-url-agent-a1", "change");
+  check("C06 · 非法 URL 时「打开模型网页」禁用",
+    await page.locator("#cfg-open-web-agent-a1").isDisabled());
+  await page.fill("#cfg-url-agent-a1", "https://chatgpt.com/");
+  await page.dispatchEvent("#cfg-url-agent-a1", "change");
+
+  /* C07：打开模型网页参数正确（拦截 window.open，不真开互联网） */
+  await page.evaluate(() => {
+    window.__opened = [];
+    const orig = window.open;
+    window.open = function (u) { window.__opened.push(u); return null; };
+  });
+  await page.click("#cfg-open-web-agent-a1");
+  const opened = await page.evaluate(() => window.__opened || []);
+  check("C07 · 打开模型网页传参正确（window.open 收到配置 URL）",
+    opened.length === 1 && opened[0] === "https://chatgpt.com/", JSON.stringify(opened));
+
+  /* C15：Demo 不在主操作区（开发工具独立区块，主操作只有「创建会议」） */
+  const demoInDevTools = await page.locator("#dev-tools #mt-create-relay").count();
+  const primaryBtns = await page.locator("#console-config .btn.primary").allInnerTexts();
+  check("C15 · Demo 按钮不在主操作区（位于开发工具区块）",
+    demoInDevTools === 1 && primaryBtns.length === 1 && primaryBtns[0].includes("创建会议"), JSON.stringify(primaryBtns));
+
+  await page.screenshot({ path: path.join(shotDirD3, "04-console.png"), fullPage: true });
+}
+
 /* ---------- 自动测试页（D1-R1 用例） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
@@ -347,6 +432,7 @@ async function runChannel(channel) {
   await runD1(page);
   await runD2(page);
   await runD3(page);
+  await runD4(page);
   await runTestPage(page);
 
   await browser.close();

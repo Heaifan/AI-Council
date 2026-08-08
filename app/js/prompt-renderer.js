@@ -116,6 +116,13 @@
     return ["## 本阶段任务", esc(instr.task) || "（未指定任务）"].join("\n");
   }
 
+  /* 议题（meeting.topic）：会议核心事实，经 Compiler 编入 packet.meeting.topic 后原样呈现。 */
+  function topicSection(p) {
+    var t = p.meeting && p.meeting.topic;
+    if (typeof t !== "string" || !t.trim()) return null;
+    return "## 会议议题\n" + t.trim();
+  }
+
   function contextSection(p) {
     var instr = p.instruction || {};
     var scope = instr.context_scope || "none";
@@ -227,6 +234,7 @@
 
     var parts = [
       header(packet),
+      topicSection(packet),
       selfLabel(packet),
       roleCardSection(packet),
       taskSection(packet),

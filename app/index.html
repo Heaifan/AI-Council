@@ -10,43 +10,36 @@
 <header class="top">
   <h1>AI 顾问委员会 · 开发验证台</h1>
   <span class="badge">人工网页中继</span>
+  <div id="project-bar" class="project-bar"></div>
 </header>
-
-<p class="workitem">当前工作项：D3 · WEB_RELAY</p>
 
 <div id="capabilities" class="capability-row"></div>
 <div id="runtime-status" class="runtime-status">当前状态：等待选择项目目录</div>
 
-<section class="controls">
-  <label class="btn">
-    选择项目目录
-    <input type="file" id="dir-input" webkitdirectory directory multiple hidden>
-  </label>
-  <label class="btn secondary">
-    指定正式规则 Schema
-    <input type="file" id="schema-input" accept="application/json,.json" hidden>
-  </label>
-  <span class="current">当前目录：<code id="dir-current">（未选择）</code></span>
-  <p class="hint">
-    浏览器无法自动扫描本地磁盘，请手动选择 AI-Council 项目根目录。目录中应包含：
-    <code>protocols/**/protocol.json</code>、<code>schema/schemas/*.schema.json</code> 与 <code>roles/*.json</code>。
-  </p>
+<section class="controls project-controls">
+  <input type="file" id="dir-input" webkitdirectory directory multiple hidden>
+  <input type="file" id="schema-input" accept="application/json,.json" hidden>
 </section>
 
 <div id="status" class="status info">正在加载…</div>
 
 <nav class="tabs" role="tablist">
-  <button type="button" class="tab active" id="tab-btn-protocols" role="tab">议事规则</button>
-  <button type="button" class="tab" id="tab-btn-meeting" role="tab">会议</button>
+  <button type="button" class="tab" id="tab-btn-protocols" role="tab">议事规则</button>
+  <button type="button" class="tab active" id="tab-btn-meeting" role="tab">会议</button>
   <button type="button" class="tab" id="tab-btn-compiler" role="tab">指令编译</button>
 </nav>
 
 <main>
-  <section class="tab-panel active" id="tab-protocols">
+  <section class="tab-panel" id="tab-protocols">
     <div id="output"></div>
   </section>
-  <section class="tab-panel" id="tab-meeting">
-    <div id="view-meeting"></div>
+  <section class="tab-panel active" id="tab-meeting">
+    <div class="console" id="console">
+      <aside class="console-left" id="console-config"></aside>
+      <section class="console-center" id="console-relay"></section>
+      <aside class="console-right" id="console-status"></aside>
+    </div>
+    <div id="console-timeline"></div>
   </section>
   <section class="tab-panel" id="tab-compiler">
     <div id="view-compiler"></div>
@@ -95,6 +88,8 @@
 <script src="js/mock-agent-runtime.js"></script>
 <script src="js/harness/harness-store.js"></script>
 <script src="js/harness/participant-binding.js"></script>
+<script src="js/harness/meeting-draft.js"></script>
+<script src="js/harness/relay-profiles.js"></script>
 <script src="js/harness/meeting-step-flow.js"></script>
 <script src="js/harness/relay-flow.js"></script>
 <script src="js/harness/compile-flow.js"></script>
@@ -104,9 +99,17 @@
 <script src="js/ui/diagnostic-view.js"></script>
 <script src="js/ui/registry-view.js"></script>
 <script src="js/ui/harness/meeting-actions.js"></script>
-<script src="js/ui/harness/meeting-runtime-view.js"></script>
 <script src="js/ui/harness/web-relay-actions.js"></script>
-<script src="js/ui/harness/web-relay-view.js"></script>
+<script src="js/ui/harness/console-actions.js"></script>
+<script src="js/ui/harness/config-participant.js"></script>
+<script src="js/ui/harness/config-panel.js"></script>
+<script src="js/ui/harness/relay-verdict.js"></script>
+<script src="js/ui/harness/relay-workarea.js"></script>
+<script src="js/ui/harness/relay-panel.js"></script>
+<script src="js/ui/harness/status-panel.js"></script>
+<script src="js/ui/harness/timeline-panel.js"></script>
+<script src="js/ui/harness/dev-tools-panel.js"></script>
+<script src="js/ui/harness/project-bar.js"></script>
 <script src="js/ui/harness/compiler-packet-view.js"></script>
 <script src="js/ui/harness/compiler-view.js"></script>
 <script src="js/ui/harness/harness-shell.js"></script>

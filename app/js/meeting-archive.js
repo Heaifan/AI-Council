@@ -49,7 +49,7 @@
     var doc = docOf(protocol);
     return FP.sha256Canonical(doc).then(function (sha) {
       var firstEvent = (meeting.events && meeting.events.length) ? meeting.events[0].occurred_at : Log.now();
-      return {
+      var archive = {
         schema_version: "0.1.0",
         meeting_id: meeting.meetingId,
         title: meeting.title,
@@ -76,6 +76,9 @@
         created_at: firstEvent,
         updated_at: Log.now()
       };
+      var t = (meeting.topic === undefined ? "" : meeting.topic);
+      if (typeof t === "string" && t.trim()) archive.topic = t.trim();
+      return archive;
     });
   }
 

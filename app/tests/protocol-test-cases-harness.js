@@ -60,7 +60,7 @@
     return false;
   }
 
-  T.test("TEST-129", "index.html 必须装配 D3 全链路脚本、中文顶栏，且不得残留过期文案", function (ctx) {
+  T.test("TEST-129", "index.html 必须装配 D3 会议控制台全链路脚本、中文顶栏，且不得残留过期文案", function (ctx) {
     var html = (ctx.appSources || {})["app/index.html"];
     T.assert(typeof html === "string", "未采集到 app/index.html");
     [
@@ -68,17 +68,23 @@
       "js/instruction-packet-schema.js",
       "js/invocation/agent-web-relay-controller.js", "js/invocation/invocation-message-factory.js",
       "js/harness/harness-store.js", "js/harness/participant-binding.js",
+      "js/harness/meeting-draft.js", "js/harness/relay-profiles.js",
       "js/harness/meeting-step-flow.js", "js/harness/relay-flow.js",
       "js/harness/compile-flow.js", "js/harness/archive-flow.js",
       "js/ui/ui-text.js",
-      "js/ui/harness/meeting-actions.js", "js/ui/harness/meeting-runtime-view.js",
-      "js/ui/harness/web-relay-actions.js", "js/ui/harness/web-relay-view.js",
+      "js/ui/harness/meeting-actions.js", "js/ui/harness/web-relay-actions.js",
+      "js/ui/harness/console-actions.js", "js/ui/harness/config-participant.js",
+      "js/ui/harness/config-panel.js", "js/ui/harness/relay-verdict.js",
+      "js/ui/harness/relay-panel.js", "js/ui/harness/status-panel.js",
+      "js/ui/harness/project-bar.js",
       "js/ui/harness/compiler-packet-view.js", "js/ui/harness/compiler-view.js",
       "js/ui/harness/harness-shell.js"
     ].forEach(function (src) {
       T.assert(html.indexOf('src="' + src + '"') >= 0, "index.html 缺少脚本：" + src);
     });
-    T.assert(html.indexOf("meeting-persistence-ui.js") < 0, "index.html 不得再引用已删除的 D1-R4 面板");
+    ["meeting-persistence-ui.js", "meeting-runtime-view.js", "web-relay-view.js"].forEach(function (dead) {
+      T.assert(html.indexOf(dead) < 0, "index.html 不得再引用已删除的旧面板：" + dead);
+    });
     T.assert(html.indexOf("AI 顾问委员会 · 开发验证台") >= 0, "顶部标题必须是中文「AI 顾问委员会 · 开发验证台」");
     T.assert(html.indexOf('class="badge">人工网页中继') >= 0, "顶部徽标必须是中文「人工网页中继」");
     T.assert(html.indexOf('id="runtime-status"') >= 0, "必须有与能力灯分开的独立「当前状态」行");
@@ -88,6 +94,8 @@
     ["tab-btn-protocols", "tab-btn-meeting", "tab-btn-compiler"].forEach(function (id) {
       T.assert(html.indexOf('id="' + id + '"') >= 0, "缺少 Tab 按钮：" + id);
     });
+    T.assert(html.indexOf('id="project-bar"') >= 0, "必须有顶部项目条（目录压缩）");
+    T.assert(html.indexOf('id="console"') >= 0, "必须有会议控制台三栏容器");
   });
 
   T.test("TEST-130", "选择目录后 Snapshot 同时冻结 Role Card 库 / Schema Pack / Packet Schema", function (ctx) {

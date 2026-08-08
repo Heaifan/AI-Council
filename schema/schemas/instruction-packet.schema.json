@@ -58,6 +58,11 @@
         "meeting_id": {
           "type": "string"
         },
+        "topic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
         "visibility_mode": {
           "type": [
             "string",

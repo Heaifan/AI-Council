@@ -31,6 +31,7 @@
       protocolId: archive.protocol_snapshot.protocol_id,
       protocolVersion: archive.protocol_snapshot.version,
       title: archive.title,
+      topic: (archive.topic === undefined ? "" : archive.topic),
       visibilityMode: archive.visibility_mode,
       seed: (typeof archive.seed === "number" ? archive.seed : 0),
       status: archive.status,

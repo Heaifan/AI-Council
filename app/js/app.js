@@ -28,6 +28,8 @@
     /* D2-F1：Session 与其随行资产（Schema Pack / Role Card 库）一次性交给 HarnessStore，
      * Meeting 与 Compiler 两个 Tab 只从 Store 取状态，绝不各自再去碰 snapshot。 */
     A.HarnessStore.setSession(state.snapshot, session);
+    if (A.ConsoleActions) A.ConsoleActions.resetSessionState();
+    if (A.ProjectBar) A.ProjectBar.writeLast(session.rootName || "");
     if (!session.registry) {
       status("本次会话未能初始化：缺少可用的正式 Schema 文件。", "warn");
       return;

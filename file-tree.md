@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D3 · WEB_RELAY — 中文 UI + 浏览器测试补齐 + 测试治理：169/169 Node PASS；Browser Gate 因沙箱无 Playwright NOT VERIFIED，待开发机复跑 B01..B25 + A01..A10）
+> 最后更新：2026-08-08（D3 · WEB_RELAY — 会议控制台整改：Node 179/179 · Browser 72/72 · 人工真机验收 A01..A12 待执行）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -66,6 +66,8 @@ app/
 │   ├── harness/                     # ★D2-F1 无 DOM 流程层（可在 Node 直接测试，每文件 ≤100 行）+ ★D3 WEB_RELAY 编排层
 │   │   ├── harness-store.js          # 共享状态 + 订阅；setSession 从 snapshot.assetFiles 冻结装入 Role Card/Schema Pack/Packet Schema
 │   │   ├── participant-binding.js    # Participant 下拉来源（只来自 meeting.participants[]）+ 当前相位 actor 标注 + Compiler 禁用态
+│   │   ├── meeting-draft.js          # ★D3 会议控制台 MeetingDraft（81 行）：创建前草稿模型 + 校验 + 一次性创建（Draft 非事实源，创建后冻结）
+│   │   ├── relay-profiles.js         # ★D3 WebRelayTargetProfile（66 行）：Transport 本地配置（web_url 不进 Schema）+ URL 安全校验 + upsert
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
 │   │   ├── relay-flow.js             # ★D3 WEB_RELAY 编排层（82 行）：CompileFlow↔WebRelayController 接合；routeStep 供 step 委托停下；createRelayDemo；依赖项调用时取 A.*
@@ -75,12 +77,20 @@ app/
 │       ├── ui-text.js           # ★D3 UI 中文文案单一来源（94 行）：TERM/RELAY_STATE/MEETING_STATUS/CHOICE/TRANSPORT/ERROR 六张映射 + 六个查询函数；机器状态值不经此文件
 │       ├── diagnostic-view.js   # 坏规则诊断渲染
 │       ├── registry-view.js     # 可用规则 / 已隔离规则列表渲染（中文标签 + 中文空状态）
-│       └── harness/             # ★D2-F1 视图层（DOM，只画不判规则）
-│           ├── harness-shell.js       # 能力灯 6 个（含 WebRelay）+ 独立运行状态行 + 三 Tab 切换 + 订阅 Store 全量重绘
-│           ├── meeting-actions.js     # Meeting Tab 按钮行为（中文提示）；含 createRelay + load 后 hydrate
-│           ├── meeting-runtime-view.js# Meeting Tab 渲染（中文状态 + 内部状态双行 + Create Relay Demo 按钮启用规则）
-│           ├── web-relay-actions.js   # ★D3 WEB_RELAY 面板点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
-│           ├── web-relay-view.js      # ★D3 WEB_RELAY 面板渲染（92 行：选中全部提示词 / 粘贴 / V01–V05 清单 / 接受·拒绝·重试·取消；中文状态 + 内部状态双行）
+│       └── harness/             # ★D2-F1 视图层（DOM，只画不判规则）+ ★D3 会议控制台三栏面板
+│           ├── harness-shell.js       # 外壳：能力灯 6 个 + 独立运行状态行 + 三 Tab（默认会议）+ 订阅 Store 全量重绘；装配三栏 + 项目条 + 时间线
+│           ├── meeting-actions.js     # 会议按钮行为（中文提示）；含 createRelay + load 后 hydrate
+│           ├── web-relay-actions.js   # ★D3 WEB_RELAY 中继点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
+│           ├── console-actions.js     # ★D3 控制台动作层（98 行）：MeetingDraft 状态持有 / 创建会议冻结 / 打开模型网页 / 清空会议
+│           ├── config-participant.js  # ★D3 左栏与会者配置卡（80 行：角色/模型名称/模型引用/传输方式/模型网页 + 打开）
+│           ├── config-panel.js        # ★D3 左栏会议配置总装（81 行：名称/议题/议事规则 + 创建会议 Primary）
+│           ├── relay-workarea.js      # ★D3 中栏 Prompt/Response 大工作区（53 行，页面最大区域）
+│           ├── relay-verdict.js       # ★D3 校验状态行 + 折叠详情（46 行，V01–V05 不霸占页面）
+│           ├── relay-panel.js         # ★D3 中栏总装（96 行：当前执行 + 工作区 + 校验折叠 + 接受/拒绝/重试/取消）
+│           ├── status-panel.js        # ★D3 右栏会议状态（89 行：中文 + 内部小字 + 步进/人工裁定/存档按钮）
+│           ├── timeline-panel.js      # ★D3 底部会议时间线/审计日志折叠区（40 行）
+│           ├── dev-tools-panel.js     # ★D3 开发工具折叠区（39 行：Demo 装载/清空，退出主流程）
+│           ├── project-bar.js         # ★D3 顶栏项目条（85 行：目录压缩为一行 + IndexedDB 记住上次项目）
 │           ├── compiler-view.js       # Compiler Tab 渲染（禁用态 / Participant 下拉 / 角色解析）
 │           └── compiler-packet-view.js# 编译产物渲染（摘要 / Raw JSON / Rendered Prompt 只读 textarea）
 ├── vendor/
@@ -88,8 +98,8 @@ app/
 └── tests/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
-    ├── run-node.js             # Node 入口（自动测试，现 169 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery）
-    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols 7 + D2 Meeting/Compiler 19 + ★D3 WEB_RELAY B01..B25 + 测试页 1 + JS错误 2 = ≥54；沙箱无 Playwright → NOT VERIFIED）
+    ├── run-node.js             # Node 入口（自动测试，现 179 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft）
+    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols + D2-F1 Meeting/Compiler + D3 WEB_RELAY B01..B25 + D4 会议控制台 C01..C16 真实点击链路；72 项）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
@@ -104,6 +114,7 @@ app/
     ├── protocol-test-cases-web-relay-state.js      # ★D3D0-09..12（D3-D0 状态机/TransportAdapter/WebRelay 端到端；D3-D0-F1 由 169 行单文件拆分）
     ├── protocol-test-cases-web-relay-flow.js       # ★WR-01..05（D3 WEB_RELAY 生命周期：open/validate(V01–V05)/accept/submit；67 行，由 145 行拆分）
     ├── protocol-test-cases-web-relay-recovery.js   # ★WR-06..13（D3 WEB_RELAY 持久化与集成：Save/Load/cancel/retry/step路由/accept写messages；98 行，由 145 行拆分）
+    ├── protocol-test-cases-console-draft.js        # ★TEST-147..154（D3 会议控制台：MeetingDraft 校验/一次性创建/议题落库 + RelayProfiles URL 安全/upsert；123 行，测试文件不受 ≤100 约束）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/

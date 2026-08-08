@@ -262,4 +262,36 @@
       T.assert(rendered.text.indexOf("半匿名") >= 0, "端到端 committee 默认半匿名");
     });
   });
+
+  /* ---------- 议题数据链（D3 · 会议控制台）：用户输入议题 → Meeting → Packet → Prompt ---------- */
+
+  T.test("TEST-145", "议题数据链：用户输入议题 → Meeting.topic → packet.meeting.topic → Prompt 真实包含", function (ctx) {
+    return A.TestFixtures.buildSession([A.TestFixtures.schemaEntry(ctx.schemaText), A.TestFixtures.protocolEntry("committee", ctx.validText)])
+      .then(function (s) { return s.registry.available[0]; })
+      .then(function (proto) {
+        var topic = "是否应该继续自研玄域引擎？";
+        var m = A.MeetingFactory.createMeeting(proto, { meetingId: "rt-topic", participants: committeeParticipants(), topic: topic });
+        T.assertEqual(m.topic, topic, "Meeting.topic 必须等于用户输入");
+        var compiled = A.InstructionCompiler.compile({ protocol: proto, meeting: m, phaseId: "opening", participantId: "agent-a1", roleRegistry: reg(ctx) });
+        T.assert(compiled.ok, "编译应 ok");
+        T.assertEqual(compiled.packet.meeting.topic, topic, "packet.meeting.topic 必须等于议题");
+        var rendered = A.PromptRenderer.render(compiled.packet);
+        T.assert(rendered.ok, "渲染应 ok");
+        T.assert(rendered.text.indexOf("## 会议议题") >= 0, "Prompt 必须包含「会议议题」段");
+        T.assert(rendered.text.indexOf(topic) >= 0, "Prompt 必须真实包含用户输入的议题文本");
+      });
+  });
+
+  T.test("TEST-146", "议题空值：无 topic 时 packet 不含 topic 字段，Prompt 不出现议题段", function (ctx) {
+    return freshMeeting(ctx).then(function (s) {
+      var compiled = A.InstructionCompiler.compile({
+        protocol: s.proto, meeting: s.m, phaseId: "opening", participantId: "agent-a1", roleRegistry: reg(ctx)
+      });
+      T.assert(compiled.ok, "编译应 ok");
+      T.assert(!Object.prototype.hasOwnProperty.call(compiled.packet.meeting, "topic"), "空议题不应写入 packet（避免 minLength:1 违规）");
+      var rendered = A.PromptRenderer.render(compiled.packet);
+      T.assert(rendered.ok, "渲染应 ok");
+      T.assert(rendered.text.indexOf("## 会议议题") < 0, "空议题不应渲染议题段");
+    });
+  });
 })(typeof globalThis !== "undefined" ? globalThis : this);

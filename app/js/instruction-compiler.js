@@ -148,12 +148,15 @@
       };
     }
 
+    var mt = (meeting.topic === undefined ? "" : meeting.topic);
+    var meetingBlock = { meeting_id: meeting.meetingId, visibility_mode: (meeting.visibilityMode === undefined ? null : meeting.visibilityMode) };
+    if (typeof mt === "string" && mt.trim()) meetingBlock.topic = mt.trim();
     var packet = {
       schema_version: "0.1.0",
       packet_id: "ip-00000000", /* 占位，稍后回填内容哈希 */
       compiler_version: COMPILER_VERSION,
       protocol: { protocol_id: doc.protocol_id, protocol_version: doc.version },
-      meeting: { meeting_id: meeting.meetingId, visibility_mode: (meeting.visibilityMode === undefined ? null : meeting.visibilityMode) },
+      meeting: meetingBlock,
       phase: { phase_id: phase.phase_id, phase_kind: phase.kind, phase_name: phase.name },
       target: {
         participant_id: participant.participant_id,

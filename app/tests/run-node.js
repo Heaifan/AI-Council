@@ -39,6 +39,8 @@ const RUNTIME = [
   "app/js/mock-agent-runtime.js",
   "app/js/harness/harness-store.js",
   "app/js/harness/participant-binding.js",
+  "app/js/harness/meeting-draft.js",
+  "app/js/harness/relay-profiles.js",
   "app/js/harness/meeting-step-flow.js",
   "app/js/harness/relay-flow.js",
   "app/js/harness/compile-flow.js",
@@ -53,6 +55,7 @@ const RUNTIME = [
   "app/tests/protocol-test-cases-compiler.js",
   "app/tests/protocol-test-cases-renderer.js",
   "app/tests/protocol-test-cases-harness.js",
+  "app/tests/protocol-test-cases-console-draft.js",
   "app/js/invocation/agent-invocation-request.js",
   "app/js/invocation/agent-invocation-result.js",
   "app/js/invocation/agent-web-relay-state-machine.js",
@@ -105,7 +108,17 @@ const AUDITED = [
   "app/js/ui/diagnostic-view.js",
   "app/js/ui/registry-view.js",
   "app/js/ui/harness/meeting-actions.js",
-  "app/js/ui/harness/meeting-runtime-view.js",
+  "app/js/ui/harness/web-relay-actions.js",
+  "app/js/ui/harness/console-actions.js",
+  "app/js/ui/harness/config-participant.js",
+  "app/js/ui/harness/config-panel.js",
+  "app/js/ui/harness/relay-verdict.js",
+  "app/js/ui/harness/relay-workarea.js",
+  "app/js/ui/harness/relay-panel.js",
+  "app/js/ui/harness/status-panel.js",
+  "app/js/ui/harness/timeline-panel.js",
+  "app/js/ui/harness/dev-tools-panel.js",
+  "app/js/ui/harness/project-bar.js",
   "app/js/ui/harness/compiler-packet-view.js",
   "app/js/ui/harness/compiler-view.js",
   "app/js/ui/harness/harness-shell.js",
@@ -116,9 +129,7 @@ const AUDITED = [
   "app/js/invocation/agent-mock-transport.js",
   "app/js/invocation/agent-web-relay-transport.js",
   "app/js/invocation/agent-web-relay-controller.js",
-  "app/js/invocation/invocation-message-factory.js",
-  "app/js/ui/harness/web-relay-actions.js",
-  "app/js/ui/harness/web-relay-view.js"
+  "app/js/invocation/invocation-message-factory.js"
 ];
 
 RUNTIME.forEach((rel) => vm.runInThisContext(read(rel), { filename: rel }));
