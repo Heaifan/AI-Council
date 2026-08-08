@@ -38,16 +38,16 @@
     var actions = A.ConsoleActions;
     var mode = actions.getMode();
 
-    /* 顶部模式条 */
-    var bar = Dom.el("div", "mode-bar");
-    bar.appendChild(modeBtn("mode-run", "会议运行", mode === "run", function () { actions.setMode("run"); }));
-    bar.appendChild(modeBtn("mode-seat", "席位配置", mode === "seat", function () { actions.setMode("seat"); }));
-    host.appendChild(bar);
-
-    /* 当前上下文 */
-    var ctx = Dom.el("div", "card context");
-    contextLine(ctx);
-    host.appendChild(ctx);
+    /* 顶部模式条 + 上下文：仅 run 模式显示（seat 模式由表单标题/取消/保存表达，省 80px 让配置一屏）。 */
+    if (mode !== "seat") {
+      var bar = Dom.el("div", "mode-bar");
+      bar.appendChild(modeBtn("mode-run", "会议运行", mode === "run", function () { actions.setMode("run"); }));
+      bar.appendChild(modeBtn("mode-seat", "席位配置", mode === "seat", function () { actions.setMode("seat"); }));
+      host.appendChild(bar);
+      var ctx = Dom.el("div", "card context");
+      contextLine(ctx);
+      host.appendChild(ctx);
+    }
 
     /* 会议配置卡（常驻）：无会议=表单，有会议=冻结摘要 */
     A.ConfigPanel.render(host, state);

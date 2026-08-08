@@ -2,6 +2,19 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## ONE-SCREEN-F1 · 无滚动工作区 + 席位编辑恢复 — 2026-08-08
+
+- **目的**：用户裁定「两个基础问题没解决之前继续测自动化没有意义」——① 会议页仍存在左右席位列和中央配置区纵向滚动条，必须实现真正 One-Screen；② 会议 frozen/running 后六个席位配置被错误整体锁死，必须恢复席位运行配置编辑能力。本轮严格只修这两个问题（不碰 Web Automation / 会议协议 / 其他 UI）。
+- **One-Screen 布局**：body=100dvh flex 列 + overflow hidden；`main` flex:1 min-height:0；`.console` 删除 `calc(100vh-212px)` 与 `min-height:480px`（根因：旧 CSS 丢失 `html{height:100%}` 导致 html 被内容撑开自举放大）。席位卡 6 行字段 → 4 行紧凑摘要（单卡 ~132px）；中央会议配置卡与席位配置卡双栏 grid（备注跨列）；底部开发工具/时间线 = 32px drawer（默认折叠，展开 absolute 覆盖不挤压工作区，重绘保留展开状态）。
+- **冻结解耦（Freeze Meeting ≠ Freeze Seat Configuration）**：新 `SeatConfigRules`（纯逻辑）：`FROZEN_FIELDS=["role_class"]` 字段级权限；创建后 role_class 冻结，**model_ref/transport_kind 可热改**；立场/备注/显示名/URL 永可编辑。`console-actions.setParticipantField` 原 frozen 整体拒绝 → 改为 `canEdit` 矩阵。
+- **交互简化**：席位配置改挂起式编辑 + [取消]/[保存配置] 显式保存（`SeatConfigCommit` 新模块）→ 保存后 `✓ X 配置已保存` 自动返回会议运行；删除「返回会议运行」按钮。
+- **持久化（T06）**：新 `LocalStore`（localStorage 封装）+ `SeatSessionStore`（draft/profiles）+ SeatLocalConfig 落盘；键前缀 `ai-council:v1:`；draft 一次性创建；刷新/重选目录后六席配置（显示名/URL/备注/立场 + 创建前引用/传输）保持；`reset()` 只清内存不清存储。
+- **测试**：Node **188/188**（185 零回归 + TEST-161..163 冻结矩阵：字段级矩阵/创建前全写/创建后角色拒改引用热改）；Browser **135/135**（99 零回归 + F01..F18：1366×768 页面/控制台/左/中/右无滚动、四档分辨率、六席可见可进配置、创建后字段级冻结、保存自动回运行、卡片摘要刷新、会议参与者热改且事件零污染、六席保存→刷新持久化、drawer 默认折叠且不挤压）；Offline **14/14** 零回归；Schema PASS；≤100 红线 PASS（console-actions.js 110 ≤110 登记例外，同 request.js 先例）。
+- **测试适配**：devtools 默认折叠推翻 D3 旧妥协（原「默认展开保可见性契约」）——5 处既有 `#mt-create*`/`#mt-clear` 点击改 `clickDevBtn`（展开→点击→立即折叠，防 overlay 拦截）；C06/C07/S 系列断言零改动（openBtn 按挂起 edits 实时计算）。
+- **已知取舍**：1280×720 中央席位配置允许内部滚动（compact 极限，1366 主门禁无滚动）；seat 模式隐藏顶部模式条/上下文卡（省 80px，由取消/保存表达模式切换）；draft 持久化仅覆盖创建前（会议本身仍走既有手动存档）。
+- 新增 `reports/d3-one-screen-f1.md`；新增模块 4 个（LocalStore/SeatConfigRules/SeatSessionStore/SeatConfigCommit）；同步 file-tree.md。
+- **状态**：`ONE-SCREEN-F1: IMPLEMENTED · Node 188/188 · Browser 135/135 · Offline 14/14 · 真机验收（F 系列截图 + 四档分辨率）待用户复跑`。
+
 ## D3 · WEB_AUTOMATION — ChatGPT 单站 PoC — 2026-08-08
 
 - **目的**：把「人工搬运 Prompt/Response」自动化。本地 Node Automation Worker（automation/）以 localhost 同源模式提供 UI + Automation API + 专用 Chrome Profile；只做 ChatGPT 单站；自动化结果必经校验 + 人工 Accept 才进正式会议（只替代搬运，不替代协议/运行时/校验/裁定）。自动化模式 `node automation/start.js` → http://127.0.0.1:3741/；Manual 模式双击 app/index.html 不变。

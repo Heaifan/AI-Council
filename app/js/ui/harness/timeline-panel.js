@@ -18,13 +18,15 @@
 
   function render(host, meeting) {
     if (!host) return;
+    var wasOpen = host.querySelector("details") ? host.querySelector("details").open : false;   /* 先读后清：保留用户展开状态 */
     Dom.clear(host);
     var box = Dom.el("div", "card timeline");
     var details = document.createElement("details");
     var sum = Dom.el("summary", null, "会议时间线 / 审计日志");
     sum.id = "tl-toggle";
+    details.open = wasOpen;   /* 默认折叠；用户展开后重绘保留 */
     details.appendChild(sum);
-    var list = Dom.el("div", "tl-list");
+    var list = Dom.el("div", "tl-list drawer-body");
     var events = (meeting && meeting.events) || [];
     if (!events.length) {
       list.appendChild(Dom.el("p", "empty", "（暂无事件）"));

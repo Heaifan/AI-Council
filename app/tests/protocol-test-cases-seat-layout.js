@@ -92,4 +92,43 @@
     T.assertEqual(compiled.packet.meeting.topic, "六席议题应进入提示词", "packet 携带议题");
     return Promise.resolve();
   });
+
+  /* ---------- F1：席位配置冻结规则（SeatConfigRules，ONE-SCREEN-F1 §七/§八） ---------- */
+
+  T.test("TEST-161", "字段级冻结矩阵：冻结只锁 role_class，model_ref/transport 仍可编辑", function () {
+    var R = A.SeatConfigRules;
+    T.assert(!R.canEdit(true, "role_class"), "冻结时角色不可编辑");
+    T.assert(R.canEdit(true, "model_ref"), "冻结时模型引用可编辑");
+    T.assert(R.canEdit(true, "transport_kind"), "冻结时传输方式可编辑");
+    T.assert(R.canEdit(false, "role_class"), "未冻结时角色可编辑");
+    T.assert(R.canEdit(false, "model_ref"), "未冻结时模型引用可编辑");
+    return Promise.resolve();
+  });
+
+  T.test("TEST-162", "创建前 applyToParticipant：角色/引用/传输全部可写", function () {
+    var p = { participant_id: "agent-a1", role_class: "advisor", model_ref: "chatgpt-web", transport_kind: "web_relay" };
+    var r = A.SeatConfigRules.applyToParticipant(p,
+      { role_class: "chair_secretary", model_ref: "claude-web", transport_kind: "mock" }, false);
+    T.assert(r.ok, "应成功：" + (r.message || ""));
+    T.assertEqual(p.role_class, "chair_secretary", "角色已更新");
+    T.assertEqual(p.model_ref, "claude-web", "引用已更新");
+    T.assertEqual(p.transport_kind, "mock", "传输已更新");
+    return Promise.resolve();
+  });
+
+  T.test("TEST-163", "创建后 applyToParticipant：角色拒改，引用/传输热改成功", function () {
+    var p = { participant_id: "agent-a1", role_class: "advisor", model_ref: "chatgpt-web", transport_kind: "web_relay" };
+    var r = A.SeatConfigRules.applyToParticipant(p,
+      { role_class: "chair_secretary", model_ref: "claude-web", transport_kind: "mock" }, true);
+    T.assert(!r.ok, "角色改动必须被拒绝");
+    T.assertEqual(p.role_class, "advisor", "角色未被污染");
+    T.assertEqual(p.model_ref, "chatgpt-web", "引用未被污染（整体拒绝）");
+    var r2 = A.SeatConfigRules.applyToParticipant(p,
+      { role_class: "advisor", model_ref: "claude-web", transport_kind: "mock" }, true);
+    T.assert(r2.ok, "引用/传输热改应成功：" + (r2.message || ""));
+    T.assertEqual(p.model_ref, "claude-web", "引用已热改");
+    T.assertEqual(p.transport_kind, "mock", "传输已热改");
+    T.assertEqual(p.role_class, "advisor", "角色保持冻结值");
+    return Promise.resolve();
+  });
 })(typeof globalThis !== "undefined" ? globalThis : this);

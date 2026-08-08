@@ -1,5 +1,6 @@
 /* AI Council v0.1 — D3 · 六席会议控制台 · SeatConfigPanel：中央大屏「席位配置」编辑器（DOM 投影）。
  * 当前选中席位的详细配置表单装配；字段构建在 SeatConfigFields。
+ * F1：保存回调 = SeatConfigCommit.run（写入后自动返回会议运行）；取消 = 直接返回（挂起编辑丢弃）。
  * Browser 契约 id（C 系列）：cfg-model-ref-<pid> / cfg-url-<pid> / cfg-open-web-<pid>。
  */
 (function (root) {
@@ -34,7 +35,9 @@
     box.id = "seat-config";
     box.appendChild(Dom.el("h2", null, (seat ? seat.seat_id : "—") + " · 席位配置" +
       (pt ? "（" + pt.participant_id + "）" : "（空席）")));
-    if (frozen) box.appendChild(Dom.el("p", "note", "核心配置已冻结；模型网页、模型显示名、立场与备注仍可修改。"));
+    if (frozen) {
+      box.appendChild(Dom.el("p", "note", "会议协议与历史已冻结；席位运行配置（模型/引用/传输/网页/立场/备注）仍可修改。"));
+    }
 
     if (!pt) {
       box.appendChild(Dom.el("p", "empty", "该席位当前为空。创建会议前请先为席位分配与会者。"));
@@ -43,7 +46,9 @@
     }
 
     var profile = A.RelayProfiles.findByModelRef(actions.getProfiles(), pt.model_ref || "");
-    A.SeatConfigFields.build(box, pt, seat, profile, frozen, actions);
+    A.SeatConfigFields.build(box, pt, seat, profile, frozen, actions,
+      function (edits) { A.SeatConfigCommit.run(pt.participant_id, seat.seat_id, edits); },
+      function () { actions.setMode("run"); });
     host.appendChild(box);
   }
 

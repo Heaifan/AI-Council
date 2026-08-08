@@ -1,6 +1,6 @@
-/* AI Council v0.1 — D3 · 会议控制台 · DevToolsPanel：开发工具折叠区（退出主流程，次级视觉）。
- * 保留 D2/D3 Browser 契约 id：mt-create / mt-create-relay / mt-clear。
- * 默认展开：基线 Browser 测试直接点击 Demo 按钮（可见性契约）；样式已降级为独立次级区块。
+/* AI Council v0.1 — D3 · 会议控制台 · DevToolsPanel：开发工具（底部 drawer 内，退出主流程，次级视觉）。
+ * F1：默认折叠（32px 条），展开内容由 CSS 绝对定位覆盖在工作区上方，不挤压 workspace；
+ * 保留 D2/D3 Browser 契约 id：mt-create / mt-create-relay / mt-clear；重绘时保留用户展开状态。
  */
 (function (root) {
   "use strict";
@@ -10,13 +10,14 @@
 
   function render(host, hasRegistry, hasMeeting) {
     if (!host) return;
+    var wasOpen = host.querySelector("details") ? host.querySelector("details").open : false;   /* 先读后清：保留用户展开状态 */
     A.Dom.clear(host);
     var details = document.createElement("details");
     details.className = "dev-tools";
     details.id = "dev-tools";
-    details.open = true;
-    details.appendChild(Dom.el("summary", null, "开发工具 ▾"));
-    var box = Dom.el("div", "dev-tools-body");
+    details.open = wasOpen;   /* 默认折叠（F1）；用户展开后重绘保留 */
+    details.appendChild(Dom.el("summary", null, "开发工具"));
+    var box = Dom.el("div", "dev-tools-body drawer-body");
     var demo = Dom.el("button", "btn secondary", "加载 Mock Demo");
     demo.id = "mt-create";
     demo.disabled = !hasRegistry;

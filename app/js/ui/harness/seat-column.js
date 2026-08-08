@@ -1,5 +1,5 @@
 /* AI Council v0.1 — D3 · 六席会议控制台 · SeatColumn：左右席位列装配（DOM 投影）。
- * 左列 = A1..A3（支持侧），右列 = B1..B3（质疑侧）+ 右列底部会议摘要窄卡。
+ * 左列 = A1..A3（支持侧），右列 = B1..B3（质疑侧）+ 右列底部会议摘要窄卡（F1 压缩为双列）。
  * 席位卡 = SeatCard 摘要卡（选中/编辑/打开网页）；详细配置进中央大屏，不在两侧铺开。
  */
 (function (root) {
@@ -12,7 +12,7 @@
     return A.SeatLayout.SEATS.filter(function (s) { return s.side === side; });
   }
 
-  /* 会议摘要窄卡（方案 §七方案 B）：状态/阶段/当前发言/已接收数/正式消息数，一行一值，不做大卡片。 */
+  /* 会议摘要窄卡（F1 双列 grid：状态/内部、阶段/事件数、应发言/已接收，按钮行 + 消息行）。 */
   function meetingSummary(state) {
     var box = Dom.el("div", "card summary-card");
     box.appendChild(Dom.el("h2", null, "会议摘要"));
@@ -23,26 +23,28 @@
       box.appendChild(e);
       return box;
     }
-    var line = function (id, key, val) {
+    var line = function (target, id, key, val) {
       var f = Dom.el("div", "seat-line");
       f.appendChild(Dom.el("span", "seat-key", key));
       var v = Dom.el("span", "seat-val", val);
       v.id = id;
       f.appendChild(v);
-      box.appendChild(f);
+      target.appendChild(f);
     };
-    line("mt-status", "状态", A.UIText.meetingStatus(s.status));
-    line("mt-status-raw", "内部", s.status);
-    line("mt-phase", "阶段", s.currentPhaseId || "—");
+    var grid = Dom.el("div", "summary-grid");
+    line(grid, "mt-status", "状态", A.UIText.meetingStatus(s.status));
+    line(grid, "mt-status-raw", "内部", s.status);
+    line(grid, "mt-phase", "阶段", s.currentPhaseId || "—");
+    line(grid, "mt-events", "事件数", s.events);
     if (s.pending) {
-      line("mt-required", "应发言", s.pending.required.join(", ") || "—");
-      line("mt-received", "已接收",
+      line(grid, "mt-required", "应发言", s.pending.required.join(", ") || "—");
+      line(grid, "mt-received", "已接收",
         s.pending.received.length ? (s.pending.received.join(", ")) : "（无）");
     }
-    line("mt-events", "事件数", s.events);
+    box.appendChild(grid);
     var gate = A.MeetingStepFlow.humanGateState(state.meeting);
     var bar = Dom.el("div", "controls");
-    var step = Dom.el("button", "btn secondary", "执行下一步");
+    var step = Dom.el("button", "btn secondary small", "执行下一步");
     step.id = "mt-step";
     var canStep = !!(s.pending && s.pending.type === A.MeetingAction.ACTION.COLLECT_RESPONSES);
     step.disabled = !canStep;
@@ -50,16 +52,16 @@
     bar.appendChild(step);
     [["mt-finish", "结束会议", "finish"], ["mt-continue", "继续会议", "continue"], ["mt-battle", "进入对辩", "battle"]].forEach(function (g) {
       var off = !gate.enabled || gate.choices.indexOf(g[2]) < 0;
-      var b = Dom.el("button", "btn secondary", g[1]);
+      var b = Dom.el("button", "btn secondary small", g[1]);
       b.id = g[0]; b.disabled = off;
       if (!off) b.addEventListener("click", function () { A.MeetingActions.decide(state, g[2]); });
       bar.appendChild(b);
     });
-    var save = Dom.el("button", "btn secondary", "保存");
+    var save = Dom.el("button", "btn secondary small", "保存");
     save.id = "mt-save"; save.disabled = !state.meeting;
     save.addEventListener("click", function () { A.MeetingActions.save(state); });
     bar.appendChild(save);
-    var load = Dom.el("button", "btn secondary", "加载");
+    var load = Dom.el("button", "btn secondary small", "加载");
     load.id = "mt-load"; load.disabled = !state.registry;
     load.addEventListener("click", function () { A.MeetingActions.load(state); });
     bar.appendChild(load);

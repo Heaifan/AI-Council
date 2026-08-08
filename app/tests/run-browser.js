@@ -33,6 +33,13 @@ const statusText = (page) => page.locator("#status").innerText();
 const waitStatus = (page, re) =>
   page.waitForFunction((src) => new RegExp(src).test(document.getElementById("status").textContent), re.source, { timeout: 30000 });
 
+/* F1：开发工具默认折叠（drawer）——点击 drawer 内按钮 = 展开 → 点击 → 立即折叠（避免 overlay 拦截工作区）。 */
+const openDevTools = (page) =>
+  page.evaluate(() => { const d = document.getElementById("dev-tools"); if (d && !d.open) d.open = true; });
+const closeDevTools = (page) =>
+  page.evaluate(() => { const d = document.getElementById("dev-tools"); if (d && d.open) d.open = false; });
+const clickDevBtn = async (page, id) => { await openDevTools(page); await page.click(id); await closeDevTools(page); };
+
 /* ---------- D1-R1：Protocols Tab ---------- */
 async function runD1(page) {
   await page.goto(appUrl);
@@ -92,8 +99,7 @@ async function runD2(page) {
     (await page.locator("#cp-disabled").innerText()).includes("创建会议"));
 
   await page.click("#tab-btn-meeting");
-  await page.waitForSelector("#mt-create");
-  await page.click("#mt-create");
+  await clickDevBtn(page, "#mt-create");
   await page.waitForSelector("#mt-phase");
   let phase = await page.locator("#mt-phase").innerText();
   check("D2 · Create Demo 停在 opening", phase === "opening", phase);
@@ -215,8 +221,7 @@ async function runD3(page) {
   await page.setInputFiles("#dir-input", repoRoot);
   await waitStatus(page, /可用规则 1 · 已隔离 0/);
   await page.click("#tab-btn-meeting");
-  await page.waitForSelector("#mt-create-relay");
-  await page.click("#mt-create-relay");
+  await clickDevBtn(page, "#mt-create-relay");
   await page.waitForSelector("#mt-phase");
   check("B08 · 创建网页中继会议后状态为「进行中」",
     (await page.locator("#mt-status-raw").innerText()) === "running");
@@ -279,7 +284,7 @@ async function runD3(page) {
     await page.locator("#mt-step").isEnabled());
 
   /* B21-B24：错误处理（空响应→拒绝→重新生成→通过→接受） */
-  await page.click("#mt-create-relay");
+  await clickDevBtn(page, "#mt-create-relay");
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
@@ -311,7 +316,7 @@ async function runD3(page) {
     (await page.locator("#relay-msg").innerText()).includes("已接受为正式发言"));
 
   /* B25：取消 */
-  await page.click("#mt-create-relay");
+  await clickDevBtn(page, "#mt-create-relay");
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
@@ -369,7 +374,7 @@ async function runD4(page) {
     !(await page.locator("#cfg-url-agent-a1").isDisabled()));
 
   /* C01/C02/C03：会议名称 / 议题 / 议事规则 可编辑（创建前） */
-  await page.click("#mt-clear");
+  await clickDevBtn(page, "#mt-clear");
   await page.waitForFunction(() => !document.getElementById("cfg-title").disabled);
   check("C01 · 会议名称可编辑", !(await page.locator("#cfg-title").isDisabled()));
   check("C02 · 议题可编辑", !(await page.locator("#cfg-topic").isDisabled()));
@@ -499,7 +504,7 @@ async function runD6(page) {
   }
 
   /* 创建网页中继会议，进入运行模式 */
-  await page.click("#mt-create-relay");
+  await clickDevBtn(page, "#mt-create-relay");
   await page.waitForSelector("#relay-open");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
@@ -556,6 +561,135 @@ async function runD6(page) {
   await page.screenshot({ path: path.join(shotDirD3, "06-one-screen.png"), fullPage: true });
 }
 
+/* ---------- F1：One-Screen 硬验收 + 席位编辑恢复（ONE-SCREEN-F1 方案） ---------- */
+const PID_OF_SEAT = { A1: "agent-a1", A2: "agent-a2", A3: "agent-a3", B1: "agent-b1", B2: "agent-b2", B3: "agent-b3" };
+const ALL_SEATS = ["A1", "A2", "A3", "B1", "B2", "B3"];
+const seatConfigShows = (page, seatId) =>
+  page.waitForFunction((id) => {
+    const h = document.querySelector("#seat-config h2");
+    return h && h.textContent.includes(id);
+  }, seatId);
+
+async function runF1(page) {
+  await page.goto(appUrl);
+  await page.evaluate(() => localStorage.clear());   /* 可重复运行：清上次遗留的席位配置 */
+  await page.reload();                               /* 清后重载，确保 start() 读到干净存储 */
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* F01/F02：1366×768 主门禁——页面/三栏/控制台无纵向滚动 + 六席同时完整可见 */
+  await page.setViewportSize({ width: 1366, height: 768 });
+  const noScrollAll = await page.evaluate(() => {
+    const ok = (el) => el.scrollHeight <= el.clientHeight + 1;
+    return ok(document.scrollingElement) && ok(document.getElementById("console")) &&
+      ok(document.getElementById("console-left")) && ok(document.getElementById("console-center")) &&
+      ok(document.getElementById("console-right"));
+  });
+  check("F01 · 1366×768：页面/控制台/左/中/右均无纵向滚动条", noScrollAll);
+  for (const s of ALL_SEATS) {
+    const v = await page.locator("#seat-" + s).isVisible();
+    check("F02 · 1366×768 席位 " + s + " 完整可见", v);
+    if (!v) break;
+  }
+
+  /* F03：1920×1080 / 1600×900 无整体纵向滚动 */
+  for (const vp of [[1920, 1080], [1600, 900]]) {
+    await page.setViewportSize({ width: vp[0], height: vp[1] });
+    const sc = await page.evaluate(() => document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight);
+    check("F03 · " + vp[0] + "×" + vp[1] + " 无整体纵向滚动", !sc);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const sc720 = await page.evaluate(() => document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight);
+  check("F03b · 1280×720 无整体纵向滚动（compact）", !sc720);
+  await page.setViewportSize({ width: 1366, height: 768 });
+
+  /* F04：六席「配置」按钮逐一可进入（创建前） */
+  for (const s of ALL_SEATS) {
+    await page.click("#seat-" + s);
+    await seatConfigShows(page, s);
+    check("F04 · 席位 " + s + " 可进入配置", await page.locator("#seat-config").isVisible());
+  }
+
+  /* F05-F09：创建会议后字段级冻结——角色锁，模型/传输/立场/备注放开（T05） */
+  await page.click("#seat-A1");
+  await seatConfigShows(page, "A1");
+  await page.fill("#cfg-title", "F1 冻结解耦验收");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.fill("#cfg-topic", "F1 席位热改议题");
+  await page.dispatchEvent("#cfg-topic", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#relay-hint");
+  await page.click("#seat-A1");
+  await seatConfigShows(page, "A1");
+  check("F05 · 创建后角色下拉冻结", await page.locator("#cfg-role-agent-a1").isDisabled());
+  check("F06 · 创建后 model_ref 仍可编辑", !(await page.locator("#cfg-model-ref-agent-a1").isDisabled()));
+  check("F07 · 创建后传输方式仍可编辑", !(await page.locator("#cfg-transport-agent-a1").isDisabled()));
+  check("F08 · 创建后立场仍可编辑", !(await page.locator("#cfg-stance-agent-a1").isDisabled()));
+  check("F09 · 创建后备注仍可编辑", !(await page.locator("#cfg-note-agent-a1").isDisabled()));
+
+  /* F10-F13：热改保存 → 自动回运行 + 席位卡刷新 + 会议参与者更新且历史不受污染 */
+  const evBefore = await page.evaluate(() => AICouncil.HarnessStore.get().meeting.events.length);
+  await page.fill("#cfg-model-ref-agent-a1", "claude-web");
+  await page.dispatchEvent("#cfg-model-ref-agent-a1", "change");
+  await page.fill("#cfg-url-agent-a1", "https://claude.ai/");
+  await page.dispatchEvent("#cfg-url-agent-a1", "change");
+  await page.click("#seat-config-save");
+  await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+  check("F10 · 保存后自动返回会议运行模式",
+    (await page.locator("#mode-run").getAttribute("class")).includes("active"));
+  check("F11 · 保存后席位卡摘要立即刷新（Claude · claude-web）",
+    (await page.locator("#seat-A1").innerText()).includes("Claude"));
+  const modelRefNow = await page.evaluate(() => AICouncil.HarnessStore.get().meeting.participants[0].model_ref);
+  check("F12 · 创建后热改 model_ref 写入会议 participants", modelRefNow === "claude-web", modelRefNow);
+  const evAfter = await page.evaluate(() => AICouncil.HarnessStore.get().meeting.events.length);
+  check("F13 · 配置保存不产生会议事件（历史快照零污染）", evBefore === evAfter,
+    evBefore + " -> " + evAfter);
+
+  /* F14：六席逐一保存（含备注）→ 刷新 → 配置保持（T06 持久化验收） */
+  await clickDevBtn(page, "#mt-clear");
+  await page.waitForFunction(() => !document.getElementById("cfg-title").disabled);
+  for (const s of ALL_SEATS) {
+    await page.click("#seat-" + s);
+    await seatConfigShows(page, s);
+    await page.fill("#cfg-note-" + PID_OF_SEAT[s], "F1备注-" + s);
+    await page.dispatchEvent("#cfg-note-" + PID_OF_SEAT[s], "change");
+    await page.click("#seat-config-save");
+    await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+  }
+  await page.click("#seat-A1");
+  await seatConfigShows(page, "A1");
+  await page.fill("#cfg-model-name-agent-a1", "我的模型甲");
+  await page.dispatchEvent("#cfg-model-name-agent-a1", "change");
+  await page.click("#seat-config-save");
+  await page.waitForFunction(() => document.getElementById("console-relay").style.display !== "none");
+
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  check("F14 · 刷新后 A1 席位卡显示名保持（我的模型甲）",
+    (await page.locator("#seat-A1").innerText()).includes("我的模型甲"));
+  for (const s of ALL_SEATS) {
+    await page.click("#seat-" + s);
+    await seatConfigShows(page, s);
+    const note = await page.locator("#cfg-note-" + PID_OF_SEAT[s]).inputValue();
+    check("F14 · 刷新后席位 " + s + " 备注保持", note === "F1备注-" + s, note);
+  }
+
+  /* F15-F18：底部 drawer 默认折叠 + 展开不挤压工作区 */
+  check("F15 · 开发工具默认折叠（32px 条）",
+    (await page.evaluate(() => document.getElementById("dev-tools").open)) === false);
+  check("F16 · 时间线/审计日志默认折叠",
+    (await page.evaluate(() => document.querySelector("#console-timeline details").open)) === false);
+  const hBefore = await page.locator("#console").evaluate((el) => el.getBoundingClientRect().height);
+  await openDevTools(page);
+  await page.waitForTimeout(120);
+  const hAfter = await page.locator("#console").evaluate((el) => el.getBoundingClientRect().height);
+  check("F17 · drawer 展开不挤压主工作区高度", Math.abs(hBefore - hAfter) < 2,
+    Math.round(hBefore) + " -> " + Math.round(hAfter));
+  check("F18 · drawer 展开后 Demo 按钮可见可点", await page.locator("#mt-create-relay").isVisible());
+  await page.screenshot({ path: path.join(shotDirD3, "07-one-screen-f1.png"), fullPage: true });
+}
+
 /* ---------- 自动测试页（D1-R1 用例） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
@@ -583,6 +717,7 @@ async function runChannel(channel) {
   await runD4(page);
   await runD5(page);
   await runD6(page);
+  await runF1(page);
   await runTestPage(page);
 
   await browser.close();

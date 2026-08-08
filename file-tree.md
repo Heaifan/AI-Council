@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（D3 · WEB_AUTOMATION ChatGPT 单站 PoC：Offline 14/14 · Node 185/185 · Browser 99/99 · Live ChatGPT 人工验收待执行）
+> 最后更新：2026-08-08（ONE-SCREEN-F1 · 无滚动工作区 + 席位编辑恢复：Node 188/188 · Browser 135/135 · Offline 14/14 · 四档分辨率一屏）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -68,6 +68,9 @@ app/
 │   │   ├── participant-binding.js    # Participant 下拉来源（只来自 meeting.participants[]）+ 当前相位 actor 标注 + Compiler 禁用态
 │   │   ├── meeting-draft.js          # ★D3 会议控制台 MeetingDraft（81 行）：创建前草稿模型 + 校验 + 一次性创建（Draft 非事实源，创建后冻结）
 │   │   ├── relay-profiles.js         # ★D3 WebRelayTargetProfile（66 行）：Transport 本地配置（web_url 不进 Schema）+ URL 安全校验 + upsert
+│   │   ├── local-store.js            # ★F1 localStorage 封装（35 行：JSON 读写 + 异常静默降级；键前缀 ai-council:v1:）
+│   │   ├── seat-config-rules.js      # ★F1 席位配置冻结规则（35 行：FROZEN_FIELDS 字段级权限 + applyToParticipant，Node 可测）
+│   │   ├── seat-session-store.js     # ★F1 创建前草稿/Transport Profile 持久化（40 行：draft 一次性创建 + profiles 落盘）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
 │   │   ├── relay-flow.js             # ★D3 WEB_RELAY 编排层（82 行）：CompileFlow↔WebRelayController 接合；routeStep 供 step 委托停下；createRelayDemo；依赖项调用时取 A.*
@@ -81,12 +84,13 @@ app/
 │           ├── harness-shell.js       # 外壳：能力灯 6 个 + 独立运行状态行 + 三 Tab（默认会议）+ 订阅 Store 全量重绘；装配六席 + 项目条 + 时间线 + 开发工具条
 │           ├── meeting-actions.js     # 会议按钮行为（中文提示）；含 createRelay + load 后 hydrate
 │           ├── web-relay-actions.js   # ★D3 WEB_RELAY 中继点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
-│           ├── console-actions.js     # ★D3 控制台动作层（100 行）：MeetingDraft 持有 / 创建会议冻结 / 打开模型网页 / 清空会议
+│           ├── console-actions.js     # ★D3 控制台动作层（110 行 ≤110 例外）：MeetingDraft 持有 / F1 字段级冻结 / 持久化委托 SeatSessionStore / 打开模型网页 / 清空会议
 │           ├── seat-local-config.js   # ★D3 席位本地 UI 配置（44 行：立场覆盖/备注/模式/选中席位；不污染 Participant Schema）
 │           ├── seat-status.js         # ★D3 席位状态中文判定 + 当前轮次判定（37 行，纯函数）
 │           ├── seat-card.js           # ★D3 席位摘要卡（76 行：编号/角色/模型/传输/立场/状态 + 选中/编辑/打开网页）
 │           ├── seat-column.js         # ★D3 左右席列装配（90 行：左 A1..A3 / 右 B1..B3 + 右栏会议摘要窄卡 mt-* 契约）
-│           ├── seat-config-fields.js  # ★D3 席位配置表单字段（94 行：角色/模型名/引用/传输/URL/立场/备注；cfg-*-<pid> 契约）
+│           ├── seat-config-fields.js  # ★D3 席位配置表单字段（F1 双栏 grid + 挂起式编辑 + [取消]/[保存配置]；cfg-*-<pid> 契约）
+│           ├── seat-config-commit.js  # ★F1 席位配置保存提交（45 行：写入 participant/profile/立场/备注 + 自动回运行）
 │           ├── seat-config-panel.js   # ★D3 席位配置模式装配（51 行）
 │           ├── center-stage.js        # ★D3 中央大屏（70 行：模式条/上下文/会议配置卡/运行与席位配置双面板显隐）
 │           ├── config-panel.js        # ★D3 中央会议配置卡（70 行：名称/议题/议事规则 + 创建会议；无会议=表单/有会议=冻结摘要）

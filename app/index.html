@@ -39,8 +39,10 @@
       <section class="console-center" id="console-center"></section>
       <aside class="console-right" id="console-right"></aside>
     </div>
-    <div id="console-devtools" class="devtools-strip"></div>
-    <div id="console-timeline"></div>
+    <div class="console-drawer" id="console-drawer">
+      <div id="console-devtools" class="drawer-item"></div>
+      <div id="console-timeline" class="drawer-item"></div>
+    </div>
   </section>
   <section class="tab-panel" id="tab-compiler">
     <div id="view-compiler"></div>
@@ -88,10 +90,13 @@
 <script src="js/invocation/invocation-message-factory.js"></script>
 <script src="js/mock-agent-runtime.js"></script>
 <script src="js/harness/harness-store.js"></script>
+<script src="js/harness/local-store.js"></script>
 <script src="js/harness/participant-binding.js"></script>
 <script src="js/harness/meeting-draft.js"></script>
 <script src="js/harness/relay-profiles.js"></script>
 <script src="js/harness/seat-layout.js"></script>
+<script src="js/harness/seat-config-rules.js"></script>
+<script src="js/harness/seat-session-store.js"></script>
 <script src="js/harness/meeting-step-flow.js"></script>
 <script src="js/harness/relay-flow.js"></script>
 <script src="js/harness/compile-flow.js"></script>
@@ -110,6 +115,7 @@
 <script src="js/ui/harness/seat-card.js"></script>
 <script src="js/ui/harness/seat-column.js"></script>
 <script src="js/ui/harness/seat-config-fields.js"></script>
+<script src="js/ui/harness/seat-config-commit.js"></script>
 <script src="js/ui/harness/seat-config-panel.js"></script>
 <script src="js/ui/harness/config-panel.js"></script>
 <script src="js/ui/harness/relay-verdict.js"></script>

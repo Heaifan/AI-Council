@@ -9,8 +9,8 @@
   var A = root.AICouncil;
   var Dom = A.Dom;
 
-  function fieldRow(box, id, label, control) {
-    var f = Dom.el("div", "cfg-field");
+  function fieldRow(box, id, label, control, span2) {
+    var f = Dom.el("div", "cfg-field" + (span2 ? " span2" : ""));
     f.appendChild(Dom.el("label", "cfg-label", label));
     control.id = id;
     f.appendChild(control);
@@ -40,15 +40,16 @@
     box.appendChild(Dom.el("h2", null, "会议配置"));
     if (frozen) box.appendChild(Dom.el("p", "note", "会议配置已冻结：如需修改议题或委员配置，请结束当前会议后新建。"));
 
+    var grid = Dom.el("div", "cfg-grid");
     var title = document.createElement("input");
     title.type = "text"; title.value = draft.title || ""; title.placeholder = "例如：玄域引擎战略评审";
-    fieldRow(box, "cfg-title", "会议名称", title);
-    var topic = document.createElement("textarea");
-    topic.value = draft.topic || ""; topic.rows = 3;
-    topic.placeholder = "请输入本次会议的议题……";
-    fieldRow(box, "cfg-topic", "议题", topic);
+    fieldRow(grid, "cfg-title", "会议名称", title);
     var proto = protocolSelect(state.registry, draft.protocolId);
-    fieldRow(box, "cfg-protocol", "议事规则", proto);
+    fieldRow(grid, "cfg-protocol", "议事规则", proto);
+    var topic = document.createElement("textarea");
+    topic.value = draft.topic || ""; topic.rows = 2;
+    topic.placeholder = "请输入本次会议的议题……";
+    fieldRow(grid, "cfg-topic", "议题", topic, true);
     title.disabled = topic.disabled = proto.disabled = frozen;
     title.addEventListener("change", function () { actions.setField("title", title.value); });
     topic.addEventListener("change", function () { actions.setField("topic", topic.value); });
@@ -62,7 +63,10 @@
       if (!r.ok) A.WebRelayActions.say(r.message || "创建失败。", "bad");
       A.HarnessStore.notify();
     });
-    box.appendChild(create);
+    var row = Dom.el("div", "controls span2");
+    row.appendChild(create);
+    grid.appendChild(row);
+    box.appendChild(grid);
     host.appendChild(box);
   }
 

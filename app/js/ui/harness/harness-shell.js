@@ -74,6 +74,7 @@
   }
 
   function start() {
+    if (A.SeatLocalConfig) A.SeatLocalConfig.load();   /* F1：刷新后恢复立场/备注/选中席位 */
     renderCapabilities();
     TAB_IDS.forEach(function (t) {
       var b = document.getElementById("tab-btn-" + t);
