@@ -35,6 +35,7 @@
       return Object.freeze({ ok: false, diagnostic: makeDiag(C.ROLE_CARD_INVALID, "Role Card 列表必须是数组。") });
     }
     var byClass = Object.create(null);
+    var byId = Object.create(null);
     for (var i = 0; i < cards.length; i++) {
       var c = cards[i];
       var err = structuralValid(c);
@@ -42,6 +43,7 @@
       var rc = c.role_class;
       if (!byClass[rc]) byClass[rc] = [];
       byClass[rc].push(c);
+      if (!byId[c.role_id]) byId[c.role_id] = c; /* 同 role_id 重复时保留先到者，确定性由调用方排序保证 */
     }
     /* 每个 role_class 内按 role_id 升序，保证确定性 pick */
     Object.keys(byClass).forEach(function (k) {
@@ -61,12 +63,30 @@
       if (!arr || arr.length === 0) return null;
       return clone(arr[0]); /* 确定性：取排序后第一个 */
     }
+    function byRoleId(roleId) {
+      var c = roleId ? byId[roleId] : null;
+      return c ? clone(c) : null;
+    }
+
+    /* D2-F1：Participant → Role Card 的唯一解析入口。
+     * Role ≠ Participant：Participant 是“这场会议里的人”，Role Card 是“岗位说明书”。
+     * 解析顺序固定为 role_id 精确命中 → role_class 回退，便于 UI 显示解析来源。 */
+    function resolveForParticipant(participant) {
+      if (!participant) return null;
+      var exact = byRoleId(participant.role_id);
+      if (exact) return { card: exact, resolvedBy: "role_id" };
+      var fallback = byRoleClass(participant.role_class);
+      if (fallback) return { card: fallback, resolvedBy: "role_class" };
+      return null;
+    }
 
     return Object.freeze({
       ok: true,
       list: list,
       hasRoleClass: hasRoleClass,
-      byRoleClass: byRoleClass
+      byRoleClass: byRoleClass,
+      byRoleId: byRoleId,
+      resolveForParticipant: resolveForParticipant
     });
   }
 

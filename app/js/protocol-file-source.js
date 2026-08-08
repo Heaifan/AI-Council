@@ -7,6 +7,9 @@
 
   var PROTOCOL_PATH = /^protocols\/(?:.+\/)?protocol\.json$/;
   var SCHEMA_PATH = /(?:^|\/)schemas\/protocol\.schema\.json$/;
+  /* D2-F1：Harness 接线所需的其它正式资产（Schema Pack + Role Card 库）。
+   * 与 Protocol 发现完全分开：这些文件不参与 Protocol Registry 分流，只供 Persistence / Compiler 使用。 */
+  var ASSET_PATH = /^(?:schema\/schemas\/[a-z0-9-]+\.schema\.json|roles\/[^/]+\.json)$/;
 
   function normalize(p) {
     return String(p).replace(/\\/g, "/").replace(/^\.\//, "");
@@ -31,7 +34,8 @@
   function build(rootName, records) {
     var protocolRecords = records.filter(function (r) { return PROTOCOL_PATH.test(r.path); });
     var schemaRecords = records.filter(function (r) { return SCHEMA_PATH.test(r.path); });
-    return Promise.all([readRecords(protocolRecords), readRecords(schemaRecords)])
+    var assetRecords = records.filter(function (r) { return ASSET_PATH.test(r.path); });
+    return Promise.all([readRecords(protocolRecords), readRecords(schemaRecords), readRecords(assetRecords)])
       .then(function (res) {
         return Object.freeze({
           rootName: rootName,
@@ -39,7 +43,8 @@
           fileCount: records.length,
           index: Object.freeze(records.map(function (r) { return r.path; })),
           protocolFiles: Object.freeze(res[0].map(Object.freeze)),
-          schemaMatches: Object.freeze(res[1].map(Object.freeze))
+          schemaMatches: Object.freeze(res[1].map(Object.freeze)),
+          assetFiles: Object.freeze(res[2].map(Object.freeze))
         });
       });
   }
@@ -75,6 +80,7 @@
   root.AICouncil.FileSource = Object.freeze({
     PROTOCOL_PATH: PROTOCOL_PATH,
     SCHEMA_PATH: SCHEMA_PATH,
+    ASSET_PATH: ASSET_PATH,
     fromFileList: fromFileList,
     fromEntries: fromEntries
   });

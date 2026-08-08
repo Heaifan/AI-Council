@@ -2,15 +2,17 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>AI顾问委员会 · Meeting Persistence (D1-R4)</title>
+<title>AI顾问委员会 · Developer Harness (D2-F1)</title>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 
 <header class="top">
-  <h1>AI顾问委员会 · Meeting Persistence</h1>
-  <span class="badge">D1-R4 Developer Harness</span>
+  <h1>AI顾问委员会 · Developer Harness</h1>
+  <span class="badge">D2-F1 Integration Harness</span>
 </header>
+
+<div id="capabilities" class="capability-row"></div>
 
 <section class="controls">
   <label class="btn">
@@ -21,42 +23,41 @@
     指定正式 protocol.schema.json
     <input type="file" id="schema-input" accept="application/json,.json" hidden>
   </label>
+  <span class="current">当前：<code id="dir-current">（未选择）</code></span>
   <p class="hint">
-    浏览器没有权限自动扫描磁盘，必须由用户主动选择目录。
-    选中的目录需包含 <code>protocols/**/protocol.json</code>；
-    若目录内含 <code>schemas/protocol.schema.json</code> 则自动使用，否则请用右侧按钮直接指定正式 Schema 文件。
+    浏览器没有权限自动扫描磁盘，必须由用户主动选择目录。请选择仓库根目录 <code>AI-Council/</code>，
+    其中需包含 <code>protocols/**/protocol.json</code>、<code>schema/schemas/*.schema.json</code> 与 <code>roles/*.json</code>。
   </p>
 </section>
 
 <div id="status" class="status info">正在加载…</div>
 
-<main id="output"></main>
+<nav class="tabs" role="tablist">
+  <button type="button" class="tab active" id="tab-btn-protocols" role="tab">Protocols</button>
+  <button type="button" class="tab" id="tab-btn-meeting" role="tab">Meeting</button>
+  <button type="button" class="tab" id="tab-btn-compiler" role="tab">Compiler</button>
+</nav>
 
-<section class="persistence" id="persistence">
-  <h2>Meeting Persistence（D1-R4 最小面板）</h2>
-  <div class="kv">
-    <span>Status:</span><code id="ps-status">—</code>
-    <span>Current Phase:</span><code id="ps-phase">—</code>
-    <span>Events:</span><code id="ps-events">0</code>
-    <span>Checkpoints:</span><code id="ps-cp">0</code>
-  </div>
-  <div class="controls">
-    <button id="ps-demo" class="btn">Create Demo Meeting</button>
-    <button id="ps-save" class="btn">Save Meeting JSON</button>
-    <button id="ps-load" class="btn secondary">Load Meeting JSON</button>
-  </div>
-  <div id="ps-msg" class="status info">选择项目目录后，点 Create Demo Meeting 生成会议，再 Save / Load。</div>
-</section>
+<main>
+  <section class="tab-panel active" id="tab-protocols">
+    <div id="output"></div>
+  </section>
+  <section class="tab-panel" id="tab-meeting">
+    <div id="view-meeting"></div>
+  </section>
+  <section class="tab-panel" id="tab-compiler">
+    <div id="view-compiler"></div>
+  </section>
+</main>
 
 <footer class="foot">
   <p><strong>不热加载（第42题）</strong>：目录选择完成的瞬间即建立 File Snapshot 并冻结本 Session。
-     之后无论磁盘上的 <code>protocol.json</code> 如何修改，本页结果都不会变化。
-     需要重新读取规则请<strong>重新打开页面</strong>或<strong>重新选择目录（=新建 Session）</strong>。
-     本应用不提供、也不允许提供“热刷新 Protocol”按钮。</p>
-  <p><strong>范围</strong>：D1-R4 在 D1-R3 的确定性 Runtime 之上，增加 Event Log / Checkpoint /
-     Single JSON Archive / Restore。会议现在可以保存为一个 <code>*.meeting.json</code> 文件，
-     程序关闭后重新加载、校验（Schema + Protocol 指纹 + 语义一致性）、恢复原状态并继续运行到 $end。
-     Runtime 仍只读 Protocol、不接 LLM、不生成 Prompt；不实现 Replay / Branch / Instruction Compiler。</p>
+     之后无论磁盘上的 <code>protocol.json</code> / <code>roles/*.json</code> 如何修改，本页结果都不会变化。
+     需要重新读取请<strong>重新选择目录（=新建 Session）</strong>。本应用不提供“热刷新”按钮。</p>
+  <p><strong>范围</strong>：D2-F1 只做接线——把已完成的 Protocol Kernel / Meeting Runtime / Persistence /
+     Instruction Compiler / Prompt Renderer 接进同一个浏览器 Harness，做到点得到、看得到、验得到。
+     本轮<strong>不</strong>实现 D3 Transport、<strong>不</strong>接真实 LLM、<strong>不</strong>做正式六席会议室 UI。
+     Rendered Prompt 只能人工复制到外部模型，本应用不发起任何网络请求。</p>
 </footer>
 
 <script src="vendor/ajv2020.bundle.js"></script>
@@ -79,12 +80,25 @@
 <script src="js/meeting-restore-validator.js"></script>
 <script src="js/meeting-persistence.js"></script>
 <script src="js/meeting-restore.js"></script>
+<script src="js/role-card-registry.js"></script>
+<script src="js/instruction-packet-schema.js"></script>
+<script src="js/instruction-compiler.js"></script>
+<script src="js/prompt-renderer.js"></script>
 <script src="js/mock-agent-runtime.js"></script>
+<script src="js/harness/harness-store.js"></script>
+<script src="js/harness/participant-binding.js"></script>
+<script src="js/harness/meeting-step-flow.js"></script>
+<script src="js/harness/compile-flow.js"></script>
+<script src="js/harness/archive-flow.js"></script>
 <script src="js/ui/dom.js"></script>
 <script src="js/ui/diagnostic-view.js"></script>
 <script src="js/ui/registry-view.js"></script>
+<script src="js/ui/harness/meeting-actions.js"></script>
+<script src="js/ui/harness/meeting-runtime-view.js"></script>
+<script src="js/ui/harness/compiler-packet-view.js"></script>
+<script src="js/ui/harness/compiler-view.js"></script>
+<script src="js/ui/harness/harness-shell.js"></script>
 <script src="js/app.js"></script>
-<script src="js/meeting-persistence-ui.js"></script>
 
 </body>
 </html>

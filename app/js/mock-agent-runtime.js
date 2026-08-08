@@ -26,6 +26,34 @@
     return true;
   }
 
+  /* D2-F1 —「执行下一步 Mock」的唯一语义：只消费当前 Pending Action 的一个确定性步骤。
+   * 即：为 requiredParticipantIds 中第一个尚未响应的参与者提交一次 Mock 响应，然后立即停手。
+   * 绝不循环、绝不自动越过 Human Gate（await_human_decision 一律拒绝，交回人工按钮）。 */
+  function stepOnce(runtime, meeting, protocol) {
+    var pa = meeting && meeting.pendingAction;
+    if (!pa) return { ok: false, reason: "no_pending_action", message: "当前没有待办动作（会议可能已结束或失败）。" };
+    if (pa.action_type === ACTION.AWAIT_HUMAN_DECISION) {
+      return { ok: false, reason: "human_gate",
+        message: "当前停在 Human Gate，Mock 不得替人类决策，请点击 Finish / Continue / Battle。" };
+    }
+    if (pa.action_type !== ACTION.COLLECT_RESPONSES) {
+      return { ok: false, reason: "unsupported_action", message: "不支持的待办动作类型：" + String(pa.action_type) + "。" };
+    }
+    var next = null;
+    for (var i = 0; i < pa.requiredParticipantIds.length && next === null; i++) {
+      var id = pa.requiredParticipantIds[i];
+      if (pa.receivedParticipantIds.indexOf(id) < 0) next = id;
+    }
+    if (next === null) return { ok: false, reason: "no_pending_participant", message: "当前 Pending Action 的响应已收齐。" };
+
+    var phaseId = pa.phaseId;
+    var r = runtime.submitResult(meeting, protocol, {
+      participant_id: next, payload: { mock: true, phaseId: phaseId, participantId: next }
+    });
+    if (!r.ok) return { ok: false, reason: "submit_failed", message: r.diagnostic.message, diagnostic: r.diagnostic };
+    return { ok: true, participantId: next, phaseId: phaseId };
+  }
+
   root.AICouncil = root.AICouncil || {};
-  root.AICouncil.MockAgentRuntime = Object.freeze({ runOnce: runOnce });
+  root.AICouncil.MockAgentRuntime = Object.freeze({ runOnce: runOnce, stepOnce: stepOnce });
 })(typeof globalThis !== "undefined" ? globalThis : this);

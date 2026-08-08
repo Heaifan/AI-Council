@@ -37,6 +37,11 @@ const RUNTIME = [
   "app/js/instruction-compiler.js",
   "app/js/prompt-renderer.js",
   "app/js/mock-agent-runtime.js",
+  "app/js/harness/harness-store.js",
+  "app/js/harness/participant-binding.js",
+  "app/js/harness/meeting-step-flow.js",
+  "app/js/harness/compile-flow.js",
+  "app/js/harness/archive-flow.js",
   "app/tests/protocol-test-suite.js",
   "app/tests/protocol-test-fixtures.js",
   "app/tests/protocol-test-cases.js",
@@ -45,7 +50,8 @@ const RUNTIME = [
   "app/tests/protocol-test-cases-runtime.js",
   "app/tests/protocol-test-cases-persistence.js",
   "app/tests/protocol-test-cases-compiler.js",
-  "app/tests/protocol-test-cases-renderer.js"
+  "app/tests/protocol-test-cases-renderer.js",
+  "app/tests/protocol-test-cases-harness.js"
 ];
 
 const AUDITED = [
@@ -75,9 +81,19 @@ const AUDITED = [
   "app/js/instruction-compiler.js",
   "app/js/prompt-renderer.js",
   "app/js/mock-agent-runtime.js",
+  "app/js/harness/harness-store.js",
+  "app/js/harness/participant-binding.js",
+  "app/js/harness/meeting-step-flow.js",
+  "app/js/harness/compile-flow.js",
+  "app/js/harness/archive-flow.js",
   "app/js/ui/dom.js",
   "app/js/ui/diagnostic-view.js",
-  "app/js/ui/registry-view.js"
+  "app/js/ui/registry-view.js",
+  "app/js/ui/harness/meeting-actions.js",
+  "app/js/ui/harness/meeting-runtime-view.js",
+  "app/js/ui/harness/compiler-packet-view.js",
+  "app/js/ui/harness/compiler-view.js",
+  "app/js/ui/harness/harness-shell.js"
 ];
 
 RUNTIME.forEach((rel) => vm.runInThisContext(read(rel), { filename: rel }));
@@ -98,6 +114,8 @@ const ctx = {
   instructionPacketSchemaText: read("schema/schemas/instruction-packet.schema.json"),
   roleCardAdvisorText: read("roles/advisor.json"),
   roleCardChairSecretaryText: read("roles/chair-secretary.json"),
+  roleCardStrategicAdvocateText: read("roles/strategic-advocate.json"),
+  roleCardRiskChallengerText: read("roles/risk-challenger.json"),
   appSources
 };
 

@@ -122,12 +122,17 @@
       if (!registry) {
         return { ok: false, diagnostics: [diag(C.ROLE_CARD_NOT_FOUND, "协议要求包含 Role Card，但未提供 RoleCardRegistry。")] };
       }
-      roleCard = registry.byRoleClass(participant.role_class);
-      if (!roleCard) {
+      /* D2-F1：解析顺序 participant.role_id → participant.role_class（Role ≠ Participant）。
+       * 旧注册表（无 resolveForParticipant）仍按 role_class 解析，保持向后兼容。 */
+      var resolvedRole = typeof registry.resolveForParticipant === "function"
+        ? registry.resolveForParticipant(participant)
+        : (function (c) { return c ? { card: c, resolvedBy: "role_class" } : null; })(registry.byRoleClass(participant.role_class));
+      if (!resolvedRole) {
         return { ok: false, diagnostics: [diag(C.ROLE_CARD_NOT_FOUND,
-          "RoleCardRegistry 中找不到 role_class=" + String(participant.role_class) + " 的 Role Card。")] };
+          "RoleCardRegistry 中找不到 role_id=" + String(participant.role_id) +
+          " / role_class=" + String(participant.role_class) + " 的 Role Card。")] };
       }
-      roleCard = clone(roleCard);
+      roleCard = clone(resolvedRole.card);
     }
 
     /* Visibility 解析 */

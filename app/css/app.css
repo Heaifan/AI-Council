@@ -1,4 +1,4 @@
-/* AI Council v0.1 — D1-R1 Developer Harness 样式：浅色、清晰、简单。 */
+/* AI Council v0.1 — D2-F1 Developer Harness 样式：浅色、清晰、简单。 */
 
 :root {
   --bg: #f6f7f9;
@@ -26,13 +26,49 @@ body {
 .top h1 { font-size: 20px; margin: 0; }
 .badge { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 10px; padding: 1px 8px; }
 
+.capability-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.capability {
+  font-size: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 2px 10px;
+  background: var(--panel); color: var(--muted);
+}
+.capability.ok { border-color: #b7e0c1; background: #f0fbf3; color: var(--ok); }
+.capability.bad { border-color: #f2c2bd; background: #fef4f3; color: var(--bad); }
+
 .controls { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
 .btn {
-  display: inline-block; cursor: pointer; margin-right: 8px;
-  background: var(--accent); color: #fff; border-radius: 6px; padding: 8px 16px; font-size: 14px;
+  display: inline-block; cursor: pointer; margin: 0 8px 8px 0;
+  background: var(--accent); color: #fff; border: 1px solid var(--accent);
+  border-radius: 6px; padding: 8px 16px; font-size: 14px; font-family: inherit;
 }
 .btn.secondary { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+.btn:disabled { cursor: not-allowed; opacity: .45; }
 .hint { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+.current { font-size: 13px; color: var(--muted); margin-left: 4px; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 16px 0 0; }
+.tab {
+  cursor: pointer; font: inherit; font-size: 14px; padding: 8px 18px;
+  background: transparent; color: var(--muted);
+  border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
+}
+.tab.active { background: var(--panel); color: var(--ink); font-weight: 600; border-color: var(--line); margin-bottom: -1px; }
+.tab-panel { display: none; padding-top: 16px; }
+.tab-panel.active { display: block; }
+
+.select {
+  font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px;
+  background: #fff; color: var(--ink); min-width: 320px; margin-bottom: 10px;
+}
+.prompt-box {
+  width: 100%; font: 13px/1.6 Consolas, "Courier New", monospace;
+  border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: #fcfcfd; color: var(--ink);
+  resize: vertical;
+}
+.raw {
+  max-height: 340px; overflow: auto; margin: 10px 0 0; padding: 10px;
+  background: #fcfcfd; border: 1px solid var(--line); border-radius: 6px;
+  font: 12px/1.5 Consolas, "Courier New", monospace; white-space: pre-wrap; word-break: break-all;
+}
 
 .status { margin: 16px 0; padding: 10px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); }
 .status.ok { border-color: #b7e0c1; background: #f0fbf3; color: var(--ok); }

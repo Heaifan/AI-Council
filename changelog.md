@@ -2,6 +2,27 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## D2-F1 — Developer Harness Integration（接线，不做六席会议室 UI）— 2026-08-08
+
+- **目的**：把已完成的 Protocol Kernel / Meeting Runtime / Persistence-Restore / Instruction Compiler / Prompt Renderer 接进同一个浏览器 Harness，做到「点得到、看得到、验得到」。本轮**只做接线**，不开发 D3 Transport、不接真实 LLM、不做正式六席会议室 UI。
+- **新增 `app/js/harness/`（无 DOM 流程层，可在 Node 直接测试，每文件 ≤100 行）**：
+  - `harness-store.js`：共享状态 + 订阅；`setSession` 从 `snapshot.assetFiles` 冻结装入 Role Card 库 / Schema Pack / Packet Schema；`setMeeting` / `availableProtocol`。
+  - `participant-binding.js`：`options()` 只从 `meeting.participants[]` 生成下拉（标注当前 Phase 的 actor 目标）；`compilerState()` 无 Meeting 时返回禁用 + 指向 Meeting 页的理由；`defaultParticipantId`。
+  - `meeting-step-flow.js`：Create Demo **只 createMeeting + start 不预跑**；`step()` 委托 `MockAgentRuntime.stepOnce` 单步；`humanGateState` 仅 waiting_human + await_human_decision 启用；`decide` 提交人工决策；Battle 在未选人时确定性默认全部 advisor 升序并如实告知。
+  - `compile-flow.js`：`run()` = compile →（Packet Schema 校验）→ render，返回 8 字段摘要 / Raw JSON / Rendered Prompt。
+  - `archive-flow.js`：`buildArchive` / `restoreFrom`（Schema + Restore 语义校验 + 原子恢复）。
+- **新增 `app/js/ui/harness/`（视图层，只画不判规则，每文件 ≤100 行）**：
+  - `harness-shell.js`（能力灯 Protocol/Runtime/Persistence/Compiler/Renderer + 三 Tab 切换 + 订阅 Store 全量重绘）、`meeting-actions.js`、`meeting-runtime-view.js`、`compiler-view.js`、`compiler-packet-view.js`（Rendered Prompt 用**只读 textarea**，Ctrl+A/Ctrl+C 复制，刻意不调 Clipboard API 以保 local-first）。
+- **接口/数据冻结变更**：
+  - `protocol-file-source.js`：新增 `ASSET_PATH` 并 freeze `snapshot.assetFiles`（Role Card / Schema 等资产一并冻结，无热加载）。
+  - `role-card-registry.js`：新增 `byRoleId` 与 `resolveForParticipant`（role_id 精确命中 → role_class 回退）。
+  - `instruction-compiler.js`：Role Card 解析优先走 `resolveForParticipant`，错误码含 role_id 与 role_class（落实 **Role ≠ Participant**）。
+  - `mock-agent-runtime.js`：新增 `stepOnce`（单步语义，明确拒绝 `await_human_decision`）。
+  - `roles/`：新增 `strategic-advocate.json` / `risk-challenger.json` 两张正式 Role Card（现共 4 张）。
+- **UI 重排**：`index.html` 改为「能力灯 + 选择目录 + Protocols / Meeting / Compiler 三 Tab」，徽标 `D2-F1 Integration Harness`，脚注声明范围；删除 D1-R4 的 `meeting-persistence-ui.js`；`app.js` 在 `rebuild()` 后把 Session 交给 `HarnessStore`。
+- **测试**：新增 `app/tests/protocol-test-cases-harness.js`（TEST-129..144，共 16 项），覆盖脚本装配 / 冻结 / 无 Meeting 禁用 / Mock 单步 / Human Gate 拦截 / Battle 确定性 / 编译端到端 / 切换重编译 / **Role ≠ Participant 契约** / Save-Load 往返。`run-node.js` 把 `harness/*` 纳入执行、`ui/harness/*` 纳入静态审计。自动测试由 **128 项增至 144 项（144/144 PASS，原 128 零回归）**。`run-browser.js` 扩展为 D1 Protocols + D2-F1 Meeting/Compiler 真实点击链路验收（A01..A15 关键点 + 截图）。
+- **不做的范围**：D3 Transport / 真实 LLM / 正式六席会议室 UI / Battle 人工选人 UI（本轮 Battle 走确定性默认）。
+
 ## D1-R1-F1 — Protocol Registry 收口修复 — 2026-08-07
 
 - 修复切换项目目录后旧 Schema Override 跨目录残留的问题（F01）。

@@ -1,13 +1,13 @@
-/* AI Council v0.1 — D1-R1 Developer Harness
- * 唯一职责：把用户的一次目录选择接到 ProtocolSession，并渲染结果。
- * 本文件不含任何定时器、轮询、watcher 或网络请求。
+/* AI Council v0.1 — D2-F1 Developer Harness
+ * 唯一职责：把用户的一次目录选择接到 ProtocolSession，渲染 Protocols Tab，并把 Session 交给 HarnessStore。
+ * 本文件不含任何定时器、轮询、watcher 或网络请求，也不参与会议推进 / 编译（那是 harness/* 的事）。
  */
 (function (root) {
   "use strict";
 
   var A = root.AICouncil;
   var state = { snapshot: null, schemaOverride: null };
-  var dirInput, schemaInput, statusBar, output;
+  var dirInput, schemaInput, statusBar, output, current;
 
   function status(text, kind) {
     statusBar.textContent = text;
@@ -24,11 +24,10 @@
       return;
     }
     A.RegistryView.render(output, session);
-    /* D1-R4：暴露 snapshot + registry 给最小 Persistence 面板（window.AICouncilHarness）。 */
-    root.AICouncilHarness = root.AICouncilHarness || {};
-    root.AICouncilHarness.snapshot = state.snapshot;
-    root.AICouncilHarness.registry = session.registry;
-    root.AICouncilHarness.session = session;
+    if (current) current.textContent = session.rootName + "/";
+    /* D2-F1：Session 与其随行资产（Schema Pack / Role Card 库）一次性交给 HarnessStore，
+     * Meeting 与 Compiler 两个 Tab 只从 Store 取状态，绝不各自再去碰 snapshot。 */
+    A.HarnessStore.setSession(state.snapshot, session);
     if (!session.registry) {
       status("Session 未初始化：缺少可用的正式 Schema。", "warn");
       return;
@@ -71,6 +70,7 @@
     schemaInput = document.getElementById("schema-input");
     statusBar = document.getElementById("status");
     output = document.getElementById("output");
+    current = document.getElementById("dir-current");
 
     if (!root.AjvBundle) {
       status("vendor/ajv2020.bundle.js 未加载，无法执行正式 Schema 校验。", "bad");

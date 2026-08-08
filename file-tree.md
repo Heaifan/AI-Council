@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-07（D2-R2 更新）
+> 最后更新：2026-08-08（D2-F1 Integration Harness 更新）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -10,30 +10,30 @@
 AI-Council/
 ├── docs/                      # Phase 0 冻结文档（12 篇）
 ├── schema/                    # Schema v0.1 正式定义 + 示例
-├── roles/                     # D2-R1 Role Card 库（符合 role.schema.json）
+├── roles/                     # D2-F1 Role Card 库（4 张，符合 role.schema.json）
 ├── protocols/                 # 用户协议目录（运行时由浏览器选择）
-├── app/                       # ★ D1-R1/R2/R3/R4 正式实现（纯 HTML/JS）
-├── reports/                   # 开发报告 + 真机验收截图
+├── app/                       # ★ D1-R1/R2/R3/R4 + D2-R1/R2 + D2-F1 正式实现（纯 HTML/JS）
+├── reports/                   # 开发报告 + 真机验收截图（d1-r1-screenshots/ / d2-f1-screenshots/）
 ├── file-tree.md               # 本文件
 ├── changelog.md
 └── .gitignore
 ```
 
-## app/（D1-R1 / D1-R2 / D1-R3 / D1-R4 正式实现，核心目录）
+## app/（D1-R1 / D1-R2 / D1-R3 / D1-R4 / D2-R1 / D2-R2 / D2-F1 正式实现，核心目录）
 
 ```text
 app/
-├── index.html                 # 双击即运行入口（Developer Harness）
+├── index.html                 # 双击即运行入口（D2-F1 Developer Harness：能力灯 + Protocols/Meeting/Compiler 三 Tab）
 ├── css/
-│   └── app.css                # 浅色简洁样式
+│   └── app.css                # 浅色简洁样式（含 .tabs / .capability / .prompt-box 等 D2-F1 样式）
 ├── js/
-│   ├── app.js                 # 启动编排：选目录 → 建 Snapshot → 初始化 Session
+│   ├── app.js                 # 启动编排：选目录 → 建 Snapshot → 初始化 Session → 交给 HarnessStore
 │   ├── protocol-loader.js        # File → 文本 → JSON.parse → Parsed Object
 │   ├── protocol-schema-validator.js  # Ajv 2020 封装，加载正式 Schema
 │   ├── protocol-semantic-validator.js  # D1-R2 确定性语义校验（可达性/Human Gate/Side/Role）
 │   ├── protocol-registry.js         # Available / Invalid 分流 + 重复检测
-│   ├── protocol-diagnostic.js       # 统一诊断结构（含 RUNTIME_* 码）
-│   ├── protocol-file-source.js      # File 快照 + protocols/**/protocol.json 发现
+│   ├── protocol-diagnostic.js       # 统一诊断结构（含 RUNTIME_* / PERSISTENCE_* / COMPILER_* / ROLE_* 码）
+│   ├── protocol-file-source.js      # File 快照 + protocols/**/protocol.json 与 roles/*.json 发现（D2-F1 补 ASSET_PATH）
 │   ├── protocol-session.js          # Session 冻结（第42题：无热加载）
 │   ├── meeting-state.js             # D1-R3 Meeting 状态模型 + 错误模型
 │   ├── meeting-action.js            # D1-R3 Pending Action 构造
@@ -47,32 +47,44 @@ app/
 │   ├── meeting-restore-validator.js # ★D1-R4 恢复语义校验（协议存在/指纹一致/事件/检查点/状态一致性）
 │   ├── meeting-persistence.js       # ★D1-R4 序列化 + 浏览器 Save/Load（Blob 下载 / file input）
 │   ├── meeting-restore.js           # ★D1-R4 存档 → Runtime Meeting 原子恢复（绝不重新 start）
-│   ├── meeting-persistence-ui.js    # ★D1-R4 浏览器持久化面板（仅浏览器，不进 Node 测试）
-│   ├── role-card-registry.js       # ★D2-R1 Role Card 装载 / 按 role_class 确定性解析（补 §24-1 缺口）
+│   ├── role-card-registry.js       # ★D2-R1 Role Card 装载 / 按 role_class 与 role_id 确定性解析（补 §24-1 缺口）
 │   ├── instruction-packet-schema.js # ★D2-R1 InstructionPacket Schema 校验器（Ajv2020）
-│   ├── instruction-compiler.js      # ★D2-R1 确定性 (Protocol,Meeting,Phase,Participant)→InstructionPacket
+│   ├── instruction-compiler.js      # ★D2-R1 确定性 (Protocol,Meeting,Phase,Participant)→InstructionPacket（D2-F1 改用 resolveForParticipant）
 │   ├── prompt-renderer.js           # ★D2-R2 确定性 InstructionPacket → 人类可读 Prompt 文本（按 Role-Card-Spec §5 红化）
-│   ├── mock-agent-runtime.js        # D1-R3 测试用 Mock Agent 推进
+│   ├── mock-agent-runtime.js        # D1-R3 测试用 Mock Agent 推进（D2-F1 新增 stepOnce 单步语义）
+│   ├── harness/                     # ★D2-F1 无 DOM 流程层（可在 Node 直接测试，每文件 ≤100 行）
+│   │   ├── harness-store.js          # 共享状态 + 订阅；setSession 从 snapshot.assetFiles 冻结装入 Role Card/Schema Pack/Packet Schema
+│   │   ├── participant-binding.js    # Participant 下拉来源（只来自 meeting.participants[]）+ 当前相位 actor 标注 + Compiler 禁用态
+│   │   ├── meeting-step-flow.js      # 会议步进流程：Create Demo 只 start 不预跑 / stepOnce 单步 / Human Gate 只接人工 / Battle 确定性默认
+│   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
+│   │   └── archive-flow.js           # buildArchive / restoreFrom（Schema + Restore 语义校验 + 原子恢复）
 │   └── ui/
 │       ├── dom.js               # 轻量 DOM 工具
 │       ├── diagnostic-view.js   # 坏规则诊断渲染
-│       └── registry-view.js     # Available / Invalid 列表渲染
+│       ├── registry-view.js     # Available / Invalid 列表渲染（Protocols Tab）
+│       └── harness/             # ★D2-F1 视图层（DOM，只画不判规则）
+│           ├── harness-shell.js       # 能力灯 + 三 Tab 切换 + 订阅 Store 全量重绘
+│           ├── meeting-actions.js     # Meeting Tab 按钮行为（点击→调流程层→回写 Store）
+│           ├── meeting-runtime-view.js# Meeting Tab 渲染（状态卡 + 步进/Human Gate 按钮启用规则）
+│           ├── compiler-view.js       # Compiler Tab 渲染（禁用态 / Participant 下拉 / 角色解析）
+│           └── compiler-packet-view.js# 编译产物渲染（摘要 / Raw JSON / Rendered Prompt 只读 textarea）
 ├── vendor/
 │   └── ajv2020.bundle.js       # Ajv 8.20.0 (Draft 2020-12) IIFE 本地打包
 └── tests/
-    ├── test-runner.html        # 浏览器内测试页（无服务器）
+    ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
-    ├── run-node.js             # Node 入口（自动测试）
-    ├── run-browser.js          # Playwright 真机验收入口
+    ├── run-node.js             # Node 入口（自动测试，现 144 项，含 harness/* 流程层）
+    ├── run-browser.js          # Playwright 真机验收入口（覆盖 D1 Protocols + D2-F1 Meeting/Compiler 真实点击链路）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
     ├── protocol-test-cases-session.js  # TEST-08..10, 13..15（冻结/Schema Override）
     ├── protocol-test-cases-semantic.js  # TEST-16..31（D1-R2 语义校验）
     ├── protocol-test-cases-runtime.js   # TEST-32..53（D1-R3 会议运行时）
-    ├── protocol-test-cases-persistence.js  # ★TEST-54..84（D1-R4 事件/检查点/指纹/存档/恢复）
-    ├── protocol-test-cases-compiler.js    # ★TEST-85..109（D2-R1 Instruction Compiler / Role Card）
-│   ├── protocol-test-cases-renderer.js    # ★TEST-110..128（D2-R2 Prompt Renderer）
+    ├── protocol-test-cases-persistence.js  # TEST-54..84（D1-R4 事件/检查点/指纹/存档/恢复）
+    ├── protocol-test-cases-compiler.js    # TEST-85..109（D2-R1 Instruction Compiler / Role Card）
+    ├── protocol-test-cases-renderer.js    # TEST-110..128（D2-R2 Prompt Renderer）
+    ├── protocol-test-cases-harness.js     # ★TEST-129..144（D2-F1 接线：脚本装配/冻结/禁用/Mock单步/Human Gate/Role≠Participant/Save-Load）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     └── fixtures/acceptance/protocols/   # 人工验收样例
         ├── good-a/ good-c/      broken-b/  missing-version/
@@ -96,6 +108,16 @@ schema/
 └── README.md
 ```
 
+## roles/（D2-F1 Role Card 库，符合 role.schema.json）
+
+```text
+roles/
+├── advisor.json             # role_id=advisor-base, role_class=advisor
+├── chair-secretary.json     # role_id=chair-secretary-base, role_class=chair_secretary
+├── strategic-advocate.json  # role_id=strategic-advocate, role_class=advisor（D2-F1 提升为正式卡）
+└── risk-challenger.json     # role_id=risk-challenger, role_class=advisor（D2-F1 提升为正式卡）
+```
+
 ## docs/（Phase 0 冻结文档）
 
 ```text
@@ -117,3 +139,11 @@ docs/
 ## 技术栈
 
 正式实现已冻结为纯浏览器 **HTML / CSS / JavaScript**，无服务器、无后端、无 CDN、无构建产物。早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从工作树删除，仅保留于 Git 历史，不作为正式运行代码；当前运行代码仅为 `app/`。
+
+## D2-F1 接线边界（用户裁定冻结）
+
+- **只做接线**：把已完成的 Protocol Kernel / Meeting Runtime / Persistence-Restore / Instruction Compiler / Prompt Renderer 接进同一浏览器 Harness。不做 D3 Transport、不接真实 LLM、不做正式六席会议室 UI。
+- **Role ≠ Participant ≠ Model**：Compiler 的可选对象只来自 `meeting.participants[]`，绝不把 `roles/*.json` 当 Agent。
+- **Mock 单步**：每点一次「执行下一步 Mock」只消费当前 Pending Action 的一个确定性步骤，绝不自动越过 Human Gate；Finish / Continue / Battle 必须由人工点击。
+- **能力灯**：Protocol ✅ Runtime ✅ Persistence ✅ Compiler ✅ Renderer ✅（HarnessShell 按模块存在性判定）。
+- **红线**：单文件 ≤100 行；D2-F1 新增 `harness/*`（5 个，无 DOM）与 `ui/harness/*`（5 个，视图层）均守此界。
