@@ -2,6 +2,15 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## 只读核查 · 测试数量差异登记（2026-08-09，零代码变更）
+
+- **结论**：Node 205→203 / Browser 264→208 **非回归、非丢失**（git 全历史 + reflog + 注册表 diff 证实：Node 185→191→203、Browser 95→152→163 均单调递增，零删除零合并零迁移）。
+- **口径解释**：用户基线 Node 205 = 191（79437d5 实测）+ 14（Offline）合并口径；按同口径当前 = 203+14 = 217。Browser 264 与任何提交不匹配（无 git 依据）。
+- **「MEETING-PARTICIPANTS-F1-F1」轮及其专项（F2F2 42 项几何 / Active Seat P1 系列）在本仓库 git 历史、reflog、reports、changelog 中不存在**（git log -S 全零匹配），推测为本地未提交工作被后续提交覆盖或外部环境记录；仓库侧无法恢复。
+- **等价覆盖确认**：1vs1 mixed transport（TEST-159/WR-04/05）、B1 Message 落库（WR-05/TEST-144）、all accepted 才切 phase（runtime 测试）、summary seat status（S11 系列）、Replay R01..R07（本轮新增）均存在且全绿。
+- **统计口径今后统一**：Node 203 · Browser 208 · Offline 14。
+- 详见 `reports/test-count-audit-and-replay-preview.md`。
+
 ## MEETING-REPLAY-F1 · Timeline Replay（会议时间轴 / 只读回放）— 2026-08-08
 
 - **目的**：Mock B1 从「待执行」到「已发言」极快，历史状态立即丢失；未来 Web Automation 多模型自动运行后更严重。本轮把会议变成**可回放的状态序列**：底部常驻时间轴（Round→Step 两级），上一步/下一步/回到当前只改 UI 回放游标，**绝不修改 Runtime/Message/EventLog/PendingAction**——历史不可篡改，允许自由回看（会议录像机，非 Undo；T10 明确不做 destructive rollback）。
