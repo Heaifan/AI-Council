@@ -30,7 +30,7 @@
       var ok = !!c[2](), n = Dom.el("span", "capability " + (ok ? "ok" : "bad"), c[1] + (ok ? " ✓" : " ✗"));
       n.setAttribute("data-capability", c[0]);
       n.setAttribute("data-ok", ok ? "1" : "0");
-      n.title = ok ? (c[1] + "：模块已装载") : (c[1] + "：模块未装载");
+      n.title = c[1] + "：" + (ok ? "已装载" : "未装载");
       box.appendChild(n);
     });
     details.appendChild(box);
@@ -70,11 +70,9 @@
     renderCapabilities();
     A.ProjectBar.render(document.getElementById("project-bar"), s, onChooseProject);
     A.SeatColumn.render(document.getElementById("console-left"), "A", s);
-    /* F2 守卫：中央正显示该席位表单且草稿 dirty → 不重建（防未保存输入被 runtime render 覆盖）。 */
     var actions = A.ConsoleActions, seatWrap = document.getElementById("console-seat");
     var h2 = seatWrap && seatWrap.querySelector("#seat-config h2");
-    var showingSeat = !!(seatWrap && seatWrap.style.display !== "none" && h2 &&
-      h2.textContent.indexOf(actions.getSelectedSeatId()) >= 0);
+    var showingSeat = !!(seatWrap && seatWrap.style.display !== "none" && h2 && h2.textContent.indexOf(actions.getSelectedSeatId()) >= 0);
     var seatDirty = actions.getMode() === "seat" && showingSeat && A.SeatEditDraft.anyDirty();
     if (!seatDirty) A.CenterStage.render(document.getElementById("console-center"), s);
     A.SeatColumn.render(document.getElementById("console-right"), "B", s);
@@ -84,18 +82,16 @@
   }
 
   function start() {
-    if (A.SeatLocalConfig) A.SeatLocalConfig.load();   /* F1：刷新后恢复立场/备注/选中席位 */
+    if (A.SeatLocalConfig) A.SeatLocalConfig.load();
     TAB_IDS.forEach(function (t) {
       var b = document.getElementById("tab-btn-" + t);
       if (b) b.addEventListener("click", function () { select(t); });
     });
-    select("meeting");   /* 会议是主工作区，默认打开 */
-    A.HarnessStore.subscribe(refresh);
-    refresh();
+    select("meeting");
+    A.HarnessStore.subscribe(refresh); refresh();
   }
 
   A.HarnessShell = Object.freeze({ select: select, refresh: refresh, start: start, runtimeStatusText: runtimeStatusText });
-
   if (typeof document !== "undefined") {
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
     else start();
