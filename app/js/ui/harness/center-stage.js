@@ -51,17 +51,22 @@
     /* 会议配置卡（常驻）：无会议=表单，有会议=冻结摘要 */
     A.ConfigPanel.render(host, state);
 
-    /* 模式主体：两个面板都渲染，按 mode 显隐（Browser 契约 id 常驻 DOM，C11 等创建后检查仍可查 disabled） */
+    /* F3-T01：中央单一滚动工作区——面板内容全部进 meeting-workspace（容器不滚，内容自己滚）。 */
     var runWrap = Dom.el("div");
     runWrap.id = "console-relay";
     runWrap.style.display = (mode === "run") ? "" : "none";
-    A.RelayPanel.render(runWrap, state);
+    var runWs = Dom.el("div", "meeting-workspace");
+    runWs.id = "meeting-workspace";
+    A.RelayPanel.render(runWs, state);
+    runWrap.appendChild(runWs);
     host.appendChild(runWrap);
 
     var seatWrap = Dom.el("div");
     seatWrap.id = "console-seat";
     seatWrap.style.display = (mode === "seat") ? "" : "none";
-    A.SeatConfigPanel.render(seatWrap, state);
+    var seatWs = Dom.el("div", "meeting-workspace");
+    A.SeatConfigPanel.render(seatWs, state);
+    seatWrap.appendChild(seatWs);
     host.appendChild(seatWrap);
   }
 

@@ -31,7 +31,8 @@
     var nodes = ds.timeline || [];
     var cur = ds.cursor;
     var latest = ds.latest;
-    var curNode = nodes[cur] || nodes[nodes.length - 1] || null;
+    /* 偏差 A 修正：显示「最后已重放」的节点（nodes[cur-1]），而非「下一个」节点（nodes[cur]）。 */
+    var curNode = nodes[cur - 1] || nodes[nodes.length - 1] || null;
 
     var strip = Dom.el("div", "timeline-strip");
     var prevB = btn("tl-prev", "◀ 上一步", "secondary", cur <= 0 || !ds.meeting, function () { A.ReplayCursor.prev(state.meeting); });

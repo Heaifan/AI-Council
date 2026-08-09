@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（MEETING-REPLAY-F1 Timeline Replay：Node 203/203 · Browser 208/208 · Offline 14/14）
+> 最后更新：2026-08-09（MEETING-UX-F3 Center Workspace Simplification：Node 203/203 · Browser 250/250 · Offline 14/14）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -113,7 +113,7 @@ app/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
     ├── run-node.js             # Node 入口（自动测试，现 203 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft + seat-layout + meeting-replay）
-    ├── run-browser.js          # Playwright 真机验收入口（D1..D6 + F1/F2/F2-F1 + D7 回放 R01..R07；208 项）
+    ├── run-browser.js          # Playwright 真机验收入口（D1..D7 + F1/F2/F2-F1 + F3 四视口 L01..L10；250 项）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）

@@ -246,21 +246,21 @@ async function runD3(page) {
 
   await page.fill("#relay-paste", "建议：控制风险敞口，分批建仓，关注情报收集。");
   await page.click("#relay-submit");
-  await page.waitForSelector("#relay-validation");
-  check("B12 · 校验状态为「通过」",
-    (await page.locator("#relay-validation").innerText()).includes("通过"));
-
-  const checkItems = await page.locator(".checks li").evaluateAll((els) =>
-    els.map((e) => ({ id: e.textContent.trim().split(" ")[0], ok: e.className.includes("ok") })));
-  check("B13 · V01–V05 五条校验全亮",
-    checkItems.length === 5 && checkItems.every((c) => c.ok), JSON.stringify(checkItems));
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  check("B12 · 校验通过静默（F3-T03：无常驻校验块）",
+    (await page.locator("#relay-validation").count()) === 0);
+  check("B13 · 校验通过后无详情清单常驻",
+    (await page.locator(".checks li").count()) === 0);
 
   check("B14 · 中继状态为中文「校验通过」",
     (await page.locator("#relay-state").innerText()) === "校验通过");
   check("B15 · 内部状态为机器值「validated」",
     (await page.locator("#relay-state-raw").innerText()).includes("validated"));
-  check("B16 · 存在「尚未写入正式会议记录」警告",
-    (await page.locator("#relay-not-official").innerText()).includes("尚未写入正式会议记录"));
+  check("B16 · 未提交时无「尚未写入」常驻块（F3-T04）",
+    (await page.locator("#relay-not-official").count()) === 0);
   check("B17 · 「接受为正式发言」按钮可用",
     await page.locator("#relay-accept").isEnabled());
 
@@ -299,20 +299,28 @@ async function runD3(page) {
 
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", "x".repeat(20001));   /* 超长触发 V04 校验失败 */
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  check("B23 · 校验失败才出现轻提示（F3-T03）",
+    (await page.locator("#relay-validation").innerText()).includes("校验问题"));
+  await page.click("#relay-verdict-toggle");
+  const failItems = await page.locator(".checks li").count();
+  check("B23b · 校验失败详情清单可见（含失败项）", failItems > 0, "items=" + failItems);
+
+  await page.click("#relay-open");   /* V04 被拒后回 idle，需重新生成提示词 */
+  await page.waitForSelector("#relay-paste");
   await page.fill("#relay-paste", "建议：加强情报收集，谨慎行事，保持阵型稳定。");
   await page.click("#relay-submit");
-  await page.waitForFunction(() => {
-    const el = document.getElementById("relay-validation");
-    return el && el.textContent.includes("通过");
-  });
-  check("B23 · 被拒后重新生成提示词并粘贴有效回答 → 校验通过",
-    (await page.locator("#relay-validation").innerText()).includes("通过"));
+  await page.waitForFunction(() => document.getElementById("relay-validation") === null);
+  check("B24 · 重新粘贴有效回答 → 校验通过静默（无校验块）",
+    (await page.locator("#relay-validation").count()) === 0);
   await page.click("#relay-accept");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-msg");
     return el && el.textContent.includes("已接受为正式发言");
   });
-  check("B24 · 第二次接受成功并写入会议记录",
+  check("B24b · 第二次接受成功并写入会议记录",
     (await page.locator("#relay-msg").innerText()).includes("已接受为正式发言"));
 
   /* B25：取消 */
@@ -474,9 +482,12 @@ async function runD5(page) {
   /* response 流程 + accept 仍成立 */
   await page.fill("#relay-paste", "六席验收回答：同意继续自研。");
   await page.click("#relay-submit");
-  await page.waitForSelector("#relay-validation");
-  check("S13 · response 流程仍成立（校验通过）",
-    (await page.locator("#relay-validation").innerText()).includes("通过"));
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  check("S13 · response 流程仍成立（校验通过静默，F3-T03）",
+    (await page.locator("#relay-validation").count()) === 0);
   await page.click("#relay-accept");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-msg");
@@ -640,6 +651,97 @@ async function runD7(page) {
   await page.screenshot({ path: path.join(shotDirD3, "07-replay.png"), fullPage: true });
 }
 
+
+/* ---------- F3：Center Workspace Simplification（L01..L10 × 4 视口，方案 T01/T03/T04/T05/T07/T08） ---------- */
+async function runF3(page, vp) {
+  const [w, h] = vp, tag = "L@" + w + "x" + h;
+  await page.goto(appUrl);
+  await page.setViewportSize({ width: w, height: h });
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* L01 页面本体无整体滚动（只有中央 workspace 滚） */
+  const docDelta = await page.evaluate(() => document.scrollingElement.scrollHeight - window.innerHeight);
+  check(tag + " · L01 页面本体无主要纵向滚动", docDelta <= 2, "delta=" + docDelta);
+
+  /* L02 Timeline 固定可见（不进中央滚动区） */
+  const tlBox = await page.locator("#tl-prev").boundingBox();
+  check(tag + " · L02 Timeline 固定可见", !!tlBox && tlBox.y + tlBox.height <= h + 2);
+
+  /* L03 席位可见 */
+  const seatBox = await page.locator("#seat-A1").boundingBox().catch(() => null);
+  check(tag + " · L03 席位可见", !!seatBox && seatBox.y < h);
+
+  /* L04 中央 workspace 是唯一滚动容器 */
+  const ws = await page.evaluate(() => {
+    const el = document.getElementById("meeting-workspace");
+    if (!el) return null;
+    return { oy: getComputedStyle(el).overflowY };
+  });
+  check(tag + " · L04 中央 workspace 独立滚动容器", !!ws && ws.oy === "auto", JSON.stringify(ws));
+
+  /* L05 创建 Mock Demo：无 record 常驻块 + 无校验块（T03/T04） */
+  await page.click("#dev-tools summary");
+  await page.click("#mt-create");
+  await page.waitForSelector("#mt-phase");
+  const notOfficial = await page.locator("#relay-not-official").count();
+  const validation = await page.locator("#relay-validation").count();
+  check(tag + " · L05 无常驻「尚未写入」块 + 无校验块", notOfficial === 0 && validation === 0,
+    "notOfficial=" + notOfficial + " validation=" + validation);
+
+  /* L06 relay 场景：Prompt/Response 主体高度可读（T05） */
+  await page.click("#mt-create-relay");
+  await page.waitForSelector("#relay-hint");
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  const ph = await page.locator("#relay-prompt").evaluate((el) => el.clientHeight);
+  const rh = await page.locator("#relay-paste").evaluate((el) => el.clientHeight);
+  check(tag + " · L06 Prompt/Response 主体可读（≥140/≥170）", ph >= 140 && rh >= 170,
+    "prompt=" + ph + " response=" + rh);
+
+  /* L07 校验失败才出现轻提示（T03）——超长文本触发 V04 */
+  await page.fill("#relay-paste", "x".repeat(20001));
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  const failText = await page.locator("#relay-validation").innerText();
+  check(tag + " · L07 校验 FAIL 才出现轻提示", failText.includes("校验问题"), failText);
+
+  /* L08 校验通过静默（T03）——V04 被拒后回 idle，重新生成 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-paste");
+  await page.fill("#relay-paste", "建议：加强情报收集，谨慎行事，保持阵型稳定。");
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => document.getElementById("relay-validation") === null);
+  check(tag + " · L08 校验 PASS 静默（无校验块）", true);
+
+  /* L09 中央滚动后席位不随中央滚走（T07）——滚动前后同状态比较 */
+  const seatBox1 = await page.locator("#seat-A1").boundingBox().catch(() => null);
+  await page.evaluate(() => {
+    const el = document.getElementById("meeting-workspace");
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+  const seatBox2 = await page.locator("#seat-A1").boundingBox().catch(() => null);
+  check(tag + " · L09 席位不随中央滚动走", !!seatBox2 && !!seatBox1 && Math.abs(seatBox2.y - seatBox1.y) < 2);
+
+  /* L10 控件 overlap = 0（workspace 内交互元素两两不相交，T08） */
+  const overlaps = await page.evaluate(() => {
+    const wsEl = document.getElementById("meeting-workspace");
+    if (!wsEl) return -1;
+    const els = Array.from(wsEl.querySelectorAll("button, textarea, select, input"))
+      .filter((e) => e.offsetParent !== null);
+    let bad = 0;
+    for (let i = 0; i < els.length; i++) {
+      for (let j = i + 1; j < els.length; j++) {
+        const a = els[i].getBoundingClientRect(), b = els[j].getBoundingClientRect();
+        if (!(a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1)) bad++;
+      }
+    }
+    return bad;
+  });
+  check(tag + " · L10 控件 overlap = 0", overlaps === 0, "overlaps=" + overlaps);
+}
+
+
 /* ---------- F1：One-Screen 硬验收 + 席位编辑恢复（ONE-SCREEN-F1 方案） ---------- */
 const PID_OF_SEAT = { A1: "agent-a1", A2: "agent-a2", A3: "agent-a3", B1: "agent-b1", B2: "agent-b2", B3: "agent-b3" };
 const ALL_SEATS = ["A1", "A2", "A3", "B1", "B2", "B3"];
@@ -656,15 +758,20 @@ async function runF1(page) {
   await page.setInputFiles("#dir-input", repoRoot);
   await waitStatus(page, /可用规则 1 · 已隔离 0/);
 
-  /* F01/F02：1366×768 主门禁——页面/三栏/控制台无纵向滚动 + 六席同时完整可见 */
+  /* F01/F02：1366×768 主门禁——页面框架无滚动条（F3：中央内容由 meeting-workspace 滚动，不压内容） */
   await page.setViewportSize({ width: 1366, height: 768 });
-  const noScrollAll = await page.evaluate(() => {
-    const ok = (el) => el.scrollHeight <= el.clientHeight + 1;
-    return ok(document.scrollingElement) && ok(document.getElementById("console")) &&
-      ok(document.getElementById("console-left")) && ok(document.getElementById("console-center")) &&
-      ok(document.getElementById("console-right"));
+  const noScrollFrame = await page.evaluate(() => {
+    /* 无滚动条 = 页面本体不滚 + 左/右栏 overflow hidden（内容由各自容器裁剪，不产生滚动条）；中央由 workspace 滚动。 */
+    const doc = document.scrollingElement;
+    const oy = (id) => getComputedStyle(document.getElementById(id)).overflowY;
+    return doc.scrollHeight <= doc.clientHeight + 1 &&
+      oy("console-left") === "hidden" && oy("console-right") === "hidden" && oy("console") !== "auto";
   });
-  check("F01 · 1366×768：页面/控制台/左/中/右均无纵向滚动条", noScrollAll);
+  const wsOverflow = await page.evaluate(() => {
+    const el = document.getElementById("meeting-workspace");
+    return !!el && getComputedStyle(el).overflowY === "auto";
+  });
+  check("F01 · 1366×768：页面/左/右无滚动条，中央 workspace 为滚动容器（F3）", noScrollFrame && wsOverflow);
   for (const s of ALL_SEATS) {
     const v = await page.locator("#seat-" + s).isVisible();
     check("F02 · 1366×768 席位 " + s + " 完整可见", v);
@@ -994,6 +1101,7 @@ async function runChannel(channel) {
   await runD5(page);
   await runD6(page);
   await runD7(page);
+  for (const vp of [[1366, 768], [1440, 900], [1792, 856], [1920, 1080]]) await runF3(page, vp);
   await runF1(page);
   await runF2(page);
   await runF2F1(page);

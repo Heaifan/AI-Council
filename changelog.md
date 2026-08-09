@@ -2,6 +2,16 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-UX-F3 · Center Workspace Simplification — 2026-08-09
+
+- **目的**：真机证明中央信息主次错误——Validation/Record Status 长期占核心空间，Prompt/Response 被压缩。本轮不再局部调高度，直接简化：**中央 = 单一滚动工作区**，内容多少都行、放不下中央自己滚。
+- **中央布局**：每个模式面板包 `div.meeting-workspace`（flex:1 + min-height:0 + overflow-y:auto，唯一滚动容器）；删除双栏 grid、textarea 挤压、`@media (max-height:800/760)` 矮屏压缩规则（T02 全删）；Prompt min-height 150 / Response 180 + resize:vertical（T05）。
+- **Validation 降级（T03）**：未校验/PASS 全静默，仅 FAIL 显示「⚠ 回答存在校验问题 [查看详情]」（详情抽屉 V01–V05）；关键修复——校验 FAIL 走 rejected 终态后 activeSession 消失，FAIL 卡片改由 lastCheck 驱动在 idle 态也渲染。
+- **Record Status 降级（T04）**：删「尚未写入正式会议记录」常驻块；accept 瞬间 Toast「✓ 已写入会议记录」（CSS animation 2s 淡出，无 JS timer）。
+- **Timeline 固定（T07）**：底部固定不进中央滚动区；顺带修正偏差 A（标签显示 nodes[cur-1]）。
+- **门禁**：Node **203/203** 零回归；Browser **250/250**（208 零丢失 + F3 四视口 40 项 + B23b/B24b 拆分 2 项；B12/B13/B16/S13/F01 随方案更新语义）。新增 `reports/meeting-ux-f3.md`。
+- **状态**：`MEETING-UX-F3: IMPLEMENTED · Node 203/203 · Browser 250/250`。
+
 ## 只读核查 · 测试数量差异登记（2026-08-09，零代码变更）
 
 - **结论**：Node 205→203 / Browser 264→208 **非回归、非丢失**（git 全历史 + reflog + 注册表 diff 证实：Node 185→191→203、Browser 95→152→163 均单调递增，零删除零合并零迁移）。
