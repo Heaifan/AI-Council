@@ -561,6 +561,85 @@ async function runD6(page) {
   await page.screenshot({ path: path.join(shotDirD3, "06-one-screen.png"), fullPage: true });
 }
 
+/* ---------- D7：MEETING-REPLAY-F1 时间轴（R01..R08，方案 T05/T06/T07） ---------- */
+async function runD7(page) {
+  await page.goto(appUrl);
+  await page.setViewportSize({ width: 1792, height: 856 });
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+
+  /* R01：底部时间轴常驻（上一步/下一步/回到当前 + 轨道） */
+  check("R01 · 底部时间轴常驻（上一步/下一步/回到当前）",
+    (await page.locator("#tl-prev").count()) === 1 &&
+    (await page.locator("#tl-next").count()) === 1 &&
+    (await page.locator("#tl-back").count()) === 1);
+
+  /* R02：创建 Mock Demo 后时间轴节点 ≥1（先展开开发工具 drawer） */
+  await page.click("#dev-tools summary");
+  await page.click("#mt-create");
+  await page.waitForSelector("#mt-phase");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("tl-current-label");
+    return el && el.textContent.length > 0;
+  });
+  const label0 = await page.locator("#tl-current-label").innerText();
+  check("R02 · 创建会议后时间轴有节点", label0.length > 0, label0);
+  const nodeCount0 = await page.locator(".tl-node").count();
+  check("R02b · 时间轴节点数 ≥ 1", nodeCount0 >= 1, "nodes=" + nodeCount0);
+
+  /* R03：执行下一步后节点增加 */
+  await page.click("#mt-step");
+  await page.waitForFunction((n) => {
+    const el = document.getElementById("tl-current-label");
+    return el && el.textContent.length > 0;
+  }, nodeCount0, { timeout: 5000 });
+  await page.waitForFunction((n) => document.querySelectorAll(".tl-node").length > n, nodeCount0, { timeout: 5000 });
+  const nodeCount1 = await page.locator(".tl-node").count();
+  check("R03 · 执行步骤后时间轴节点增加", nodeCount1 > nodeCount0, nodeCount0 + " -> " + nodeCount1);
+
+  /* R04：上一步进入回放模式（横幅 + 按钮禁用） */
+  await page.click("#tl-prev");
+  await page.waitForSelector("#replay-banner");
+  check("R04 · 上一步进入回放模式（历史横幅出现）", await page.locator("#replay-banner").isVisible());
+  check("R04b · 回放时执行步骤按钮禁用", await page.locator("#mt-step").isDisabled());
+  check("R04c · 回放时保存/加载禁用", await page.locator("#mt-save").isDisabled() && await page.locator("#mt-load").isDisabled());
+
+  /* R05：回放时席位卡状态来自 replay（B1 执行前：A1 已发言 / B1 待执行） */
+  /* 先回到当前，再 step 一次让 A1、B1 都发言过，然后逐次 prev 回退到 B1 发言前的位置。 */
+  await page.click("#tl-back");
+  await page.waitForFunction(() => !document.getElementById("replay-banner"));
+  await page.click("#mt-step");
+  let got = false;
+  for (let i = 0; i < 5 && !got; i++) {
+    const a1 = await page.locator("#seat-A1 .seat-state").innerText().catch(() => "");
+    const b1 = await page.locator("#seat-B1 .seat-state").innerText().catch(() => "");
+    if (a1.includes("已发言") && (b1.includes("当前发言") || b1.includes("等待"))) { got = true; break; }
+    await page.click("#tl-prev");
+    await page.waitForTimeout(150);
+  }
+  const a1Status = await page.locator("#seat-A1 .seat-state").innerText().catch(() => "");
+  const b1Status = await page.locator("#seat-B1 .seat-state").innerText().catch(() => "");
+  check("R05 · 回放时席位状态来自历史（A1 已发言 / B1 待执行）",
+    got && a1Status.includes("已发言") && (b1Status.includes("当前发言") || b1Status.includes("等待")),
+    "A1=" + a1Status + " B1=" + b1Status);
+
+  /* R06：回到当前恢复 Live State */
+  await page.click("#tl-back");
+  await page.waitForFunction(() => !document.getElementById("replay-banner"));
+  check("R06 · 回到当前后横幅消失", true);
+  check("R06b · 回到当前后执行按钮恢复", !(await page.locator("#mt-step").isDisabled()));
+
+  /* R07：回放期间不产生新 Message/Event */
+  await page.click("#tl-prev");
+  await page.waitForSelector("#replay-banner");
+  const evBefore = await page.evaluate(() => window.AICouncil.HarnessStore.get().meeting.events.length);
+  await page.waitForTimeout(400);
+  const evAfter = await page.evaluate(() => window.AICouncil.HarnessStore.get().meeting.events.length);
+  check("R07 · 回放浏览不产生新事件（live 不变）", evBefore === evAfter, evBefore + " -> " + evAfter);
+  await page.click("#tl-back");
+  await page.screenshot({ path: path.join(shotDirD3, "07-replay.png"), fullPage: true });
+}
+
 /* ---------- F1：One-Screen 硬验收 + 席位编辑恢复（ONE-SCREEN-F1 方案） ---------- */
 const PID_OF_SEAT = { A1: "agent-a1", A2: "agent-a2", A3: "agent-a3", B1: "agent-b1", B2: "agent-b2", B3: "agent-b3" };
 const ALL_SEATS = ["A1", "A2", "A3", "B1", "B2", "B3"];
@@ -914,6 +993,7 @@ async function runChannel(channel) {
   await runD4(page);
   await runD5(page);
   await runD6(page);
+  await runD7(page);
   await runF1(page);
   await runF2(page);
   await runF2F1(page);

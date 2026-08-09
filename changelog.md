@@ -2,6 +2,16 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-REPLAY-F1 · Timeline Replay（会议时间轴 / 只读回放）— 2026-08-08
+
+- **目的**：Mock B1 从「待执行」到「已发言」极快，历史状态立即丢失；未来 Web Automation 多模型自动运行后更严重。本轮把会议变成**可回放的状态序列**：底部常驻时间轴（Round→Step 两级），上一步/下一步/回到当前只改 UI 回放游标，**绝不修改 Runtime/Message/EventLog/PendingAction**——历史不可篡改，允许自由回看（会议录像机，非 Undo；T10 明确不做 destructive rollback）。
+- **核心**：`MeetingReplay.buildTimeline`（Event Cursor 重建：node 只记 event_cursor，Replay State = events[0..cursor-1] 派生，不复制整份 Meeting）；`ReplayProvider.get` 为 Display State 唯一出口（displayState = live | replay 视图），SeatCard/MeetingHud/RelayPanel/Summary 全部统一消费；回放视图清空 stateData.web_relay 防未来中继会话泄漏；ReplayCursor 用 -1 表示跟随最新（新会议不误判回放）。
+- **UI**：底部时间轴常驻条（[◀ 上一步] 节点轨道 [下一步 ▶] [回到当前] + 当前节点标签，展开=事件日志）；回放模式中央黄色横幅「⏱ 正在查看历史状态 [回到当前会议]」，全部 mutating 按钮（执行/裁定/保存/加载/提交/接受/拒绝/重试/取消）禁用。
+- **测试**：Node **203/203**（191 零回归 + TEST-173..184 十二项防御性门禁：单调/不改 live/不产 Message/PendingAction/恢复/回到当前/mutating/B1 before-after/跨阶段/save-load/不被污染/displayState 一致）；Browser **208/208**（197 零回归 + R01..R07 时间轴与回放模式真实点击）。save/load 后 timeline 一致（T08，存档已含 events）。
+- **未决项**：Fork From Here（从历史节点新建分支）仅登记设计；messages 内容入事件为可选增强。
+- 新增 `reports/meeting-replay-f1.md`；同步 file-tree.md。
+- **状态**：`MEETING-REPLAY-F1: IMPLEMENTED · Node 203/203 · Browser 208/208`。
+
 ## MEETING-UX-F2-F1 · Seat Runtime Fields Unlock — 2026-08-08
 
 - **目的**：真人验收发现「模型名称/模型网页仍无法编辑」→ 用户裁定 F2 = FUNCTIONAL PARTIAL PASS。本轮只修席位字段权限；**禁止 Edge Attach / Web Automation / 会议流程**（automation/ 行为层零 diff）。

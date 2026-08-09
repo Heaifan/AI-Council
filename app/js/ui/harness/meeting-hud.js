@@ -18,11 +18,11 @@
   }
 
   /* Round = 当前相位在协议 phases 中的序号；phase = 相位中文名。 */
-  function roundInfo(state) {
-    var m = state.meeting;
+  function roundInfo(vs) {
+    var m = vs.meeting;
     if (!m) return { round: "Round —", phase: "—" };
     var phases = [];
-    var avail = (state.registry && state.registry.available) || [];
+    var avail = (vs.registry && vs.registry.available) || [];
     for (var i = 0; i < avail.length; i++) {
       if (avail[i].protocolId === m.protocolId) {
         phases = (avail[i].document && avail[i].document.phases) || [];
@@ -49,8 +49,11 @@
   function render(host, state) {
     if (!host) return;
     Dom.clear(host);
-    var m = state.meeting;
-    var r = roundInfo(state);
+    /* T04：HUD 统一消费 displayState（回放时显示历史 phase/status）。 */
+    var ds = A.ReplayProvider.get(state);
+    var vs = ds.isReplay ? Object.assign({}, state, { meeting: ds.meeting }) : state;
+    var m = vs.meeting;
+    var r = roundInfo(vs);
 
     var main = Dom.el("div", "hud-main");
     var title = Dom.el("span", "hud-title", m ? (m.title || "（未命名会议）") : "尚未创建会议");

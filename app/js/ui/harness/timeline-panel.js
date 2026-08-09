@@ -1,6 +1,7 @@
-/* AI Council v0.1 — D3 · 会议控制台 · TimelinePanel：底部「会议时间线 / 审计日志」折叠区。
- * 只读投影 meeting.events 尾部 20 条；开发详情（Event Type / request_id / participant_id）随折叠展开。
- * 与右栏状态卡分离：时间线不再散落，统一沉底。
+/* AI Council v0.1 — MEETING-REPLAY-F1 · TimelinePanel：常驻底部会议时间轴（方案 T05）。
+ * 常驻条：[◀ 上一步] — Round/Step 节点（横向滚动）— [下一步 ▶] [回到当前]
+ * 展开：节点详情（当前查看位置 + 事件日志）。
+ * 回放只改 cursor（ReplayCursor），不碰 Runtime（T01）。
  */
 (function (root) {
   "use strict";
@@ -8,34 +9,68 @@
   var A = root.AICouncil;
   var Dom = A.Dom;
 
-  function line(box, ev) {
-    var l = Dom.el("div", "tl-line");
-    l.appendChild(Dom.el("span", "tl-time", String(ev.occurred_at || "").slice(11, 19) || "—"));
-    l.appendChild(Dom.el("span", "tl-type", ev.event_type));
-    if (ev.payload && ev.payload.participant_id) l.appendChild(Dom.el("span", "tl-pid", ev.payload.participant_id));
-    box.appendChild(l);
+  function btn(id, label, cls, disabled, onClick) {
+    var b = Dom.el("button", "btn timeline-btn" + (cls ? " " + cls : ""), label);
+    b.id = id; b.disabled = !!disabled;
+    if (!disabled) b.addEventListener("click", onClick);
+    return b;
   }
 
-  function render(host, meeting) {
+  function nodeDot(node, cur, latest) {
+    var state = node.sequence < cur ? "past" : (node.sequence === cur ? "current" : "future");
+    var d = Dom.el("span", "tl-node " + state, "●");
+    d.title = node.label + (node.event_cursor > 0 ? "（事件 " + node.event_cursor + "）" : "");
+    d.setAttribute("data-seq", node.sequence);
+    return d;
+  }
+
+  function render(host, state) {
     if (!host) return;
-    var wasOpen = host.querySelector("details") ? host.querySelector("details").open : false;   /* 先读后清：保留用户展开状态 */
     Dom.clear(host);
-    var box = Dom.el("div", "card timeline");
-    var details = document.createElement("details");
-    var sum = Dom.el("summary", null, "会议时间线 / 审计日志");
-    sum.id = "tl-toggle";
-    details.open = wasOpen;   /* 默认折叠；用户展开后重绘保留 */
-    details.appendChild(sum);
-    var list = Dom.el("div", "tl-list drawer-body");
-    var events = (meeting && meeting.events) || [];
-    if (!events.length) {
-      list.appendChild(Dom.el("p", "empty", "（暂无事件）"));
-    } else {
-      events.slice(-20).forEach(function (ev) { line(list, ev); });
+    var ds = A.ReplayProvider.get(state);
+    var nodes = ds.timeline || [];
+    var cur = ds.cursor;
+    var latest = ds.latest;
+    var curNode = nodes[cur] || nodes[nodes.length - 1] || null;
+
+    var strip = Dom.el("div", "timeline-strip");
+    var prevB = btn("tl-prev", "◀ 上一步", "secondary", cur <= 0 || !ds.meeting, function () { A.ReplayCursor.prev(state.meeting); });
+    strip.appendChild(prevB);
+
+    var track = Dom.el("div", "timeline-track");
+    track.id = "timeline-track";
+    (nodes || []).forEach(function (n) { track.appendChild(nodeDot(n, cur, latest)); });
+    var label = Dom.el("span", "tl-current-label", curNode ? ("R" + curNode.round + " · " + curNode.label) : "");
+    label.id = "tl-current-label";
+    track.appendChild(label);
+    strip.appendChild(track);
+
+    var nextB = btn("tl-next", "下一步 ▶", "secondary", !ds.meeting || cur >= latest, function () { A.ReplayCursor.next(state.meeting); });
+    strip.appendChild(nextB);
+    var backB = btn("tl-back", "回到当前", "secondary", !ds.isReplay, function () { A.ReplayCursor.toLatest(state.meeting); });
+    strip.appendChild(backB);
+    host.appendChild(strip);
+
+    /* 展开区：当前节点详情 + 事件日志（只读） */
+    var details = Dom.el("details", "timeline-details");
+    details.appendChild(Dom.el("summary", null, "会议时间线 / 审计日志"));
+    var body = Dom.el("div", "timeline-body");
+    if (curNode) {
+      var info = Dom.el("p", "note", "当前查看：R" + curNode.round + " · " + curNode.label +
+        (curNode.event_cursor ? "（事件游标 " + curNode.event_cursor + " / " + latest + "）" : "（尚未开始）") +
+        (ds.isReplay ? " ⏱ 历史回放中" : " · 当前最新"));
+      info.id = "tl-node-info";
+      body.appendChild(info);
     }
-    details.appendChild(list);
-    box.appendChild(details);
-    host.appendChild(box);
+    if (ds.meeting && ds.meeting.events) {
+      ds.meeting.events.forEach(function (ev) {
+        var line = Dom.el("div", "tl-line", (ev.occurred_at || "").slice(11, 19) + " · " + ev.event_type +
+          (ev.actor_id ? " · " + ev.actor_id : "") + (ev.payload && ev.payload.choice ? " · " + ev.payload.choice : ""));
+        body.appendChild(line);
+      });
+    }
+    details.appendChild(body);
+    host.appendChild(details);
   }
 
   A.TimelinePanel = Object.freeze({ render: render });

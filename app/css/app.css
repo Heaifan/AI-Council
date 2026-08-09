@@ -179,6 +179,20 @@ main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* ---------- 时间线 ---------- */
 .timeline summary, .full-state summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 .tl-line { display: flex; gap: 10px; font-size: 12px; padding: 2px 0; border-bottom: 1px dashed #eef1f5; }
+
+/* ---------- MEETING-REPLAY-F1：常驻底部时间轴 ---------- */
+.timeline-strip { display: flex; align-items: center; gap: 10px; padding: 6px 4px; border-top: 1px solid var(--line); }
+.timeline-btn { padding: 4px 12px; font-size: 12px; }
+.timeline-track { flex: 1; display: flex; align-items: center; gap: 6px; overflow-x: auto; white-space: nowrap; }
+.tl-node { font-size: 12px; cursor: default; }
+.tl-node.past { color: var(--ok); }
+.tl-node.current { color: var(--accent); font-size: 16px; }
+.tl-node.future { color: var(--line); }
+.tl-current-label { font-size: 12px; color: var(--ink); margin-left: 8px; }
+.timeline-details { margin-top: 4px; }
+.timeline-body { max-height: 160px; overflow-y: auto; }
+.replay-banner { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 8px 14px;
+  border: 1px solid #f0dcae; border-radius: 8px; background: #fdf8ec; color: #8a6d1f; font-size: 13px; }
 .tl-time { color: var(--muted); font-family: Consolas, monospace; }
 .tl-type { color: var(--ink); }
 .tl-pid { color: var(--muted); }

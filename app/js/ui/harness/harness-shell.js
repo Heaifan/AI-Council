@@ -78,7 +78,7 @@
     var seatDirty = actions.getMode() === "seat" && showingSeat && A.SeatEditDraft.anyDirty();
     if (!seatDirty) A.CenterStage.render(document.getElementById("console-center"), s);
     A.SeatColumn.render(document.getElementById("console-right"), "B", s);
-    A.TimelinePanel.render(document.getElementById("console-timeline"), s.meeting);
+    A.TimelinePanel.render(document.getElementById("console-timeline"), s);
     A.DevToolsPanel.render(document.getElementById("console-devtools"), !!s.registry, !!s.meeting);
     A.CompilerView.render(document.getElementById("view-compiler"), s);
   }

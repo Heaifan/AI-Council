@@ -1,6 +1,5 @@
-/* AI Council v0.1 — D3 · 会议控制台 · RelayPanel：中栏主工作区装配（DOM 投影，动作全在 WebRelayActions）。
- * 当前执行信息 → RelayWorkarea 双栏 → 校验折叠 → 状态驱动决定按钮。
- */
+/* AI Council v0.1 — D3 · RelayPanel：中栏主工作区装配（DOM 投影，动作全在 WebRelayActions）。
+ * 执行信息 → 双栏工作区 → 校验折叠 → 状态驱动按钮（T06 回放只读）。 */
 (function (root) {
   "use strict";
 
@@ -15,40 +14,32 @@
   }
   function row(box, id, label, value) {
     var f = Dom.field(label, value);
-    f.lastChild.id = id;
-    box.appendChild(f);
+    f.lastChild.id = id; box.appendChild(f);
   }
 
   function execCard(active, profiles) {
     var box = Dom.el("div", "card exec");
     box.appendChild(Dom.el("h2", null, "当前执行"));
     var req = active && active.request;
-    var pid = req ? req.participant_id : "—";
+    var pid = req ? req.participant_id : "—", modelRef = req ? (req.model_ref || "") : "";
     row(box, "relay-exec-pid", "当前委员", pid);
-    var modelRef = req ? (req.model_ref || "") : "";
     row(box, "relay-exec-model", "模型", A.RelayProfiles.displayName(profiles, modelRef));
     row(box, "relay-state", "状态", active ? A.UIText.relayState(active.state) : "—");
     row(box, "relay-state-raw", "内部状态", active ? active.state : "—");
-    var open = btn("relay-open-web", "打开模型网页", "secondary",
+    box.appendChild(btn("relay-open-web", "打开模型网页", "secondary",
       !active || !A.RelayProfiles.isSafeUrl(A.RelayProfiles.webUrlFor(profiles, modelRef)),
-      function () { A.ConsoleActions.openWeb(modelRef); });
-    box.appendChild(open);
+      function () { A.ConsoleActions.openWeb(modelRef); }));
     return box;
   }
 
-  function actionsBar(active, check) {
+  function actionsBar(active, check, isReplay) {
     var bar = Dom.el("div", "controls relay-actions");
-    /* 状态驱动（方案 §六）：校验通过后才显示接受/拒绝/重新请求。 */
-    if (check && check.ok) {
-      bar.appendChild(btn("relay-accept", "接受为正式发言", "primary", false, function () { A.WebRelayActions.accept(); }));
-      bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", false, function () { A.WebRelayActions.reject(); }));
-      bar.appendChild(btn("relay-retry", "重新请求", "secondary", false, function () { A.WebRelayActions.retry(); }));
-    } else {
-      var canAlt = !(active && active.state !== "rejected" && active.state !== "failed");
-      bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", canAlt, function () { A.WebRelayActions.reject(); }));
-      bar.appendChild(btn("relay-retry", "重新请求", "secondary", canAlt, function () { A.WebRelayActions.retry(); }));
-    }
-    bar.appendChild(btn("relay-cancel", "取消本次请求", "secondary", !active, function () { A.WebRelayActions.cancel(); }));
+    var ok = !!(check && check.ok);
+    var canAlt = !isReplay && !!(active && active.state !== "rejected" && active.state !== "failed");
+    if (ok) bar.appendChild(btn("relay-accept", "接受为正式发言", "primary", false, function () { A.WebRelayActions.accept(); }));
+    bar.appendChild(btn("relay-reject", "拒绝回答", "secondary", !canAlt, function () { A.WebRelayActions.reject(); }));
+    bar.appendChild(btn("relay-retry", "重新请求", "secondary", !canAlt, function () { A.WebRelayActions.retry(); }));
+    bar.appendChild(btn("relay-cancel", "取消本次请求", "secondary", !active || isReplay, function () { A.WebRelayActions.cancel(); }));
     return bar;
   }
 
@@ -75,25 +66,33 @@
   function render(host, state) {
     if (!host) return;
     Dom.clear(host);
-    var active = A.WebRelayActions.activeSession(state.meeting);
-    var check = active ? A.WebRelayActions.getCheck() : null;
-    var notice = A.WebRelayActions.getNotice();
-    if (!active) {
-      idleOrEmpty(host, state);
-      if (notice) { var n0 = Dom.el("div", "status " + notice.kind, notice.text); n0.id = "relay-msg"; host.appendChild(n0); }
+    var ds = A.ReplayProvider.get(state), isReplay = ds.isReplay;
+    var vs = isReplay ? Object.assign({}, state, { meeting: ds.meeting }) : state;
+    if (isReplay) {   /* T06：回放只读——不渲染任何中继操作入口 */
+      var r = Dom.el("p", "empty", "⏱ 历史回放中：中继操作已禁用，仅可浏览席位状态与时间轴。");
+      r.id = "relay-replay-readonly";
+      host.appendChild(r);
       return;
     }
-    var profiles = A.ConsoleActions.getProfiles();
-    var req = active && active.request;
+    var active = A.WebRelayActions.activeSession(vs.meeting);
+    var check = active ? A.WebRelayActions.getCheck() : null;
+    if (!active) {
+      idleOrEmpty(host, vs);
+      var n0 = A.WebRelayActions.getNotice();
+      if (n0) { var n0e = Dom.el("div", "status " + n0.kind, n0.text); n0e.id = "relay-msg"; host.appendChild(n0e); }
+      return;
+    }
+    var profiles = A.ConsoleActions.getProfiles(), req = active && active.request;
     host.appendChild(execCard(active, profiles));
-    host.appendChild(A.AutomationView.build(active, req ? req.model_ref : ""));   /* 自动化卡独立（不撑胖 exec） */
+    host.appendChild(A.AutomationView.build(active, req ? req.model_ref : ""));
     host.appendChild(A.RelayWorkarea.workarea(active));
     host.appendChild(A.RelayVerdict.build(active, check));
     var note = Dom.el("p", "status warn", "注意：此回答尚未写入正式会议记录。");
     note.id = "relay-not-official";
     host.appendChild(note);
-    host.appendChild(actionsBar(active, check));
-    if (notice) { var nm = Dom.el("div", "status " + notice.kind, notice.text); nm.id = "relay-msg"; host.appendChild(nm); }
+    host.appendChild(actionsBar(active, check, isReplay));
+    var nm = A.WebRelayActions.getNotice();
+    if (nm) { var nme = Dom.el("div", "status " + nm.kind, nm.text); nme.id = "relay-msg"; host.appendChild(nme); }
   }
 
   A.RelayPanel = Object.freeze({ render: render });

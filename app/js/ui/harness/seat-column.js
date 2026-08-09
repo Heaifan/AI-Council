@@ -12,8 +12,11 @@
     return A.SeatLayout.SEATS.filter(function (s) { return s.side === side; });
   }
 
-  /* 会议摘要窄卡（F1 双列 grid：状态/内部、阶段/事件数、应发言/已接收，按钮行 + 消息行）。 */
-  function meetingSummary(state) {
+  /* 会议摘要窄卡（F1 双列 grid：状态/内部、阶段/事件数、应发言/已接收，按钮行 + 消息行）。
+   * T06：回放模式下所有 mutating 按钮禁用（执行/裁定/存档），仅浏览。 */
+  function meetingSummary(state, ds) {
+    ds = ds || A.ReplayProvider.get(state);
+    var isReplay = !!ds.isReplay;
     var box = Dom.el("div", "card summary-card");
     box.appendChild(Dom.el("h2", null, "会议摘要"));
     var s = A.MeetingStepFlow.summary(state.meeting);
@@ -46,23 +49,23 @@
     var bar = Dom.el("div", "controls");
     var step = Dom.el("button", "btn secondary small", "执行下一步");
     step.id = "mt-step";
-    var canStep = !!(s.pending && s.pending.type === A.MeetingAction.ACTION.COLLECT_RESPONSES);
+    var canStep = !!(s.pending && s.pending.type === A.MeetingAction.ACTION.COLLECT_RESPONSES) && !isReplay;
     step.disabled = !canStep;
     if (canStep) step.addEventListener("click", function () { A.MeetingActions.step(state); });
     bar.appendChild(step);
     [["mt-finish", "结束会议", "finish"], ["mt-continue", "继续会议", "continue"], ["mt-battle", "进入对辩", "battle"]].forEach(function (g) {
-      var off = !gate.enabled || gate.choices.indexOf(g[2]) < 0;
+      var off = !gate.enabled || gate.choices.indexOf(g[2]) < 0 || isReplay;
       var b = Dom.el("button", "btn secondary small", g[1]);
       b.id = g[0]; b.disabled = off;
       if (!off) b.addEventListener("click", function () { A.MeetingActions.decide(state, g[2]); });
       bar.appendChild(b);
     });
     var save = Dom.el("button", "btn secondary small", "保存");
-    save.id = "mt-save"; save.disabled = !state.meeting;
+    save.id = "mt-save"; save.disabled = !state.meeting || isReplay;
     save.addEventListener("click", function () { A.MeetingActions.save(state); });
     bar.appendChild(save);
     var load = Dom.el("button", "btn secondary small", "加载");
-    load.id = "mt-load"; load.disabled = !state.registry;
+    load.id = "mt-load"; load.disabled = !state.registry || isReplay;
     load.addEventListener("click", function () { A.MeetingActions.load(state); });
     bar.appendChild(load);
     box.appendChild(bar);
@@ -77,15 +80,18 @@
     if (!host) return;
     Dom.clear(host);
     var actions = A.ConsoleActions;
+    /* T04：统一消费 displayState——回放时整个右栏/席列从 replay 视图投影，组件不自判 replay。 */
+    var ds = A.ReplayProvider.get(state);
+    var vs = ds.isReplay ? Object.assign({}, state, { meeting: ds.meeting }) : state;
     var seats = A.SeatLayout.mapParticipants(
-      state.meeting ? state.meeting.participants : actions.getDraft().participants,
+      vs.meeting ? vs.meeting.participants : actions.getDraft().participants,
       actions.getStanceOverrides());
     columnSeats(side).forEach(function (def) {
       var seat = null;
       for (var i = 0; i < seats.length; i++) if (seats[i].seat_id === def.seat_id) { seat = seats[i]; break; }
-      A.SeatCard.render(host, seat || def, state);
+      A.SeatCard.render(host, seat || def, vs);
     });
-    if (side === "B") host.appendChild(meetingSummary(state));
+    if (side === "B") host.appendChild(meetingSummary(vs, ds));
   }
 
   A.SeatColumn = Object.freeze({ render: render, meetingSummary: meetingSummary });

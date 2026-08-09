@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-08（MEETING-UX-F2-F1 · Seat Runtime Fields Unlock：Node 191/191 · Browser 197/197 · Offline 14/14）
+> 最后更新：2026-08-08（MEETING-REPLAY-F1 Timeline Replay：Node 203/203 · Browser 208/208 · Offline 14/14）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -71,6 +71,7 @@ app/
 │   │   ├── local-store.js            # ★F1 localStorage 封装（35 行：JSON 读写 + 异常静默降级；键前缀 ai-council:v1:）
 │   │   ├── seat-config-rules.js     # ★F1 席位配置字段权限（51 行：FIELD_POLICY identity/runtime + FIELD_ALIAS 别名，T04 单一来源）
 │   │   ├── seat-session-store.js     # ★F1 创建前草稿/Transport Profile 持久化（40 行：draft 一次性创建 + profiles 落盘）
+│   │   ├── meeting-replay.js         # ★MEETING-REPLAY-F1 时间轴/只读回放（100 行：buildTimeline Round→Step + replayStateAt Event Cursor 重建 + resolveRequired）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
 │   │   ├── relay-flow.js             # ★D3 WEB_RELAY 编排层（82 行）：CompileFlow↔WebRelayController 接合；routeStep 供 step 委托停下；createRelayDemo；依赖项调用时取 A.*
@@ -84,7 +85,9 @@ app/
 │           ├── harness-shell.js       # 外壳：能力灯 6 个 + 独立运行状态行 + 三 Tab（默认会议）+ 订阅 Store 全量重绘；装配六席 + 项目条 + 时间线 + 开发工具条
 │           ├── meeting-actions.js     # 会议按钮行为（中文提示）；含 createRelay + load 后 hydrate
 │           ├── web-relay-actions.js   # ★D3 WEB_RELAY 中继点击行为（78 行，中文错误提示 + 错误代码；activeSession 共享判定）
-│           ├── console-actions.js     # ★D3 控制台动作层（110 行 ≤110 例外）：MeetingDraft 持有 / F1 字段级冻结 / 持久化委托 SeatSessionStore / 打开模型网页 / 清空会议
+│           ├── console-actions.js     # ★D3 控制台动作层（100 行）：MeetingDraft 持有 / F1 字段级冻结 / 持久化委托 SeatSessionStore / 打开模型网页 / 清空会议 + ReplayCursor 重置
+│           ├── replay-cursor.js       # ★MEETING-REPLAY-F1 回放游标（34 行：-1=跟随最新；prev/next/toLatest 只改 cursor 不碰 Runtime）
+│           ├── replay-provider.js     # ★MEETING-REPLAY-F1 Display State 唯一出口（41 行：live|replay 视图投影 + mutatingDisabled）
 │           ├── seat-local-config.js   # ★D3 席位本地 UI 配置（67 行：立场覆盖/备注/模式/选中席位/运行配置；F2-F1 runtimeConfig 持久化）
 │           ├── seat-edit-draft.js     # ★F2 席位编辑草稿（47 行：get/init/set/dirty/clear；runtime 刷新不得覆盖未保存输入）
 │           ├── meeting-hud.js         # ★F2 Meeting HUD（91 行：标题/议题/Round/Phase/计时器/状态；1s 局部时钟，TEST-10 唯一 setInterval 白名单）
@@ -109,8 +112,8 @@ app/
 └── tests/
     ├── test-runner.html        # 浏览器内测试页（无服务器，运行 D1 用例 TEST-01..15）
     ├── test-runner.js          # 测试运行器
-    ├── run-node.js             # Node 入口（自动测试，现 185 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft + seat-layout）
-    ├── run-browser.js          # Playwright 真机验收入口（D1 Protocols + D2 Meeting/Compiler + D3 B01..B25 + D4 C01..C16 + D5 六席 S01..S14 + D6 One-Screen/Clipboard U16..U22；99 项）
+    ├── run-node.js             # Node 入口（自动测试，现 203 项，含 harness/* 与 invocation/* 与 WEB_RELAY flow + recovery + console-draft + seat-layout + meeting-replay）
+    ├── run-browser.js          # Playwright 真机验收入口（D1..D6 + F1/F2/F2-F1 + D7 回放 R01..R07；208 项）
     ├── protocol-test-suite.js  # 测试框架
     ├── protocol-test-fixtures.js
     ├── protocol-test-cases.js  # TEST-01..07, 11, 12（Loader/Schema/Registry）
@@ -127,6 +130,7 @@ app/
     ├── protocol-test-cases-web-relay-recovery.js   # ★WR-06..13（D3 WEB_RELAY 持久化与集成：Save/Load/cancel/retry/step路由/accept写messages；98 行，由 145 行拆分）
     ├── protocol-test-cases-console-draft.js        # ★TEST-147..154（D3 会议控制台：MeetingDraft 校验/一次性创建/议题落库 + RelayProfiles URL 安全/upsert；123 行，测试文件不受 ≤100 约束）
     ├── protocol-test-cases-seat-layout.js          # ★TEST-155..160（D3 六席：SEATS 顺序/映射/立场覆盖/seat↔participant 双向/六席模板建会 topic 入 Packet；95 行，测试文件不受 ≤100 约束）
+    ├── protocol-test-cases-meeting-replay.js       # ★TEST-173..184（MEETING-REPLAY-F1 十二项防御性门禁：timeline 单调/不改 live/不产 Message/PendingAction/B1 before-after/跨阶段/save-load/displayState 一致）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     ├── fixtures/acceptance/protocols/   # 人工验收样例
     │       ├── good-a/ good-c/  broken-b/  missing-version/

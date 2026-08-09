@@ -18,25 +18,26 @@
     return b;
   }
 
-  function contextLine(box) {
-    var st = A.HarnessStore.get();
-    var m = st.meeting;
-    if (!m) { box.appendChild(Dom.el("p", "note", "尚未创建会议：请先填写会议配置并创建，或选择席位进行配置。")); return; }
-    var relay = A.WebRelayActions.activeSession(m);
-    var line = "会议进行中";
-    if (relay && relay.request) line += " · 当前席位 " + relay.request.participant_id;
-    else if (m.pendingAction && m.pendingAction.requiredParticipantIds) line += " · 等待发言：" + m.pendingAction.requiredParticipantIds.join(", ");
-    if (relay) line += " · " + A.UIText.relayState(relay.state);
-    var status = Dom.el("p", "context-line", line);
-    status.id = "center-context";
-    box.appendChild(status);
-  }
-
   function render(host, state) {
     if (!host) return;
     Dom.clear(host);
     var actions = A.ConsoleActions;
     var mode = actions.getMode();
+    var ds = A.ReplayProvider.get(state);
+
+    /* T06：回放模式横幅——查看历史时顶部明确提示 + [回到当前会议]（只读浏览）。 */
+    if (ds.isReplay) {
+      var rn = ds.timeline[ds.cursor] || null;
+      var banner = Dom.el("div", "replay-banner");
+      banner.id = "replay-banner";
+      banner.appendChild(Dom.el("span", null, "⏱ 正在查看历史状态" +
+        (rn ? " · R" + rn.round + " · " + rn.label : "") + "（游标 " + ds.cursor + " / " + ds.latest + "）"));
+      var back = Dom.el("button", "btn secondary", "回到当前会议");
+      back.id = "replay-back";
+      back.addEventListener("click", function () { A.ReplayCursor.toLatest(state.meeting); });
+      banner.appendChild(back);
+      host.appendChild(banner);
+    }
 
     /* 顶部模式条：仅 run 模式显示（seat 模式由表单标题/取消/保存表达，省 80px 让配置一屏）。
      * F2：上下文卡删除——状态/等待信息由顶部 Meeting HUD 承担（不再占中央空间）。 */
