@@ -127,10 +127,12 @@
   T.test("TEST-34", "all_selected_respond：A 先答不推进，B 答齐后进入 summary", function (ctx) {
     return startCommittee(ctx).then(function (r) {
       var res = RT.submitResult(r.m, r.proto, { participant_id: "agent-a1", payload: {} });
+      A.MessageCommit.commit(r.m, A.MockAgentRuntime.mockMessage(r.m, "agent-a1"));   /* F1-C：落库统一依据 */
       T.assert(res.ok, "A 提交被接受");
       T.assertEqual(r.m.currentPhaseId, "opening", "仅 A 响应时仍在 opening");
       T.assertEqual(r.m.pendingAction.receivedParticipantIds.length, 1, "已收到 1 份");
       RT.submitResult(r.m, r.proto, { participant_id: "agent-b1", payload: {} });
+      A.MessageCommit.commit(r.m, A.MockAgentRuntime.mockMessage(r.m, "agent-b1"));   /* F1-C：落库统一依据 */
       T.assertEqual(A.MeetingTurnSelector.phaseStatus(r.m, r.proto), "ready_to_advance", "B 响应齐后 READY_TO_ADVANCE（不自动切）");
       T.assert(RT.advancePhase(r.m, r.proto).ok, "advance 成功");
       T.assertEqual(r.m.currentPhaseId, "summary", "advance 后进入 summary");
@@ -140,7 +142,9 @@
   T.test("TEST-35", "重复提交：同一参与者第二次响应被拒，不重复计数", function (ctx) {
     return startCommittee(ctx).then(function (r) {
       RT.submitResult(r.m, r.proto, { participant_id: "agent-a1", payload: {} });
+      A.MessageCommit.commit(r.m, A.MockAgentRuntime.mockMessage(r.m, "agent-a1"));   /* F1-C：落库统一依据 */
       var dup = RT.submitResult(r.m, r.proto, { participant_id: "agent-a1", payload: {} });
+      A.MessageCommit.commit(r.m, A.MockAgentRuntime.mockMessage(r.m, "agent-a1"));   /* F1-C：落库统一依据 */
       T.assert(!dup.ok, "重复提交返回 ok=false");
       T.assertEqual(dup.diagnostic.code, "RUNTIME_DUPLICATE_RESPONSE", "诊断码 RUNTIME_DUPLICATE_RESPONSE");
       T.assertEqual(r.m.pendingAction.receivedParticipantIds.length, 1, "received 仍为 1，未重复计数");
@@ -267,6 +271,7 @@
       T.assertEqual(m.pendingAction.requiredParticipantIds.length, 1, "只要求 agent-a1");
       T.assertEqual(m.pendingAction.requiredParticipantIds[0], "agent-a1", "显式参与者被选中");
       RT.submitResult(m, proto, { participant_id: "agent-a1", payload: {} });
+      A.MessageCommit.commit(m, A.MockAgentRuntime.mockMessage(m, "agent-a1"));   /* F1-C：落库统一依据 */
       T.assertEqual(A.MeetingTurnSelector.phaseStatus(m, proto), "ready_to_advance", "a1 响应后 ready");
       T.assert(RT.advancePhase(m, proto).ok, "advance 成功");
       T.assertEqual(m.currentPhaseId, "p2", "advance 后进入 p2");
@@ -366,7 +371,9 @@
       });
       RT.start(m, proto);
       RT.submitResult(m, proto, { participant_id: "agent-a1", payload: {} });
+      A.MessageCommit.commit(m, A.MockAgentRuntime.mockMessage(m, "agent-a1"));   /* F1-C：落库统一依据 */
       var res = RT.submitResult(m, proto, { participant_id: "agent-b1", payload: {} });
+      A.MessageCommit.commit(m, A.MockAgentRuntime.mockMessage(m, "agent-b1"));   /* F1-C：落库统一依据 */
       T.assert(res.ok, "响应被接受（停在 READY_TO_ADVANCE）");
       var adv = RT.advancePhase(m, proto); /* 歧义在 advance 时解析 */
       T.assert(!adv.ok, "advance 返回 ok=false（歧义）");

@@ -296,7 +296,8 @@
     return startCommittee(ctx).then(function (r) {
       reachHuman(r.proto, r.m);
       return Archive.build(r.m, r.proto).then(function (archive) {
-        T.assertEqual(archive.messages.length, 0, "messages=[]");
+        /* F1-C 语义更新：messages 现在是正式会议事实（opening 2 + summary 1 + critique 2 = 5） */
+        T.assertEqual(archive.messages.length, 5, "messages 已落库（5 条正式事实）");
         T.assertEqual(archive.artifacts.length, 0, "artifacts=[]");
         T.assertEqual(archive.annotations.length, 0, "annotations=[]");
         T.assertEqual(archive.branch, null, "branch=null");
@@ -360,6 +361,7 @@
       var m = FACTORY.createMeeting(proto, { meetingId: "pr", participants: committeeParticipants() });
       RT.start(m, proto);
       RT.submitResult(m, proto, { participant_id: "agent-a1", payload: { mock: true, participantId: "agent-a1" } });
+      A.MessageCommit.commit(m, A.MockAgentRuntime.mockMessage(m, "agent-a1"));   /* F1-C：正式落库 */
       return Archive.build(m, proto).then(function (archive) {
         T.assertEqual(archive.pending_action.receivedParticipantIds.length, 1, "archive 记录 1 条已收");
         T.assertEqual(archive.pending_action.receivedParticipantIds[0], "agent-a1", "已收 agent-a1");
@@ -367,6 +369,7 @@
         T.assertEqual(m2.pendingAction.receivedParticipantIds.length, 1, "恢复后 received=1");
         var ok = RT.submitResult(m2, proto, { participant_id: "agent-b1", payload: { mock: true, participantId: "agent-b1" } });
         T.assert(ok.ok, "提交 B1 成功（Runtime 只等待 B1）");
+        A.MessageCommit.commit(m2, A.MockAgentRuntime.mockMessage(m2, "agent-b1"));   /* F1-C：正式落库 */
         T.assertEqual(A.MeetingTurnSelector.phaseStatus(m2, proto), "ready_to_advance", "两人响应后 ready");
         T.assert(RT.advancePhase(m2, proto).ok, "advance 成功");
         T.assertEqual(m2.currentPhaseId, "summary", "advance 后进入 summary");

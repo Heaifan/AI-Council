@@ -85,13 +85,13 @@
     },
     {
       "path": "schemas/meeting.schema.json",
-      "sha256": "9edc75b79c63c759a32c71fe8711f26ff80a5e216bee68acb3b81abbdf946170",
-      "bytes": 9341
+      "sha256": "21c12c84c410d39e54ca37bf4fb4615e4206e9ebe69c398d26dbd914ee435712",
+      "bytes": 9512
     },
     {
       "path": "schemas/message.schema.json",
-      "sha256": "8192a52d58ee5b687ab11dc294f0df6d7606e90468f773fbcc2df83847f2d78d",
-      "bytes": 5165
+      "sha256": "ea8b12540301c0f61192aa0b3f14c29386ed775c4171296ac227a9ffff632e0a",
+      "bytes": 5332
     },
     {
       "path": "schemas/protocol.schema.json",

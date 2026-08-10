@@ -339,6 +339,12 @@
                   "null"
                 ],
                 "additionalProperties": true
+              },
+              "messages": {
+                "type": "array",
+                "items": {
+                  "$ref": "message.schema.json"
+                }
               }
             }
           },

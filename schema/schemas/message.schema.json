@@ -246,6 +246,18 @@
     "extensions": {
       "type": "object",
       "additionalProperties": true
+    },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "result_id": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   }
 }

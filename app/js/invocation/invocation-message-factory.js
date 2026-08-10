@@ -8,7 +8,8 @@
   var SCHEMA_VERSION = "0.1.0";
   function diag(code, message) { return A.Diagnostic.create({ code: code, message: message }); }
   function fnv1a32(str) { var h = 0x811c9dc5; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return ("00000000" + h.toString(16)).slice(-8); }
-  /* inputs: { meeting, handle, result }（result = 已被 accept 的 AgentInvocationResult）。 */
+  /* inputs: { meeting, handle, result }（result = 已被 accept 的 AgentInvocationResult）。
+   * F1-C：provenance（request_id/result_id）+ normalized（structured_output）+ content_type 落进正式 Message。 */
   function create(inputs) {
     inputs = inputs || {};
     var m = inputs.meeting, result = inputs.result;
@@ -17,7 +18,7 @@
     var req = rec ? rec.request : null;
     var pid = (req && req.participant_id) || result.request_id;
     var p = (m.participants || []).filter(function (x) { return x.participant_id === pid; })[0] || null;
-    var text = (result.normalized_content && result.normalized_content.text) ? result.normalized_content.text : (result.raw_response || "");
+    var mode = (rec && rec.validation && rec.validation.mode) || "text";
     var now = Log.now();
     var seed = FP.canonicalize({ mid: m.meetingId, ph: (req ? req.phase_id : m.currentPhaseId), pa: pid, at: now });
     var msg = {
@@ -27,11 +28,15 @@
       phase_id: req ? req.phase_id : m.currentPhaseId,
       sender: { actor_type: (p && p.actor_type) || "agent", actor_id: pid, role_id: (p && p.role_id) || null, alias: (p && p.alias) || pid },
       recipients: { scope: "meeting" },
-      content: { raw_text: text },
+      content: { raw_text: result.raw_response || "", content_type: mode === "structured_json" ? "structured_json" : "text" },
       validation: { status: "valid", errors: [] },
       accepted_by_runtime: true,
+      request_id: result.request_id || null,
+      result_id: result.result_id || null,
       created_at: now
     };
+    if (result.normalized_content !== undefined && result.normalized_content !== null) msg.content.structured_output = result.normalized_content;
+    msg.extensions = { turn: (m.pendingAction && m.pendingAction.phase_entry) || 1 };   /* F1-C：slot turn = 该 phase 进入次数 */
     return { ok: true, message: msg };
   }
   function append(meeting, message) {

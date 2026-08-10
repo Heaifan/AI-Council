@@ -2,6 +2,17 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-INTEGRITY-F1-C · Formal Message Commit — 2026-08-10
+
+- **F1-C-01 审计结论**：正式 Message 基建已存在（message.schema.json + InvocationMessageFactory）但 ①archive DTO `messages: []` 恒空 ②checkpoint state_snapshot 不含 messages ③restore 不恢复 messages ④`submitResult` 直接 push received（transport 即完成依据）⑤无 message_accepted/message_rejected 事件。
+- **修复**：新模块 `harness/message-commit.js`（74 行）——**Formal Message 唯一落库入口（幂等）**：slot = phase_id:participant_id:turn（turn = phase_entry 进入次数，循环协议第二轮不冲突）；同 slot 同 message → NO-OP（C14/C16 重放/恢复防重）；不同 message → DUP_SLOT 拒绝（C15，审计链不覆盖）；落库 = messages.push + message_accepted 事件 + received 维护（**received 由 commit 统一维护，submitResult 只记 agent_output_received**——C10 旁路残留被堵死）。
+- **三态 → 事实链闭环**：transport（submitResult）→ validation（message_validated 事件，V06 PASS）→ **commit（唯一 satisfied 依据）**→ phase completion 由 required slots ⊆ committed slots 派生（TS 不变，received 即 committed）。mock 也落库（extensions.mock=true，validation=valid，无 provenance）——完成依据统一。
+- **事件链**：agent_output_received → message_validated → message_accepted / message_rejected（rejected payload 含 participant/request_id/result_id/reason/validation 摘要，原始错误回答保留在会话——审计链不消失）；phase_completed 恒晚于全部 required message_accepted（C12）。
+- **持久化**：archive `messages` 落库 + checkpoint state_snapshot 加 messages（meeting.schema.json 变更 + manifest 哈希同步）+ restore 恢复 messages——F1-C-12 防重复落库闭环。
+- **Schema 变更**：message.schema.json 加 `request_id`/`result_id`（provenance，["string","null"] 非 required，旧消息兼容）；meeting.schema.json checkpoint state_snapshot 加 messages（$ref message.schema.json）；manifest.sha256.json 同步。
+- **契约语义更新**：TEST-70（messages=[] → 5 条正式事实）、TEST-75/174（received/messages 断言随 commit 语义）、WR-05 补 commit；测试 helper（acceptLike/speak）统一「submitResult + commit」。
+- **门禁**：Node **282/282**（+TEST-246..263 C01..C18：落库/拒绝/推进门/幂等/恢复防重/**完整 7 条会议**/integrity assert）· Browser **355/355**（+F1C-M01..M05c 十一条：落库/不推进/完成/拒绝不计数/修复落库）· Offline 14/14 · Schema PASS · diff --check PASS。
+
 ## MEETING-INTEGRITY-F1-B · Response Validation Pipeline — 2026-08-10
 
 - **F1-B-01 审计结论**：`WC.validate`（agent-web-relay-controller.js）V01–V05 只做形状校验（句柄/状态机/非空/长度/参与者），**从不消费协议 `output_contract`**（opening/summary/critique 的 json_schema + battle 的 required_sections 全部存在但零代码引用）；`T.receive` 构造 Result 时 `normalized_content` 恒 null；`RelayFlow.accept` → `submitResult` → `receivedParticipantIds.push` **无条件入列**——「Transport success = Runtime accepted」成立。

@@ -7,6 +7,30 @@
   "use strict";
 
   var ACTION = root.AICouncil.MeetingAction.ACTION;
+  var Log = root.AICouncil.MeetingEventLog;
+
+  /* F1-C：mock 提交也落库 Formal Message（extensions.mock=true，无 provenance）——完成依据统一为正式消息。 */
+  function mockMessage(meeting, pid) {
+    var p = (meeting.participants || []).filter(function (x) { return x.participant_id === pid; })[0] || {};
+    return {
+      schema_version: "0.1.0",
+      message_id: "msg-mock-" + meeting.meetingId + "-" + meeting.currentPhaseId + "-" + pid,
+      meeting_id: meeting.meetingId,
+      phase_id: meeting.currentPhaseId,
+      sender: { actor_type: p.actor_type || "agent", actor_id: pid, role_id: p.role_id || null, alias: p.alias || pid },
+      recipients: { scope: "meeting" },
+      content: { raw_text: "（模拟回答 " + pid + "）", content_type: "text" },
+      validation: { status: "valid", errors: [] },
+      accepted_by_runtime: true,
+      request_id: null, result_id: null,
+      created_at: Log.now(),
+      extensions: { mock: true, turn: (meeting.pendingAction && meeting.pendingAction.phase_entry) || 1 }
+    };
+  }
+  function commitMock(meeting, pid) {
+    var MC = root.AICouncil.MessageCommit;
+    if (MC && meeting) MC.commit(meeting, mockMessage(meeting, pid));
+  }
 
   /* 对当前 collect_responses 动作，为所有要求的参与者各提交一次 mock 响应。
    * 若完成条件为 any_selected_respond（need=1），首条响应即触发 transition，
@@ -22,6 +46,7 @@
         participant_id: ids[i],
         payload: { mock: true, phaseId: pa.phaseId, participantId: ids[i] }
       });
+      commitMock(meeting, ids[i]);   /* F1-C：mock 响应落库正式消息 */
     }
     /* F1（修正 3）：响应收齐后停在 READY_TO_ADVANCE；测试辅助自动模拟「进入下一阶段」继续（正式 UI 不自动）。 */
     var TS = root.AICouncil.MeetingTurnSelector;
@@ -63,9 +88,10 @@
       participant_id: next, payload: { mock: true, phaseId: phaseId, participantId: next }
     });
     if (!r.ok) return { ok: false, reason: "submit_failed", message: r.diagnostic.message, diagnostic: r.diagnostic };
+    commitMock(meeting, next);   /* F1-C：mock 响应落库正式消息（slot satisfied 统一依据） */
     return { ok: true, participantId: next, phaseId: phaseId };
   }
 
   root.AICouncil = root.AICouncil || {};
-  root.AICouncil.MockAgentRuntime = Object.freeze({ runOnce: runOnce, stepOnce: stepOnce });
+  root.AICouncil.MockAgentRuntime = Object.freeze({ runOnce: runOnce, stepOnce: stepOnce, mockMessage: mockMessage });
 })(typeof globalThis !== "undefined" ? globalThis : this);

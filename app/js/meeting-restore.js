@@ -43,6 +43,7 @@
       checkpoints: (archive.checkpoints || []).slice(),
       stateData: clone(archive.state_data || {}),
       pendingAction: archive.pending_action ? clone(archive.pending_action) : null,
+      messages: clone(archive.messages || []),   /* F1-C：正式会议事实随恢复（幂等防重依赖） */
       lastTransition: null,
       lastAction: null,
       error: null

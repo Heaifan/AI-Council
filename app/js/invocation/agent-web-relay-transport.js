@@ -43,15 +43,16 @@
     if (!step.ok) return { ok: false, diagnostics: [step.error] };
     rec.state = step.next;
     if (ev === SM.EVENTS.VALIDATE_FAIL) {
+      /* F1-C：FAIL 保留 result（原始错误回答留在会话，审计可追溯；retry 时清除）。 */
       if (!raw || !raw.trim()) {
         rec.error = diag(C.EMPTY_RESPONSE, "外部返回为空，需要人工回填或重试。");
-        rec.validation = null; rec.result = null;
-        return { ok: true, state: step.next, result: null, error: rec.error, validation: null };
+        rec.validation = null;
+        return { ok: true, state: step.next, result: rec.result, error: rec.error, validation: null };
       }
       rec.error = diag(C.INVOCATION_OUTPUT_CONTRACT_FAILED, "回答未通过输出合同校验："
         + ((vr.parser_error || (vr.schema_errors[0] || "")) || ("缺少小节：" + (vr.missing_sections.join("、") || "?"))));
-      rec.validation = vr; rec.result = null;
-      return { ok: true, state: step.next, result: null, error: rec.error, validation: vr };
+      rec.validation = vr;
+      return { ok: true, state: step.next, result: rec.result, error: rec.error, validation: vr };
     }
     /* F1-B：PASS → 重建 Result 携带 normalized_content（content-address 同 id），validation 记录随会话持久化。 */
     if (vr) {

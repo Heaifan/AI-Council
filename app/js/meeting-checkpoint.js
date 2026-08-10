@@ -22,14 +22,16 @@
   /* 深拷贝：依赖 MeetingState 已通过 JSON-safe 审计（计划 T06）。 */
   function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
 
-  /* 构造当前 Runtime 状态快照（仅存档必要的可恢复字段）。 */
+  /* 构造当前 Runtime 状态快照（仅存档必要的可恢复字段）。
+   * F1-C：messages 随 checkpoint 恢复（幂等防重：恢复后 slot 已 satisfied 不重复落库）。 */
   function snapshotOf(meeting) {
     return {
       status: meeting.status,
       current_phase_id: meeting.currentPhaseId,
       completed_phase_ids: (meeting.completedPhaseIds || []).slice(),
       state_data: deepClone(meeting.stateData || {}),
-      pending_action: meeting.pendingAction ? deepClone(meeting.pendingAction) : null
+      pending_action: meeting.pendingAction ? deepClone(meeting.pendingAction) : null,
+      messages: deepClone(meeting.messages || [])
     };
   }
 

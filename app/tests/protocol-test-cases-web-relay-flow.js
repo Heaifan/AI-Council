@@ -63,6 +63,9 @@
     var a = WC.accept(m, o.handle); T.assert(a.ok, "accept 应通过");
     var r = RT.submitResult(m, proto(), a.submission);
     T.assert(r.ok, "runtime.submitResult 应通过：" + (r.diagnostic && r.diagnostic.message));
+    var mf = A.InvocationMessageFactory.create({ meeting: m, handle: o.handle, result: a.submission.payload.result });
+    T.assert(mf.ok, "消息工厂应通过");
+    A.MessageCommit.commit(m, mf.message);   /* F1-C：正式落库（RelayFlow.accept 内部等价路径） */
     T.assertEqual(m.status, "running", "响应后停在 READY_TO_ADVANCE（F1 修正 3）");
     T.assert(RT.advancePhase(m, proto()).ok, "advance 应通过");
     T.assertEqual(m.status, "completed", "advance 后终局 completed");

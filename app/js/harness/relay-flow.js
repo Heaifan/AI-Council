@@ -92,9 +92,12 @@
     var a = WC().accept(meeting, handle); if (!a.ok) return a;
     var r = A.MeetingRuntime.submitResult(meeting, protocol, a.submission);
     if (!r.ok) return { ok: false, message: r.diagnostic.message, diagnostic: r.diagnostic, submitFailed: true, accepted: a };
+    /* F1-C：Formal Message Commit——唯一落库入口（幂等；三态全真才走到这里） */
     var mf = A.InvocationMessageFactory.create({ meeting: meeting, handle: handle, result: a.submission.payload.result });
-    if (mf.ok) A.InvocationMessageFactory.append(meeting, mf.message);
-    return { ok: true, state: "accepted", submission: a.submission, message: mf.ok ? mf.message : null };
+    if (!mf.ok) return { ok: false, message: mf.diagnostics[0].message, messageFactoryFailed: true, accepted: a };
+    var cm = A.MessageCommit.commit(meeting, mf.message);
+    if (!cm.ok) return { ok: false, message: cm.message, commitFailed: true, accepted: a };
+    return { ok: true, state: "accepted", submission: a.submission, message: cm.message, noop: !!cm.noop };
   }
   function receive(meeting, handle, raw) { return WC().receive(meeting, handle, raw); }
   function validate(meeting, handle) { return WC().validate(meeting, handle); }

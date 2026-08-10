@@ -55,14 +55,16 @@
   }
   /* 模拟 RelayFlow.accept 链的落库结果：正式消息 + received 推进（消息形状同 InvocationMessageFactory）。 */
   function acceptLike(m, proto, id, text) {
-    if (!m.messages) m.messages = [];
-    m.messages.push({ schema_version: "0.1.0", message_id: "msg-" + id + "-" + m.events.length,
+    var msg = { schema_version: "0.1.0", message_id: "msg-" + id + "-" + m.events.length,
       meeting_id: m.meetingId, phase_id: m.currentPhaseId,
       sender: { actor_type: "agent", actor_id: id, role_id: "advisor", alias: id },
       recipients: { scope: "meeting" }, content: { raw_text: text || ("回答 " + id) },
       validation: { status: "valid", errors: [] }, accepted_by_runtime: true,
-      created_at: new Date().toISOString() });
-    return RT.submitResult(m, proto, { participant_id: id, payload: { mock: false, participantId: id } });
+      request_id: null, result_id: null,
+      created_at: new Date().toISOString() };
+    var r = RT.submitResult(m, proto, { participant_id: id, payload: { mock: false, participantId: id } });
+    A.MessageCommit.commit(m, msg);   /* F1-C：正式落库由 commit 统一处理 */
+    return r;
   }
   function advanceTo(m, proto, phaseId) {
     var guard = 0;

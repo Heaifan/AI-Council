@@ -77,6 +77,7 @@ app/
 │   │   ├── meeting-response-state.js   # ★F1-RT 可逆正式发言（82 行：latestOfficial/revise/revoke + 追加事件，历史不物理删除）
 │   │   ├── phase-context-snapshot.js   # ★INTEGRITY-F1-A 阶段上下文冻结（85 行：进入 Phase 冻结可见消息引用，挂 pendingAction.phase_context）
 │   │   ├── output-contract-resolver.js # ★INTEGRITY-F1-B 输出合同校验（93 行：strict JSON 整串解析 + Ajv Schema + text required_sections → ValidationResult）
+│   │   ├── message-commit.js           # ★INTEGRITY-F1-C 正式消息唯一落库入口（74 行：slot=phase:pid:turn 幂等 commit / message_accepted / received 维护）
 │   │   ├── meeting-replay.js         # ★MEETING-REPLAY-F1 时间轴/只读回放（99 行：buildTimeline + replayStateAt Event Cursor 重建，F1-RT 消费 agent_output_revoked 保持 Live/Replay 一致）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt

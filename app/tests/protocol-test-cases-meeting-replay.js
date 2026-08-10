@@ -64,10 +64,11 @@
     A.MeetingStepFlow.step(state.meeting, state.protocol);
     A.MeetingStepFlow.step(state.meeting, state.protocol);
     var nBefore = state.meeting.events.length;
+    var mBefore = (state.meeting.messages || []).length;
     A.ReplayCursor.prev(state.meeting);
     A.ReplayCursor.prev(state.meeting);
     T.assertEqual(state.meeting.events.length, nBefore, "events 数不变");
-    T.assertEqual((state.meeting.messages || []).length, 0, "messages 数不变");
+    T.assertEqual((state.meeting.messages || []).length, mBefore, "messages 数不变");
     return Promise.resolve();
   });
 

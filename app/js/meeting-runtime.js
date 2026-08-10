@@ -93,6 +93,10 @@
         if (r.error) { fail(meeting, r.error.code, r.error.message, r.error.details); return; }
         meeting.status = STATUS.RUNNING;
         meeting.pendingAction = root.AICouncil.MeetingAction.collectResponses(phaseId, r.ids);
+        /* F1-C：phase_entry = 该 phase 的进入次数（循环协议中同 phase 第二轮 turn+1，slot 不冲突） */
+        var entry = 1;
+        (meeting.events || []).forEach(function (e) { if (e.event_type === "phase_entered" && e.phase_id === phaseId) entry++; });
+        meeting.pendingAction.phase_entry = entry;
         meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;   /* F1：本阶段游标 = roster 首位 */
         /* MEETING-INTEGRITY-F1-A：进入瞬间冻结可见上下文引用（挂 pendingAction，随 checkpoint/存档自动持久化） */
         var PCS = root.AICouncil.PhaseContextSnapshot;
@@ -215,25 +219,13 @@
     if (pa.receivedParticipantIds.indexOf(pid) >= 0)
       return { ok: false, diagnostic: diag(C.RUNTIME_DUPLICATE_RESPONSE, "参与者 " + pid + " 已提交过响应，不得重复计数（phase " + pa.phaseId + "）。") };
 
-    pa.receivedParticipantIds.push(pid);
+    /* F1-C：received 不再由 submitResult 维护——正式 Message 落库（MessageCommit）才是 slot satisfied 依据；
+     * 此处只记录 transport 已收到（agent_output_received 事件）。 */
     meeting.lastAction = { type: root.AICouncil.MeetingAction.ACTION.COLLECT_RESPONSES, phaseId: pa.phaseId, participantId: pid };
     root.AICouncil.MeetingEventLog.append(meeting, "agent_output_received", {
       phaseId: pa.phaseId, actorType: "agent", actorId: pid,
       payload: { participant_id: pid, mock: !!(result && result.mock) }
     });
-
-    var comp = phase.completion || {};
-    var mode = comp.mode;
-    var need;
-    if (mode === "all_selected_respond") need = pa.requiredParticipantIds.length;
-    else if (mode === "any_selected_respond") need = Math.max(1, comp.min_responses || 1);
-    else if (mode === "secretary_respond") need = 1;
-    else return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "phase " + pa.phaseId + " 的 completion.mode(" + mode + ") 不支持响应收集。") };
-
-    /* F1（修正 3）：达标后停在 READY_TO_ADVANCE，绝不自动切阶段——用户点击「进入下一阶段」才 advance。 */
-    var TS = root.AICouncil.MeetingTurnSelector;
-    var pending = TS ? TS.derivePending(meeting) : null;
-    meeting.activeSpeakerId = pending && pending.length ? pending[0] : null;
     return { ok: true };
   }
 
@@ -248,6 +240,9 @@
     var r = resolveParticipants(phase.actor, meeting);
     if (r.error) return { ok: false, diagnostic: diag(r.error.code, r.error.message) };
     meeting.pendingAction = root.AICouncil.MeetingAction.collectResponses(meeting.currentPhaseId, r.ids);
+    var entry2 = 1;
+    (meeting.events || []).forEach(function (e) { if (e.event_type === "phase_entered" && e.phase_id === meeting.currentPhaseId) entry2++; });
+    meeting.pendingAction.phase_entry = entry2;
     meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;
     /* F1-A：名单变化后重建冻结上下文（与 enterPhase 一致，仅未开始时允许） */
     var PCS = root.AICouncil.PhaseContextSnapshot;

@@ -68,7 +68,7 @@
         state_data: clone(meeting.stateData || {}),
         pending_action: meeting.pendingAction ? clone(meeting.pendingAction) : null,
         events: clone(meeting.events || []),
-        messages: [],
+        messages: clone(meeting.messages || []),   /* F1-C：正式会议事实落库（不再恒空） */
         checkpoints: clone(meeting.checkpoints || []),
         artifacts: [],
         annotations: [],

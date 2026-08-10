@@ -1760,6 +1760,90 @@ async function runF2F1(page) {
   await page.screenshot({ path: path.join(shotDirD3, "09-seat-runtime-unlock.png"), fullPage: true });
 }
 
+/* ---------- MEETING-INTEGRITY-F1-C：Formal Message Commit E2E（M01 落库 / M02 不推进 / M03 完成 / M04 拒绝不计数 / M05 修复落库） ---------- */
+async function runF1C(page) {
+  const OK_OPEN = '{"position":"支持自研","reasons":["架构可控"],"risks":["周期长"]}';
+  const OK_SUM = '{"supporting_points":["自研理由充分"],"opposing_points":["成本压力"],"conflicts":["周期评估"],"open_questions":["人力是否足够"]}';
+  const msgs = () => page.evaluate(() => (AICouncil.HarnessStore.get().meeting.messages || []).length);
+  const evCount = (t) => page.evaluate((t2) =>
+    (AICouncil.HarnessStore.get().meeting.events || []).filter((e) => e.event_type === t2).length, t);
+  const phaseId = () => page.evaluate(() => AICouncil.HarnessStore.get().meeting.currentPhaseId);
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.evaluate(() => {
+    const d = AICouncil.ConsoleActions.getDraft();
+    d.participants.forEach((p) => { if (p.participant_id !== "agent-a1" && p.participant_id !== "agent-a3" && p.participant_id !== "agent-b1") p.model_ref = ""; });
+    AICouncil.ConsoleActions.persistDraft();
+  });
+  await page.fill("#cfg-title", "F1C 事实落库");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#preflight-start");
+  await page.click("#preflight-start");
+  await page.waitForSelector("#relay-hint");
+
+  /* M01：A1 合法 → 1 条正式消息 + message_accepted 事件 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_OPEN);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  check("F1C-M01 · A1 accepted → messages=1", (await msgs()) === 1, "msgs=" + await msgs());
+  check("F1C-M01b · message_accepted 事件存在", (await evCount("message_accepted")) === 1, "ev=" + await evCount("message_accepted"));
+
+  /* M02：B1 未提交 → phase 仍 opening，不推进 */
+  check("F1C-M02 · B1 未提交 → phase 仍 opening", (await phaseId()) === "opening" && (await evCount("phase_completed")) === 0, await phaseId());
+
+  /* M03：B1 mock 提交 → 2 条（含 mock 正式消息）→ opening 完成 */
+  await clickDevBtn(page, "#mt-step");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  check("F1C-M03 · B1 提交 → messages=2", (await msgs()) === 2, "msgs=" + await msgs());
+  check("F1C-M03b · opening 完成（mt-advance 出现）", (await page.locator("#mt-advance").count()) === 1);
+  await page.click("#mt-advance");
+
+  /* M04：summary 故意非法 JSON+尾巴 → 不落库、summary 仍 pending、message_rejected +1 */
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_SUM + "\n\n这就是我的总结。");
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  check("F1C-M04 · 非法 summary 被拒 → messages 仍 2", (await msgs()) === 2, "msgs=" + await msgs());
+  check("F1C-M04b · message_rejected 事件 +1", (await evCount("message_rejected")) === 1, "ev=" + await evCount("message_rejected"));
+  const navBad = await page.locator("#seat-nav-current").innerText();
+  check("F1C-M04c · summary 仍 pending（0/1）", navBad.includes("0/1"), navBad);
+
+  /* M05：修复 → 落库 → messages=3 → message_accepted(A3) → 1/1 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-paste");
+  await page.fill("#relay-paste", OK_SUM);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/1");
+  });
+  check("F1C-M05 · 修复后 messages=3", (await msgs()) === 3, "msgs=" + await msgs());
+  check("F1C-M05b · message_accepted 总数 3（A1+B1+秘书）", (await evCount("message_accepted")) === 3, "ev=" + await evCount("message_accepted"));
+  check("F1C-M05c · invalid 尝试不产生正式消息（rejected 仍 1）", (await evCount("message_rejected")) === 1, "ev=" + await evCount("message_rejected"));
+}
+
 /* ---------- MEETING-INTEGRITY-F1-B：Response Validation Pipeline E2E（M01 合法 / M02 尾巴 / M03 缺字段 / M04 修正恢复 / M05 battle 缺小节） ---------- */
 async function runF1B(page) {
   const OK_OPEN = '{"position":"支持自研","reasons":["架构可控"],"risks":["周期长"]}';
@@ -2008,6 +2092,7 @@ async function runChannel(channel) {
   await runF2F1(page);
   await runF1A(page);
   await runF1B(page);
+  await runF1C(page);
   await runTestPage(page);
 
   await browser.close();

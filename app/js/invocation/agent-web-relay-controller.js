@@ -9,11 +9,24 @@
   var TA = A.TransportAdapter, ACT = A.MeetingAction.ACTION;
   var MAX_LEN = 20000, NS = "web_relay";
   var T = new A.TransportAdapter.WebRelayTransport();
+  var Log = A.MeetingEventLog;
   function diag(c, m) { return A.Diagnostic.create({ code: c, message: m }); }
   function bag(m) { return m.stateData || (m.stateData = {}); }
   function slot(m, h) { var b = bag(m); var s = b[NS] || (b[NS] = {}); return s[h] || (s[h] = {}); }
   function sync(m, h) { var r = T._rec(h); if (!r) return; var s = slot(m, h); s.state = r.state; s.result = r.result; s.error = r.error; s.request = r.request; s.validation = r.validation; }
   function participant(m, id) { var ps = m.participants || []; for (var i = 0; i < ps.length; i++) if (ps[i].participant_id === id) return ps[i]; return null; }
+  /* F1-C：message_rejected 审计事件（不进入 messages[]，但拒绝原因可追溯）。 */
+  function rejectEvent(m, rec, code, reason, vr) {
+    Log.append(m, "message_rejected", {
+      phaseId: rec.request ? rec.request.phase_id : m.currentPhaseId, actorType: "agent", actorId: rec.request ? rec.request.participant_id : null,
+      payload: { participant_id: rec.request ? rec.request.participant_id : null,
+        request_id: rec.request ? rec.request.request_id : null,
+        result_id: (rec.result && rec.result.result_id) || null,
+        reason_code: code, reason: reason,
+        validation: vr ? { parser_error: vr.parser_error, missing_sections: vr.missing_sections,
+          schema_errors: (vr.schema_errors || []).slice(0, 5), additional_properties: vr.additional_properties } : null }
+    });
+  }
   function nextRelay(m) { var pa = m.pendingAction; if (!pa || pa.action_type !== ACT.COLLECT_RESPONSES) return null; for (var i = 0; i < pa.requiredParticipantIds.length; i++) { var id = pa.requiredParticipantIds[i]; if (pa.receivedParticipantIds.indexOf(id) >= 0) continue; var p = participant(m, id); if (p && (p.transport_kind || "mock") === "web_relay") return p; } return null; }
   /* Save/Load 后把 stateData 断点灌回 transport 内存态。 */
   function hydrate(m) { var b = bag(m)[NS]; if (b) Object.keys(b).forEach(function (h) { T._store[h] = b[h]; }); }
@@ -42,19 +55,28 @@
         /* V06：Output Contract 失败（非空但格式/字段不达标） */
         checks.push({ id: "V06", ok: false });
         var vr = tr.validation;
+        rejectEvent(m, rec, C.INVOCATION_OUTPUT_CONTRACT_FAILED,
+          (vr.parser_error || (vr.schema_errors[0] || "")) || ("缺少小节：" + vr.missing_sections.join("、")), vr);
         return { ok: false, state: "rejected", checks: checks, validation: vr,
           diagnostics: [diag(C.INVOCATION_OUTPUT_CONTRACT_FAILED,
             (vr.parser_error || (vr.schema_errors[0] || "")) || ("缺少小节：" + vr.missing_sections.join("、")))] };
       }
-      checks.push({ id: "V03", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.EMPTY_RESPONSE, "外部返回为空。")] };
+      checks.push({ id: "V03", ok: false }); rejectEvent(m, rec, C.EMPTY_RESPONSE, "外部返回为空。");
+      return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.EMPTY_RESPONSE, "外部返回为空。")] };
     }
     checks.push({ id: "V03", ok: true });
     var raw = rec.result ? rec.result.raw_response : "";
-    if (raw.length > MAX_LEN) { T.reject(h, C.INVALID_RESPONSE, "响应超 " + MAX_LEN + " 字符，疑似误粘贴。"); sync(m, h); checks.push({ id: "V04", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.INVALID_RESPONSE, "响应过长。")] }; }
+    if (raw.length > MAX_LEN) { T.reject(h, C.INVALID_RESPONSE, "响应超 " + MAX_LEN + " 字符，疑似误粘贴。"); sync(m, h); checks.push({ id: "V04", ok: false }); rejectEvent(m, rec, C.INVALID_RESPONSE, "响应过长。"); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.INVALID_RESPONSE, "响应过长。")] }; }
     checks.push({ id: "V04", ok: true });
-    if (!participant(m, rec.request.participant_id)) { checks.push({ id: "V05", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.PARTICIPANT_NOT_FOUND, "参与者已不在会议。")] }; }
+    if (!participant(m, rec.request.participant_id)) { checks.push({ id: "V05", ok: false }); rejectEvent(m, rec, C.PARTICIPANT_NOT_FOUND, "参与者已不在会议。"); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.PARTICIPANT_NOT_FOUND, "参与者已不在会议。")] }; }
     checks.push({ id: "V05", ok: true });
     checks.push({ id: "V06", ok: true });
+    /* F1-C：校验通过 → message_validated 事件（会话级校验结果进入会议审计链）。 */
+    Log.append(m, "message_validated", {
+      phaseId: rec.request.phase_id, actorType: "agent", actorId: rec.request.participant_id,
+      payload: { participant_id: rec.request.participant_id, request_id: rec.request.request_id,
+        result_id: (rec.result && rec.result.result_id) || null }
+    });
     sync(m, h);
     return { ok: true, state: "validated", checks: checks, result: rec.result, validation: tr.validation };
   }

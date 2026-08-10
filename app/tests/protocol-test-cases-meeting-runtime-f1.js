@@ -44,19 +44,22 @@
   }
   function speak(m, id) {
     var r = RT.submitResult(m, sixProtocol(), { participant_id: id, payload: { mock: true, participantId: id } });
+    A.MessageCommit.commit(m, A.MockAgentRuntime.mockMessage(m, id));   /* F1-C：mock 也落库（slot satisfied 统一依据） */
     return r;
   }
   function officialMsg(m, id) { return RS.latestOfficial(m, id); }
   /* 模拟真实 accept 链：先写正式 message（工厂形状）再 submitResult（mock 路径不写 message）。 */
   function acceptLike(m, id, text) {
-    if (!m.messages) m.messages = [];
-    m.messages.push({ schema_version: "0.1.0", message_id: "msg-" + id + "-" + m.events.length,
+    var msg = { schema_version: "0.1.0", message_id: "msg-" + id + "-" + m.events.length,
       meeting_id: m.meetingId, phase_id: m.currentPhaseId,
       sender: { actor_type: "agent", actor_id: id, role_id: "advisor", alias: id },
       recipients: { scope: "meeting" }, content: { raw_text: text || ("回答 " + id) },
       validation: { status: "valid", errors: [] }, accepted_by_runtime: true,
-      created_at: new Date().toISOString() });
-    return speak(m, id);
+      request_id: null, result_id: null,
+      created_at: new Date().toISOString() };
+    var r = RT.submitResult(m, sixProtocol(), { participant_id: id, payload: { mock: false, participantId: id } });
+    A.MessageCommit.commit(m, msg);   /* F1-C：正式落库由 commit 统一处理（received + message_accepted） */
+    return r;
   }
 
   T.test("TEST-185", "N01 roster 顺序完全等于 Protocol 输出（all_advisors 按 participants 序）", function () {
