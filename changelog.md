@@ -2,6 +2,12 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## 治理 · T0+ 事故恢复与 CLOSED 定义固化 — 2026-08-10
+
+- **事故**：2026-08-09 晚整条开发链（MEETING-RUNTIME-F1 + T25-F2/F3/F4/F5）全部成果**从未 Commit、从未 Push**，GitHub 停留在约 7 小时前；门禁全绿但成果单点存在于工作电脑，跨设备可信基线失效。
+- **恢复**：全量门禁复核（Node 236/236 · Browser 327/327 · Offline 14/14 · Schema PASS · diff --check PASS）→ 恢复 Commit `87a815f`（66 files, +2529/−452）→ Push → 远端一致（HEAD == origin/main，ahead/behind = 0/0，worktree clean，stash 0）。
+- **固化（制度层）**：新增 `GOVERNANCE.md`——CLOSED = 验证通过 + Commit + Push + 远端一致 + worktree clean；状态措辞与 Git 状态严格对应（IMPLEMENTED·NOT COMMITTED / COMMITTED·NOT PUSHED / PUSHED·READY FOR ACCEPTANCE / CLOSED）；每轮 Git 证据块；用户验收通过后自动 Commit+Push；GitHub 为唯一 Source of Truth；长任务恢复点规则；本次事故登记为永久反例。
+
 ## MEETING-RUNTIME-F1-T25-F5 · 秘书席位化与 Summary 闭环 — 2026-08-09
 
 - **架构裁定（用户）**：取消独立 System Phase Executor——拿六席之一给秘书 AI（默认 A3 = meeting-secretary / chair_secretary），summary = 正常 **1/1 席位阶段**，复用中继/validated/accept/revoke/replay 全管线。

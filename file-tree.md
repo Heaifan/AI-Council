@@ -15,6 +15,7 @@ AI-Council/
 ├── app/                       # ★ D1-R1/R2/R3/R4 + D2-R1/R2 + D2-F1 正式实现（纯 HTML/JS）
 ├── reports/                   # 开发报告 + 真机验收截图（d1-r1-screenshots/ / d2-f1-screenshots/）
 ├── file-tree.md               # 本文件
+├── GOVERNANCE.md              # ★2026-08-10：开发治理规则（CLOSED 定义 / Git 门禁 / 永久反例）
 ├── changelog.md
 ├── package.json               # ★D3-D0-F2：devDependencies 含 playwright-core（run-browser.js 正式依赖）
 ├── package-lock.json          # ★D3-D0-F2：lockfile（node_modules/ 经 npm install 恢复，不入 git）
