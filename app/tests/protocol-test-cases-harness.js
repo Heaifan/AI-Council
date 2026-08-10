@@ -76,6 +76,7 @@
       "js/harness/meeting-draft.js", "js/harness/relay-profiles.js", "js/harness/seat-layout.js",
       "js/harness/meeting-replay.js", "js/harness/meeting-admission.js",
       "js/harness/meeting-turn-selector.js", "js/harness/meeting-response-state.js",
+      "js/harness/phase-context-snapshot.js",
       "js/harness/local-store.js", "js/harness/seat-config-rules.js", "js/harness/seat-session-store.js",
       "js/harness/meeting-step-flow.js", "js/harness/relay-flow.js",
       "js/harness/compile-flow.js", "js/harness/archive-flow.js",

@@ -1760,7 +1760,105 @@ async function runF2F1(page) {
   await page.screenshot({ path: path.join(shotDirD3, "09-seat-runtime-unlock.png"), fullPage: true });
 }
 
-/* ---------- 自动测试页（D1-R1 用例） ---------- */
+/* ---------- MEETING-INTEGRITY-F1-A：Phase Context Snapshot E2E（S01 opening 独立 / S03 critique 只共享已完成阶段） ---------- */
+async function runF1A(page) {
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.evaluate(() => {
+    const d = AICouncil.ConsoleActions.getDraft();
+    d.participants.forEach((p) => {
+      if (p.participant_id === "agent-b1") p.transport_kind = "web_relay";   /* B1 也走真实中继 */
+      else if (p.participant_id !== "agent-a1" && p.participant_id !== "agent-a3") p.model_ref = "";
+    });
+    AICouncil.ConsoleActions.persistDraft();
+  });
+  await page.fill("#cfg-title", "F1A 上下文冻结");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#preflight-start");
+  await page.click("#preflight-start");
+  await page.waitForSelector("#relay-hint");
+
+  /* S01：A1 accept 后 B1 自动开 → Prompt 不含 A1 本轮 Opening（snapshot 空引用） */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", "A1 正式回答：支持继续自研。");
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-prompt");
+    return el && el.value && el.value.includes("风险挑战方");
+  });
+  const b1PromptS01 = await page.locator("#relay-prompt").inputValue();
+  check("F1A-S01 · opening：B1 Prompt 不含 A1 本轮 Opening（0 命中）",
+    !b1PromptS01.includes("A1 正式回答") && !b1PromptS01.includes("上一阶段正式发言"), b1PromptS01.slice(0, 60));
+
+  /* B1 完成 Opening → 2/2 → advance */
+  await page.fill("#relay-paste", "B1 正式回答：反对，风险过高。");
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  check("F1A-S01b · Opening 2/2 → READY_TO_ADVANCE", (await page.locator("#mt-advance").count()) === 1);
+  await page.click("#mt-advance");
+
+  /* summary：A3 秘书自动开 → 仍注入双方 Opening 原文（F5 链保留） */
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-prompt");
+    return el && el.value && el.value.includes("A1 正式回答：支持继续自研。") && el.value.includes("B1 正式回答：反对，风险过高。");
+  });
+  const secPrompt = await page.locator("#relay-prompt").inputValue();
+  check("F1A-S01c · 秘书 Prompt 仍含双方 Opening 原文",
+    secPrompt.includes("A1 正式回答：支持继续自研。") && secPrompt.includes("B1 正式回答：反对，风险过高。"), secPrompt.slice(0, 60));
+  await page.fill("#relay-paste", "秘书中立摘要：双方分歧在于风险评估。");
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/1");
+  });
+  await page.click("#mt-advance");
+
+  /* critique：A1 先答 critique → B1 可见 Opening+秘书汇总、不可见 A1 的 Critique */
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-prompt");
+    return el && el.value && el.value.includes("上一阶段秘书汇总") && el.value.includes("秘书中立摘要：双方分歧在于风险评估。");
+  });
+  await page.fill("#relay-paste", "A1 的批判意见：秘书摘要漏掉了成本风险。");
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-prompt");
+    return el && el.value && el.value.includes("风险挑战方");
+  });
+  const b1PromptS03 = await page.locator("#relay-prompt").inputValue();
+  check("F1A-S03 · critique：B1 可见 Opening 原文 + 秘书汇总",
+    b1PromptS03.includes("A1 正式回答：支持继续自研。") && b1PromptS03.includes("秘书中立摘要：双方分歧在于风险评估。"), b1PromptS03.slice(0, 60));
+  check("F1A-S03b · critique：B1 不可见 A1 同阶段 Critique",
+    !b1PromptS03.includes("A1 的批判意见"), b1PromptS03.slice(0, 60));
+}
+
+/* ---------- 测试页（TEST PAGE） ---------- */
 async function runTestPage(page) {
   await page.goto(testUrl);
   await page.setInputFiles("#dir-input", repoRoot);
@@ -1793,6 +1891,7 @@ async function runChannel(channel) {
   await runF1(page);
   await runF2(page);
   await runF2F1(page);
+  await runF1A(page);
   await runTestPage(page);
 
   await browser.close();

@@ -75,6 +75,7 @@ app/
 │   │   ├── meeting-admission.js        # ★F1-RT 入会检查（51 行：Runtime Admission 合同，admitted/blocked 不假装 online，externalReady 留接口）
 │   │   ├── meeting-turn-selector.js    # ★F1-RT 轮转派生（58 行：getRoundRoster 单一权威/derivePending/phaseStatus/nextTarget 游标）
 │   │   ├── meeting-response-state.js   # ★F1-RT 可逆正式发言（82 行：latestOfficial/revise/revoke + 追加事件，历史不物理删除）
+│   │   ├── phase-context-snapshot.js   # ★INTEGRITY-F1-A 阶段上下文冻结（85 行：进入 Phase 冻结可见消息引用，挂 pendingAction.phase_context）
 │   │   ├── meeting-replay.js         # ★MEETING-REPLAY-F1 时间轴/只读回放（99 行：buildTimeline + replayStateAt Event Cursor 重建，F1-RT 消费 agent_output_revoked 保持 Live/Replay 一致）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt

@@ -94,6 +94,9 @@
         meeting.status = STATUS.RUNNING;
         meeting.pendingAction = root.AICouncil.MeetingAction.collectResponses(phaseId, r.ids);
         meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;   /* F1：本阶段游标 = roster 首位 */
+        /* MEETING-INTEGRITY-F1-A：进入瞬间冻结可见上下文引用（挂 pendingAction，随 checkpoint/存档自动持久化） */
+        var PCS = root.AICouncil.PhaseContextSnapshot;
+        if (PCS) { var snap = PCS.create(meeting, protocol, phaseId); if (snap) meeting.pendingAction.phase_context = snap; }
         break;
       }
       case "human_gate": {
@@ -246,6 +249,9 @@
     if (r.error) return { ok: false, diagnostic: diag(r.error.code, r.error.message) };
     meeting.pendingAction = root.AICouncil.MeetingAction.collectResponses(meeting.currentPhaseId, r.ids);
     meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;
+    /* F1-A：名单变化后重建冻结上下文（与 enterPhase 一致，仅未开始时允许） */
+    var PCS = root.AICouncil.PhaseContextSnapshot;
+    if (PCS) { var snap = PCS.create(meeting, protocol, meeting.currentPhaseId); if (snap) meeting.pendingAction.phase_context = snap; }
     return { ok: true, roster: r.ids };
   }
 

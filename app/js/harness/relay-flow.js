@@ -62,8 +62,14 @@
     var prompt, packet;
     if (inputs.prompt && inputs.packet) { prompt = inputs.prompt; packet = inputs.packet; }
     else {
+      /* F1-A：上下文来自进入阶段时冻结的 Snapshot（只存引用，同阶段发言不再泄漏）；
+       * 旧存档/回放投影无 snapshot 时回退实时提取（兼容旧行为）。 */
+      var PCS = A.PhaseContextSnapshot;
+      var pc = PCS ? PCS.fromPending(meeting) : null;
+      var extras = pc ? PCS.resolve(meeting, pc)
+        : { previousResponses: A.MeetingResponseState.effectiveResponses(meeting), secretarySummary: A.MeetingResponseState.secretarySummary(meeting) };
       var c = A.CompileFlow.run({ protocol: protocol, meeting: meeting, participantId: pid, roleRegistry: inputs.registry || null, packetSchema: inputs.packetSchema || null,
-        previousResponses: A.MeetingResponseState.effectiveResponses(meeting), secretarySummary: A.MeetingResponseState.secretarySummary(meeting) });
+        previousResponses: extras.previousResponses, secretarySummary: extras.secretarySummary });
       if (!c.ok) return { ok: false, message: c.message };
       prompt = c.prompt; packet = c.packet;
     }

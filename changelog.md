@@ -2,6 +2,15 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-INTEGRITY-F1-A · Phase Context Snapshot — 2026-08-10
+
+- **F1-01 审计结论**：上下文注入唯一入口 = `RelayFlow.open` 每次实时提取 `effectiveResponses`/`secretarySummary`（不分阶段取各参与者 latestOfficial）→ ①同阶段污染（critique 中 B1 可见 A1 的 critique；opening 中 B1 可见 A1 的 opening）②latestOfficial 覆盖丢跨阶段原文（critique 阶段看不到 A1 的 opening）；Runtime `enterPhase` 无任何上下文冻结机制。
+- **修复**：新模块 `harness/phase-context-snapshot.js`（85 行）——进入 Phase 的瞬间冻结「可见上下文引用」（只存 message_id，不复制文本）；挂 `pendingAction.phase_context`（schema additionalProperties:true，checkpoint 深拷贝/存档 DTO/restore 均自动携带 → **零 schema 变更**、S04 恢复后引用一致）。
+- **上下文政策（用户裁定）**：opening 完全独立（S01/S02 双向 0 命中）；summary 读已完成阶段全部委员发言（秘书仍见双方 Opening）；critique 读 Opening+秘书汇总、**不见同阶段 critique**（S03）；battle 保持既有语义（F2 再议）。
+- **消费端**：`RelayFlow.open` 改从 snapshot 解析 extras；旧存档/回放投影无 snapshot 时回退实时提取（兼容旧行为，回放视图只读不编译）。
+- **门禁**：Node **244/244**（+TEST-218..225 S01..S08：双向独立/引用集冻结/存档恢复一致/秘书输入保留/battle 现状/旧存档回退）· Browser **332/332**（+F1A-S01..S03b 五条全真实中继链：A1→B1→秘书→critique，B1 Prompt 逐字断言）。
+- **跨轮依赖登记（F1-C）**：存档恢复后「可见 Opening 原文/秘书汇总」依赖 `messages[]` 落库（当前 archive DTO `messages: []` 恒空）——F1-C 交付后 S04 可升级为恢复后逐字一致断言。
+
 ## 治理 · T0+ 事故恢复与 CLOSED 定义固化 — 2026-08-10
 
 - **事故**：2026-08-09 晚整条开发链（MEETING-RUNTIME-F1 + T25-F2/F3/F4/F5）全部成果**从未 Commit、从未 Push**，GitHub 停留在约 7 小时前；门禁全绿但成果单点存在于工作电脑，跨设备可信基线失效。
