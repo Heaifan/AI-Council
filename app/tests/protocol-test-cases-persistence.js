@@ -367,7 +367,9 @@
         T.assertEqual(m2.pendingAction.receivedParticipantIds.length, 1, "恢复后 received=1");
         var ok = RT.submitResult(m2, proto, { participant_id: "agent-b1", payload: { mock: true, participantId: "agent-b1" } });
         T.assert(ok.ok, "提交 B1 成功（Runtime 只等待 B1）");
-        T.assertEqual(m2.currentPhaseId, "summary", "两人都响应后推进到 summary");
+        T.assertEqual(A.MeetingTurnSelector.phaseStatus(m2, proto), "ready_to_advance", "两人响应后 ready");
+        T.assert(RT.advancePhase(m2, proto).ok, "advance 成功");
+        T.assertEqual(m2.currentPhaseId, "summary", "advance 后进入 summary");
       });
     });
   });

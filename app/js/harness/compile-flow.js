@@ -65,7 +65,7 @@
     }
 
     var schema = validatePacket(c.packet, inputs.packetSchema);
-    var r = A.PromptRenderer.render(c.packet);
+    var r = A.PromptRenderer.render(c.packet, { previousResponses: inputs.previousResponses, secretarySummary: inputs.secretarySummary });
     if (!r.ok) {
       return { ok: false, stage: "render", message: r.diagnostics[0].message, diagnostics: r.diagnostics, packet: c.packet };
     }

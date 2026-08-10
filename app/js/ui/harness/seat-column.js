@@ -45,14 +45,13 @@
         s.pending.received.length ? (s.pending.received.join(", ")) : "（无）");
     }
     box.appendChild(grid);
+    box.appendChild(A.SeatNav.build(state, isReplay));   /* T11：上一席/当前/下一席（只改查看） */
     var gate = A.MeetingStepFlow.humanGateState(state.meeting);
     var bar = Dom.el("div", "controls");
-    var step = Dom.el("button", "btn secondary small", "执行下一步");
-    step.id = "mt-step";
-    var canStep = !!(s.pending && s.pending.type === A.MeetingAction.ACTION.COLLECT_RESPONSES) && !isReplay;
-    step.disabled = !canStep;
-    if (canStep) step.addEventListener("click", function () { A.MeetingActions.step(state); });
-    bar.appendChild(step);
+    /* T25-F2：仅 completion 满足才出现「进入下一阶段」（running 不渲染灰按钮） */
+    var advOn = !isReplay && A.MeetingTurnSelector && A.MeetingTurnSelector.phaseStatus(state.meeting, state.protocol) === "ready_to_advance";
+    if (advOn) { var adv = Dom.el("button", "btn primary small", "进入下一阶段 →"); adv.id = "mt-advance";
+      adv.addEventListener("click", function () { A.MeetingActions.advance(state); }); bar.appendChild(adv); }
     [["mt-finish", "结束会议", "finish"], ["mt-continue", "继续会议", "continue"], ["mt-battle", "进入对辩", "battle"]].forEach(function (g) {
       var off = !gate.enabled || gate.choices.indexOf(g[2]) < 0 || isReplay;
       var b = Dom.el("button", "btn secondary small", g[1]);

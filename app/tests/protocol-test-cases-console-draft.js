@@ -60,7 +60,7 @@
     T.assert(r.ok, "创建应成功：" + (r.message || ""));
     T.assertEqual(r.meeting.title, "玄域引擎战略评审", "title 落库");
     T.assertEqual(r.meeting.topic, "是否应该继续自研玄域引擎？", "topic 落库");
-    T.assertEqual(r.meeting.participants.length, 3, "3 名与会者");
+    T.assertEqual(r.meeting.participants.length, 2, "2 名与会者（T25-F3：B1 未配置模型 → 默认不参会，点名页可勾选）");
     r.meeting.participants.forEach(function (p) {
       T.assert(!Object.prototype.hasOwnProperty.call(p, "web_url"), "Participant 不得携带 web_url（Transport 配置）");
     });

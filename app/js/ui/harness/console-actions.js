@@ -1,14 +1,11 @@
-/* AI Council v0.1 — D3 · ConsoleActions：控制台动作层（无 DOM）。F1 冻结语义：role_class 创建后冻结，
- * model_ref/transport_kind 可热改；draft/profiles 经 SeatSessionStore 持久化；ReplayCursor 随会话重置。 */
+/* AI Council v0.1 — D3/F4 · ConsoleActions：控制台动作层（无 DOM）。role_class 冻结、model 热改；F4：followActiveSpeaker 同步导航。 */
 (function (root) {
   "use strict";
 
   var A = root.AICouncil;
   var draft = null, profiles = null, frozen = false;
-
   function s() { return A.HarnessStore.get(); }
   function go() { A.HarnessStore.notify(); } function local() { return A.SeatLocalConfig; }
-
   function ensureDraft() {
     if (draft) return draft;
     var proto = s().registry && s().registry.available[0];
@@ -38,6 +35,12 @@
   function isFrozen() { return frozen; } function getMode() { return local().getMode(); } function getSelectedSeatId() { return local().getSelectedSeatId(); }
   function getStanceOverrides() { return local().getStanceOverrides(); } function getNotes() { return local().getNotes(); }
   function setMode(m) { local().setMode(m); } function setSelectedSeat(seatId) { local().setSelectedSeat(seatId); }
+  function followActiveSpeaker() {   /* F4：自动推进后同步 selectedSeat（只改查看） */
+    var st = A.HarnessStore.get(), id = st.meeting && st.meeting.activeSpeakerId;
+    if (!id) return;
+    var seats = A.SeatLayout.mapParticipants(st.meeting.participants, getStanceOverrides());
+    for (var i = 0; i < seats.length; i++) if (seats[i].participant_id === id) { A.SeatLocalConfig.selectOnly(seats[i].seat_id); return; }
+  }
   function setStance(pid, stance) { local().setStance(pid, stance); } function setNote(pid, text) { local().setNote(pid, text); }
   function setField(field, value) {
     var d = ensureDraft();
@@ -57,7 +60,6 @@
     profiles = A.RelayProfiles.upsert(ensureProfiles(), profile);
     A.SeatSessionStore.saveProfiles(profiles); go(); return { ok: true };
   }
-
   function createMeeting() {
     var proto = A.HarnessStore.availableProtocol(getDraft().protocolId);
     if (!proto) return { ok: false, message: "选中的议事规则不可用，请重新选择。" };
@@ -71,7 +73,6 @@
     go();
     return { ok: true, meeting: r.meeting };
   }
-
   function clearMeeting() {
     frozen = false; local().setMode("seat");
     A.HarnessStore.setMeeting(null, null);
@@ -89,7 +90,7 @@
     getDraft: getDraft, getProfiles: getProfiles, isFrozen: isFrozen,
     getMode: getMode, getSelectedSeatId: getSelectedSeatId,
     getStanceOverrides: getStanceOverrides, getNotes: getNotes,
-    setMode: setMode, setSelectedSeat: setSelectedSeat,
+    setMode: setMode, setSelectedSeat: setSelectedSeat, followActiveSpeaker: followActiveSpeaker,
     setStance: setStance, setNote: setNote,
     setField: setField, setParticipantField: setParticipantField, updateProfile: updateProfile,
     persistDraft: persistDraft, setProfiles: setProfiles,

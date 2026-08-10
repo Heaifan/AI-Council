@@ -93,6 +93,7 @@
         if (r.error) { fail(meeting, r.error.code, r.error.message, r.error.details); return; }
         meeting.status = STATUS.RUNNING;
         meeting.pendingAction = root.AICouncil.MeetingAction.collectResponses(phaseId, r.ids);
+        meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;   /* F1：本阶段游标 = roster 首位 */
         break;
       }
       case "human_gate": {
@@ -226,10 +227,38 @@
     else if (mode === "secretary_respond") need = 1;
     else return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "phase " + pa.phaseId + " 的 completion.mode(" + mode + ") 不支持响应收集。") };
 
-    if (pa.receivedParticipantIds.length >= need) {
-      var stop = completeAndTransition(meeting, protocol, pm);
-      if (stop) return { ok: false, diagnostic: meeting.error };
-    }
+    /* F1（修正 3）：达标后停在 READY_TO_ADVANCE，绝不自动切阶段——用户点击「进入下一阶段」才 advance。 */
+    var TS = root.AICouncil.MeetingTurnSelector;
+    var pending = TS ? TS.derivePending(meeting) : null;
+    meeting.activeSpeakerId = pending && pending.length ? pending[0] : null;
+    return { ok: true };
+  }
+
+  /* T25-F3：会议开始前（Preflight 未确认）勾选参会名单后，按新 participants 重解析当前阶段 roster。 */
+  function reenterPhase(meeting, protocol) {
+    if (meeting.stateData && meeting.stateData.preflight_confirmed)
+      return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "会议已开始，本场名单已冻结。") };
+    var pm = root.AICouncil.MeetingFactory.buildPhaseMap(docOf(protocol));
+    var phase = pm[meeting.currentPhaseId];
+    if (!phase) return { ok: false, diagnostic: diag(C.RUNTIME_PHASE_NOT_FOUND, "Phase 不存在：" + meeting.currentPhaseId + "。") };
+    if (phase.kind === "human_gate") return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "当前阶段不是发言阶段，无需重解析。") };
+    var r = resolveParticipants(phase.actor, meeting);
+    if (r.error) return { ok: false, diagnostic: diag(r.error.code, r.error.message) };
+    meeting.pendingAction = root.AICouncil.MeetingAction.collectResponses(meeting.currentPhaseId, r.ids);
+    meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;
+    return { ok: true, roster: r.ids };
+  }
+
+  /* F1（T15）：显式阶段推进入口——仅 phaseStatus=ready_to_advance 时允许。 */
+  function advancePhase(meeting, protocol) {
+    var TS = root.AICouncil.MeetingTurnSelector;
+    var st = TS ? TS.phaseStatus(meeting, protocol) : null;
+    if (st !== "ready_to_advance")
+      return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "当前阶段尚未完成（" + (st || "无") + "），不能进入下一阶段。") };
+    var pm = root.AICouncil.MeetingFactory.buildPhaseMap(docOf(protocol));
+    var stop = completeAndTransition(meeting, protocol, pm);
+    if (stop) return { ok: false, diagnostic: meeting.error };
+    drive(meeting, protocol, pm);
     return { ok: true };
   }
 
@@ -265,8 +294,8 @@
     MAX_INTERNAL_STEPS: MAX_INTERNAL_STEPS,
     start: start,
     getNextAction: getNextAction,
-    submitResult: submitResult,
-    submitHumanDecision: submitHumanDecision,
+    submitResult: submitResult, reenterPhase: reenterPhase,
+    advancePhase: advancePhase, submitHumanDecision: submitHumanDecision,
     /* 暴露内部助手供测试/调试 */
     _resolveParticipants: resolveParticipants,
     _resolveTransition: resolveTransition

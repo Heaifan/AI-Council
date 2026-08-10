@@ -1,7 +1,4 @@
-/* AI Council v0.1 — D3 · 六席会议控制台 · SeatCard：席位摘要卡（DOM 投影）。
- * F1 紧凑化：头部（编号+角色+当前轮次徽标）/ 摘要行（模型·引用）/ 元信息行（传输·立场）/ 状态行 / 按钮行。
- * 单卡目标高度 130-145px；详细配置进中央大屏席位配置模式（用户 ONE-SCREEN-F1 §三）。
- */
+/* AI Council v0.1 — D3 · SeatCard：席位摘要卡（DOM 投影）。F1 紧凑化；F1-RT：修改/撤回/blocked。 */
 (function (root) {
   "use strict";
 
@@ -65,15 +62,35 @@
     }
 
     var stText = A.SeatStatus.statusText(seat, meeting, relayActive);
+    if (meeting && meeting.activeSpeakerId === seat.participant_id) {   /* F1（T08）：当前发言人 blocked → 状态行说明原因 */
+      var adm = A.MeetingAdmission.admissionOf(meeting, state.protocol, actions.getProfiles(), seat.participant_id);
+      if (adm.status === "blocked") stText = "⚠ 无法入会：" + adm.reason;
+    }
     var st = Dom.el("div", "seat-state" + stateClass(stText), stText);
     box.appendChild(st);
 
     var bar = Dom.el("div", "seat-actions");
     bar.appendChild(btn("seat-edit-" + seat.seat_id, "配置", "secondary", !seat.occupied,
       function () { actions.setSelectedSeat(seat.seat_id); }));
+    var openUrl = A.RelayProfiles.webUrlFor(actions.getProfiles(), modelRef);
     bar.appendChild(btn("seat-openweb-" + seat.seat_id, "打开网页", "secondary",
-      !p || !A.RelayProfiles.isSafeUrl(A.RelayProfiles.webUrlFor(actions.getProfiles(), modelRef)),
-      function () { actions.openWeb(modelRef); }));
+      !p || !A.RelayProfiles.isSafeUrl(openUrl), function () { actions.openWeb(modelRef); }));
+    /* T12b/T13b：已发言席位可修改/撤回（历史不物理删除；replay 视图 messages 为空自动隐藏）。 */
+    var msg = A.MeetingResponseState.latestOfficial(meeting, seat.participant_id);
+    if (msg) {
+      bar.appendChild(btn("seat-revise-" + seat.seat_id, "修改", "secondary", false, function (ev) {
+        if (ev) ev.stopPropagation();   /* 不触发卡片选中（不改 mode） */
+        var txt = window.prompt("修改正式发言：", (msg.content && msg.content.raw_text) || "");
+        if (txt === null || txt === "") return;
+        A.MeetingResponseState.revise(meeting, state.protocol, msg.message_id, txt);
+        A.HarnessStore.notify();
+      }));
+      bar.appendChild(btn("seat-revoke-" + seat.seat_id, "撤回", "secondary", false, function (ev) {
+        if (ev) ev.stopPropagation();
+        A.MeetingResponseState.revoke(meeting, msg.message_id);
+        A.HarnessStore.notify();
+      }));
+    }
     box.appendChild(bar);
     host.appendChild(box);
   }

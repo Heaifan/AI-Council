@@ -80,7 +80,9 @@
     RT.start(m, pr);
     var r = A.MeetingStepFlow.step(m, pr);
     T.assert(r.ok, "mock 参与者应被自动推进：" + (r.message || ""));
-    T.assertEqual(m.status, "completed", "单 mock 参与者全响应后终局");
+    T.assert(A.MeetingTurnSelector.phaseStatus(m, pr) === "ready_to_advance", "单 mock 全响应后 ready");
+    T.assert(RT.advancePhase(m, pr).ok, "advance 应通过");
+    T.assertEqual(m.status, "completed", "advance 后终局");
   });
 
   T.test("WR-13", "RelayFlow.accept 后会议 messages 写入 accepted_by_runtime=true 的正式 Message", function () {

@@ -32,14 +32,16 @@
     participants = participants || [];
     overrides = overrides || {};
     var bySide = { A: [], B: [] };
+    var bySeat = {};
     participants.forEach(function (p) {
       var side = (p.side_id === undefined || p.side_id === null) ? "" : String(p.side_id);
       var key = (side === "A" || side === "B") ? side : "";
+      var seatId = p.seat_id || (SEATS.some(function (s) { return s.seat_id === p.alias; }) ? p.alias : null);
+      if (seatId && SEATS.some(function (s) { return s.seat_id === seatId; })) { bySeat[seatId] = p; return; }   /* F5：固定席位（秘书，seat_id 被白名单剥离时用 alias 兜底） */
       if (key) bySide[key].push(p);
     });
     return SEATS.map(function (seat) {
-      var pool = seat.side === "A" ? bySide.A : bySide.B;
-      var p = pool.shift() || null;
+      var p = bySeat[seat.seat_id] || (seat.side === "A" ? bySide.A : bySide.B).shift() || null;
       var stance = p ? (overrides[p.participant_id] || defaultStanceFor(seat.side)) : null;
       return {
         seat_id: seat.seat_id,
@@ -69,11 +71,11 @@
   function sixSeatParticipants() {
     return [
       { participant_id: "agent-a1", role_class: "advisor", side_id: "A", actor_type: "agent", alias: "A1", role_id: "strategic-advocate", transport_kind: "web_relay", model_ref: "chatgpt-web" },
-      { participant_id: "agent-a2", role_class: "advisor", side_id: "A", actor_type: "agent", alias: "A2", role_id: "strategic-advocate", transport_kind: "mock", model_ref: "" },
-      { participant_id: "agent-a3", role_class: "advisor", side_id: "A", actor_type: "agent", alias: "A3", role_id: "strategic-advocate", transport_kind: "mock", model_ref: "" },
-      { participant_id: "agent-b1", role_class: "advisor", side_id: "B", actor_type: "agent", alias: "B1", role_id: "risk-challenger", transport_kind: "mock", model_ref: "" },
-      { participant_id: "agent-b2", role_class: "advisor", side_id: "B", actor_type: "agent", alias: "B2", role_id: "risk-challenger", transport_kind: "mock", model_ref: "" },
-      { participant_id: "agent-b3", role_class: "advisor", side_id: "B", actor_type: "agent", alias: "B3", role_id: "risk-challenger", transport_kind: "mock", model_ref: "" }
+      { participant_id: "agent-a2", role_class: "advisor", side_id: "A", actor_type: "agent", alias: "A2", role_id: "strategic-advocate", transport_kind: "mock", model_ref: "claude-web" },
+      { participant_id: "agent-a3", role_class: "chair_secretary", side_id: null, actor_type: "agent", alias: "A3", role_id: "meeting-secretary", seat_id: "A3", transport_kind: "web_relay", model_ref: "chatgpt-web" },
+      { participant_id: "agent-b1", role_class: "advisor", side_id: "B", actor_type: "agent", alias: "B1", role_id: "risk-challenger", transport_kind: "mock", model_ref: "chatgpt-web" },
+      { participant_id: "agent-b2", role_class: "advisor", side_id: "B", actor_type: "agent", alias: "B2", role_id: "risk-challenger", transport_kind: "mock", model_ref: "claude-web" },
+      { participant_id: "agent-b3", role_class: "advisor", side_id: "B", actor_type: "agent", alias: "B3", role_id: "risk-challenger", transport_kind: "mock", model_ref: "gemini-web" }
     ];
   }
 

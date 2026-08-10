@@ -29,9 +29,18 @@
     var r = A.MeetingStepFlow.step(state.meeting, state.protocol);
     say(r.ok ? ("已推进一步：" + r.participantId + " 完成阶段 " + r.phaseId + "。") : r.message, r.ok ? "ok" : "warn");
     A.HarnessStore.setMeeting(state.meeting);
+    if (r.ok) A.ConsoleActions.followActiveSpeaker();   /* F4：mock 推进后同样同步导航 */
   }
 
   /* 生成含 web_relay 委员的演示会议（agent-a1=web_relay），用于走通人工网页中继。 */
+  /* F1（T15）：用户点击「进入下一阶段」→ 显式 advance（Runtime 绝不自动切）。 */
+  function advance(state) {
+    var r = A.MeetingRuntime.advancePhase(state.meeting, state.protocol);
+    say(r.ok ? "已进入下一阶段。" : (r.diagnostic ? r.diagnostic.message : r.message), r.ok ? "ok" : "warn");
+    A.HarnessStore.setMeeting(state.meeting);
+    if (r.ok) { A.WebRelayActions.autoOpenNext(A.HarnessStore.get()); A.ConsoleActions.followActiveSpeaker(); }   /* F5：进入新阶段后自动打开 web_relay 席位（如秘书） */
+  }
+
   function createRelay() {
     var proto = A.HarnessStore.availableProtocol("committee-mvp");
     if (!proto) { say(NO_PROTOCOL, "warn"); A.HarnessStore.notify(); return; }
@@ -76,6 +85,6 @@
 
   A.MeetingActions = Object.freeze({
     message: message, say: say,
-    create: create, createRelay: createRelay, step: step, decide: decide, save: save, load: load
+    create: create, createRelay: createRelay, step: step, advance: advance, decide: decide, save: save, load: load
   });
 })(typeof globalThis !== "undefined" ? globalThis : this);

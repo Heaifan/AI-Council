@@ -204,10 +204,25 @@
       " · deterministic · generated_at " + esc(p.generated_at);
   }
 
+  /* F5：上一阶段正式发言（秘书中立汇总的输入，保留来源引用） */
+  function previousSection(list) {
+    var lines = ["## 上一阶段正式发言（中立汇总的输入，保留来源）"];
+    list.forEach(function (r) {
+      lines.push("- " + (r.alias || r.participant_id) + "（" + r.participant_id + "，source=" + r.responseId + "）：");
+      lines.push("  " + String(r.text || "").split("\n").join("\n  "));
+    });
+    return lines.join("\n");
+  }
+
+  /* F5：秘书正式汇总——下一阶段所有委员共享的公共上下文（同一份） */
+  function secretarySection(s) {
+    return ["## 上一阶段秘书汇总（本阶段公共上下文）", String(s.text || "")].join("\n");
+  }
+
   /* ---------- 渲染入口 ---------- */
 
-  /* packet：经 InstructionCompiler 产出的 InstructionPacket（或等价结构） */
-  function render(packet) {
+  /* packet：经 InstructionCompiler 产出的 InstructionPacket（或等价结构）；extras：{previousResponses?, secretarySummary?} F5 上下文注入 */
+  function render(packet, extras) {
     if (!packet || typeof packet !== "object" || Array.isArray(packet)) {
       return { ok: false, diagnostics: [di(C.RENDERER_PACKET_INVALID, "PromptRenderer 需要合法的 InstructionPacket 对象。")] };
     }
@@ -244,6 +259,8 @@
       actorSection(packet),
       footer(packet)
     ].filter(function (x) { return x !== null; });
+    if (extras && extras.previousResponses && extras.previousResponses.length) parts.push(previousSection(extras.previousResponses));
+    if (extras && extras.secretarySummary) parts.push(secretarySection(extras.secretarySummary));
 
     return Object.freeze({ ok: true, text: parts.join("\n\n") + "\n" });
   }

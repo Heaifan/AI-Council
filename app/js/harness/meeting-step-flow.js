@@ -25,6 +25,7 @@
     if (m.status === STATUS.FAILED) return { ok: false, message: m.error ? m.error.message : "会议创建失败。" };
     var r = A.MeetingRuntime.start(m, protocol);
     if (!r.ok) return { ok: false, message: r.diagnostic ? r.diagnostic.message : "会议启动失败。" };
+    m.stateData = m.stateData || {}; m.stateData.preflight_confirmed = true; m.stateData.dev_mode = true;   /* F1：demo=开发测试模式 */
     return { ok: true, meeting: m };
   }
 

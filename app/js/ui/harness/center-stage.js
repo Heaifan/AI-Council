@@ -51,6 +51,12 @@
     /* 会议配置卡（常驻）：无会议=表单，有会议=冻结摘要 */
     A.ConfigPanel.render(host, state);
 
+    /* T16：点名卡——正式建会（cfg-create）后 Preflight 未确认时，中央先点名再开始 Round 1。 */
+    if (mode === "run" && state.meeting && !(state.meeting.stateData && state.meeting.stateData.preflight_confirmed)) {
+      A.PreflightPanel.render(host, state);
+      return;
+    }
+
     /* F3-T01：中央单一滚动工作区——面板内容全部进 meeting-workspace（容器不滚，内容自己滚）。 */
     var runWrap = Dom.el("div");
     runWrap.id = "console-relay";

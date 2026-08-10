@@ -45,6 +45,10 @@
   function setSelectedSeat(seatId) {
     if (A.SeatLayout.seatDef(seatId)) { selectedSeatId = seatId; mode = "seat"; save(); go(); }
   }
+  /* F1（T11）：纯浏览——只改查看对象，不切配置模式（调度器不受影响）。 */
+  function selectOnly(seatId) {
+    if (A.SeatLayout.seatDef(seatId)) { selectedSeatId = seatId; save(); go(); }
+  }
   function setStance(participantId, stance) {
     stanceOverrides[participantId] = stance; save(); go();
   }
@@ -61,7 +65,7 @@
     getMode: getMode, getSelectedSeatId: getSelectedSeatId,
     getStanceOverrides: getStanceOverrides, getNotes: getNotes,
     getRuntimeConfig: getRuntimeConfig, setRuntimeConfig: setRuntimeConfig,
-    setMode: setMode, setSelectedSeat: setSelectedSeat,
+    setMode: setMode, setSelectedSeat: setSelectedSeat, selectOnly: selectOnly,
     setStance: setStance, setNote: setNote, load: load, reset: reset
   });
 })(typeof globalThis !== "undefined" ? globalThis : this);

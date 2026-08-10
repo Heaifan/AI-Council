@@ -28,6 +28,11 @@
     relay.disabled = !hasRegistry;
     relay.addEventListener("click", A.MeetingActions.createRelay);
     box.appendChild(relay);
+    var sim = Dom.el("button", "btn secondary", "模拟下一席响应");
+    sim.id = "mt-step";   /* F1（T10）：Mock 驱动从正式导航移入开发工具（语义断开） */
+    sim.disabled = !hasMeeting;
+    sim.addEventListener("click", function () { A.MeetingActions.step(A.HarnessStore.get()); });
+    box.appendChild(sim);
     var clear = Dom.el("button", "btn secondary", "清空当前会议");
     clear.id = "mt-clear";
     clear.disabled = !hasMeeting;

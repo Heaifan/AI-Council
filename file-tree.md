@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-09（MEETING-UX-F3 Center Workspace Simplification：Node 203/203 · Browser 250/250 · Offline 14/14）
+> 最后更新：2026-08-09（MEETING-RUNTIME-F1 发言队列/入会检查/可逆正式发言：Node 236/236 · Browser 327/327 · Offline 14/14）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -71,7 +71,10 @@ app/
 │   │   ├── local-store.js            # ★F1 localStorage 封装（35 行：JSON 读写 + 异常静默降级；键前缀 ai-council:v1:）
 │   │   ├── seat-config-rules.js     # ★F1 席位配置字段权限（51 行：FIELD_POLICY identity/runtime + FIELD_ALIAS 别名，T04 单一来源）
 │   │   ├── seat-session-store.js     # ★F1 创建前草稿/Transport Profile 持久化（40 行：draft 一次性创建 + profiles 落盘）
-│   │   ├── meeting-replay.js         # ★MEETING-REPLAY-F1 时间轴/只读回放（100 行：buildTimeline Round→Step + replayStateAt Event Cursor 重建 + resolveRequired）
+│   │   ├── meeting-admission.js        # ★F1-RT 入会检查（51 行：Runtime Admission 合同，admitted/blocked 不假装 online，externalReady 留接口）
+│   │   ├── meeting-turn-selector.js    # ★F1-RT 轮转派生（58 行：getRoundRoster 单一权威/derivePending/phaseStatus/nextTarget 游标）
+│   │   ├── meeting-response-state.js   # ★F1-RT 可逆正式发言（82 行：latestOfficial/revise/revoke + 追加事件，历史不物理删除）
+│   │   ├── meeting-replay.js         # ★MEETING-REPLAY-F1 时间轴/只读回放（99 行：buildTimeline + replayStateAt Event Cursor 重建，F1-RT 消费 agent_output_revoked 保持 Live/Replay 一致）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
 │   │   ├── relay-flow.js             # ★D3 WEB_RELAY 编排层（82 行）：CompileFlow↔WebRelayController 接合；routeStep 供 step 委托停下；createRelayDemo；依赖项调用时取 A.*
@@ -101,7 +104,10 @@ app/
 │           ├── config-panel.js        # ★D3 中央会议配置卡（70 行：名称/议题/议事规则 + 创建会议；无会议=表单/有会议=冻结摘要）
 │           ├── relay-workarea.js      # ★D3 中栏 Prompt/Response 大工作区（53 行，页面最大区域）
 │           ├── relay-verdict.js       # ★D3 校验状态行 + 折叠详情（46 行，V01–V05 不霸占页面）
-│           ├── relay-panel.js         # ★D3 中央运行模式（96 行：当前执行 + 工作区 + 校验折叠 + 接受/拒绝/重试/取消）
+│           ├── relay-panel.js         # ★D3/F1-RT 中央运行模式（99 行：执行 + 工作区 + 校验仅 FAIL + 阻塞卡转发）
+│           ├── relay-blocked.js        # ★F1-RT 阻塞卡（24 行：当前发言人无法入会 → 原因 + 配置入口）
+│           ├── seat-nav.js            # ★F1-RT 席位浏览导航（48 行：上一席/当前 x/y/下一席，只改查看不改调度）
+│           ├── preflight-panel.js     # ★F1-RT 会议点名卡（54 行：开会前逐席点名，全部 admitted 才可开始）
 │           ├── timeline-panel.js      # ★D3 底部会议时间线/审计日志折叠区（40 行）
 │           ├── dev-tools-panel.js     # ★D3 开发工具条（40 行：Demo 装载/清空，退出主流程）
 │           ├── project-bar.js         # ★D3 顶栏项目条（85 行：目录压缩为一行 + IndexedDB 记住上次项目）
@@ -130,7 +136,8 @@ app/
     ├── protocol-test-cases-web-relay-recovery.js   # ★WR-06..13（D3 WEB_RELAY 持久化与集成：Save/Load/cancel/retry/step路由/accept写messages；98 行，由 145 行拆分）
     ├── protocol-test-cases-console-draft.js        # ★TEST-147..154（D3 会议控制台：MeetingDraft 校验/一次性创建/议题落库 + RelayProfiles URL 安全/upsert；123 行，测试文件不受 ≤100 约束）
     ├── protocol-test-cases-seat-layout.js          # ★TEST-155..160（D3 六席：SEATS 顺序/映射/立场覆盖/seat↔participant 双向/六席模板建会 topic 入 Packet；95 行，测试文件不受 ≤100 约束）
-    ├── protocol-test-cases-meeting-replay.js       # ★TEST-173..184（MEETING-REPLAY-F1 十二项防御性门禁：timeline 单调/不改 live/不产 Message/PendingAction/B1 before-after/跨阶段/save-load/displayState 一致）
+    ├── protocol-test-cases-meeting-replay.js       # ★TEST-173..184
+    ├── protocol-test-cases-meeting-runtime-f1.js     # ★TEST-185..196（N01..N10 六席状态机 + Admission + Live/Replay 一致）（MEETING-REPLAY-F1 十二项防御性门禁：timeline 单调/不改 live/不产 Message/PendingAction/B1 before-after/跨阶段/save-load/displayState 一致）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     ├── fixtures/acceptance/protocols/   # 人工验收样例
     │       ├── good-a/ good-c/  broken-b/  missing-version/

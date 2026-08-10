@@ -48,9 +48,23 @@
   function accept() {
     var st = s(); if (!st.meeting || !handle) return;
     var r = A.RelayFlow.accept(st.meeting, st.protocol, handle);
-    if (r.ok) { handle = null; lastCheck = null; say("已接受为正式发言并写入会议记录。", "ok"); }
+    if (r.ok) {
+      handle = null; lastCheck = null; say("已接受为正式发言并写入会议记录。", "ok");
+      autoOpenNext(st);   /* T09：接受后自动轮转到下一 web_relay 席位的工作区 */
+      A.ConsoleActions.followActiveSpeaker();   /* F4：selectedSeat 同步到新发言人（含 mock 席位） */
+    }
     else { lastCheck = null; fail(r); }
     go(); return r;
+  }
+  function autoOpenNext(st) {   /* T09：下一席 web_relay → 自动打开工作区 */
+    var TS = A.MeetingTurnSelector;
+    var next = TS ? TS.nextSpeaker(st.meeting) : null;
+    if (!next || activeSession(st.meeting)) return;
+    var p = st.meeting.participants.filter(function (x) { return x.participant_id === next; })[0];
+    if (p && (p.transport_kind || "mock") === "web_relay") {
+      var r = A.RelayFlow.open(st.meeting, st.protocol, { registry: st.roleRegistry, packetSchema: st.packetSchema });
+      if (r.ok) handle = r.handle;
+    }
   }
   function reject(code, msg) {
     var st = s(); if (!st.meeting || !handle) return;
@@ -71,6 +85,7 @@
   function getNotice() { return notice; }
 
   A.WebRelayActions = Object.freeze({
+    autoOpenNext: autoOpenNext,
     openRelay: openRelay, paste: paste, validate: validate, accept: accept,
     reject: reject, retry: retry, cancel: cancel,
     getHandle: getHandle, getCheck: getCheck, getNotice: getNotice, say: say, activeSession: activeSession

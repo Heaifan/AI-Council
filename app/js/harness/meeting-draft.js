@@ -43,7 +43,7 @@
       if (!p || !p.participant_id) { errors.push("存在缺少编号的与会者。"); return; }
       if (!p.role_class) errors.push("与会者 " + p.participant_id + " 缺少角色。");
       if (TRANSPORTS.indexOf(p.transport_kind) < 0) errors.push("与会者 " + p.participant_id + " 的传输方式不合法。");
-      if (p.transport_kind === "web_relay" && !p.model_ref) errors.push("与会者 " + p.participant_id + " 走网页中继，必须填写模型引用。");
+      if (p.transport_kind === "web_relay" && !p.model_ref && p.role_class !== "chair_secretary") errors.push("与会者 " + p.participant_id + " 走网页中继，必须填写模型引用。");   /* F5：秘书模型完整性由 Preflight 检查 */
     });
     return { ok: errors.length === 0, errors: errors };
   }
@@ -53,7 +53,10 @@
     var v = validate(draft);
     if (!v.ok) return { ok: false, message: v.errors[0] };
     if (!protocol) return { ok: false, message: "没有可用的议事规则，无法创建会议。" };
-    var participants = (draft.participants || []).map(function (p) {
+    /* T25-F3：默认只带已配置模型的席位参会（六席是容量不是满员；未配置=未参会，点名页可再勾选）。 */
+    var participants = (draft.participants || []).filter(function (p) {
+      return p.role_class === "chair_secretary" || !!(p.model_ref && String(p.model_ref).trim());
+    }).map(function (p) {
       /* 只把会议身份字段交给 MeetingFactory；web_url 永远不属于 Participant（Transport 配置）。 */
       return {
         participant_id: p.participant_id, role_class: p.role_class, side_id: p.side_id,

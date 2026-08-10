@@ -23,6 +23,12 @@
         payload: { mock: true, phaseId: pa.phaseId, participantId: ids[i] }
       });
     }
+    /* F1（修正 3）：响应收齐后停在 READY_TO_ADVANCE；测试辅助自动模拟「进入下一阶段」继续（正式 UI 不自动）。 */
+    var TS = root.AICouncil.MeetingTurnSelector;
+    if (TS && TS.phaseStatus(meeting, protocol) === "ready_to_advance") {
+      var ad = runtime.advancePhase(meeting, protocol);
+      if (ad && ad.ok) return runOnce(runtime, meeting, protocol);
+    }
     return true;
   }
 
@@ -40,9 +46,15 @@
       return { ok: false, reason: "unsupported_action", message: "不支持的待办动作类型：" + String(pa.action_type) + "。" };
     }
     var next = null;
-    for (var i = 0; i < pa.requiredParticipantIds.length && next === null; i++) {
-      var id = pa.requiredParticipantIds[i];
-      if (pa.receivedParticipantIds.indexOf(id) < 0) next = id;
+    /* F1：调度目标 = activeSpeaker 优先（撤回后保持当前轮），否则 roster 序 pending 首位。 */
+    var TS = root.AICouncil.MeetingTurnSelector;
+    var target = TS ? TS.nextTarget(meeting) : null;
+    if (target && pa.receivedParticipantIds.indexOf(target) < 0) next = target;
+    if (next === null) {
+      for (var i = 0; i < pa.requiredParticipantIds.length && next === null; i++) {
+        var id = pa.requiredParticipantIds[i];
+        if (pa.receivedParticipantIds.indexOf(id) < 0) next = id;
+      }
     }
     if (next === null) return { ok: false, reason: "no_pending_participant", message: "当前 Pending Action 的响应已收齐。" };
 

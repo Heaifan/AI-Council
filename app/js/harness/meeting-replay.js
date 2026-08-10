@@ -64,13 +64,13 @@
   function replayStateAt(meeting, protocol, cursor) {
     var events = (meeting && meeting.events) || [];
     var n = Math.max(0, Math.min(cursor, events.length));
-    var spoken = [], phaseId = null, round = 0, status = null, phaseDone = false;
-    var timestamp = null;
+    var spoken = [], phaseId = null, round = 0, status = null, phaseDone = false, timestamp = null;
     for (var i = 0; i < n; i++) {
       var ev = events[i];
       timestamp = ev.occurred_at;
       if (ev.event_type === "phase_entered") { phaseId = ev.phase_id; round += 1; phaseDone = false; status = "running"; }
       else if (ev.event_type === "agent_output_received" && spoken.indexOf(ev.actor_id) < 0) spoken.push(ev.actor_id);
+      else if (ev.event_type === "agent_output_revoked") { var ri = spoken.indexOf(ev.actor_id); if (ri >= 0) spoken.splice(ri, 1); }
       else if (ev.event_type === "phase_completed") phaseDone = true;
       else if (ev.event_type === "meeting_completed") status = "completed";
       else if (ev.event_type === "meeting_failed") status = "failed";

@@ -61,7 +61,9 @@
     var a = WC.accept(m, o.handle); T.assert(a.ok, "accept 应通过");
     var r = RT.submitResult(m, proto(), a.submission);
     T.assert(r.ok, "runtime.submitResult 应通过：" + (r.diagnostic && r.diagnostic.message));
-    T.assertEqual(m.status, "completed", "单参与者全响应后应终局 completed");
+    T.assertEqual(m.status, "running", "响应后停在 READY_TO_ADVANCE（F1 修正 3）");
+    T.assert(RT.advancePhase(m, proto()).ok, "advance 应通过");
+    T.assertEqual(m.status, "completed", "advance 后终局 completed");
     T.assert(m.pendingAction === null, "终局 pendingAction 清空");
   });
 })(typeof globalThis !== "undefined" ? globalThis : this);

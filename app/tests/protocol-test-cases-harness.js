@@ -56,6 +56,11 @@
       if (state.meeting.currentPhaseId === phaseId && state.meeting.status === STATUS.WAITING_HUMAN) return true;
       var r = A.MeetingStepFlow.step(state.meeting, state.protocol);
       if (!r.ok) return state.meeting.currentPhaseId === phaseId;
+      /* F1：响应收齐后 READY_TO_ADVANCE，测试辅助模拟用户点击「进入下一阶段」 */
+      if (A.MeetingTurnSelector && A.MeetingTurnSelector.phaseStatus(state.meeting, state.protocol) === "ready_to_advance") {
+        var ad = A.MeetingRuntime.advancePhase(state.meeting, state.protocol);
+        if (!ad.ok) return false;
+      }
     }
     return false;
   }
@@ -69,7 +74,8 @@
       "js/invocation/agent-web-relay-controller.js", "js/invocation/invocation-message-factory.js",
       "js/harness/harness-store.js", "js/harness/participant-binding.js",
       "js/harness/meeting-draft.js", "js/harness/relay-profiles.js", "js/harness/seat-layout.js",
-      "js/harness/meeting-replay.js",
+      "js/harness/meeting-replay.js", "js/harness/meeting-admission.js",
+      "js/harness/meeting-turn-selector.js", "js/harness/meeting-response-state.js",
       "js/harness/local-store.js", "js/harness/seat-config-rules.js", "js/harness/seat-session-store.js",
       "js/harness/meeting-step-flow.js", "js/harness/relay-flow.js",
       "js/harness/compile-flow.js", "js/harness/archive-flow.js",
@@ -77,14 +83,15 @@
       "js/ui/harness/meeting-actions.js", "js/ui/harness/web-relay-actions.js",
       "js/ui/harness/console-actions.js", "js/ui/harness/replay-cursor.js",
       "js/ui/harness/replay-provider.js", "js/ui/harness/automation-bridge.js",
-      "js/ui/harness/automation-view.js", "js/ui/harness/seat-local-config.js",
+      "js/ui/harness/automation-view.js", "js/ui/harness/seat-local-config.js", "js/ui/harness/seat-nav.js",
+      "js/ui/harness/preflight-panel.js",
       "js/ui/harness/seat-edit-draft.js", "js/ui/harness/meeting-hud.js",
       "js/ui/harness/seat-status.js", "js/ui/harness/seat-card.js",
       "js/ui/harness/seat-column.js", "js/ui/harness/seat-config-fields.js",
       "js/ui/harness/seat-config-commit.js",
       "js/ui/harness/seat-config-panel.js",
       "js/ui/harness/config-panel.js", "js/ui/harness/relay-verdict.js",
-      "js/ui/harness/relay-workarea.js", "js/ui/harness/relay-panel.js",
+      "js/ui/harness/relay-workarea.js", "js/ui/harness/relay-blocked.js", "js/ui/harness/relay-panel.js",
       "js/ui/harness/center-stage.js",
       "js/ui/harness/timeline-panel.js", "js/ui/harness/dev-tools-panel.js",
       "js/ui/harness/project-bar.js",
@@ -187,12 +194,17 @@
     return openMeeting(ctx).then(function (state) {
       A.MeetingStepFlow.step(state.meeting, state.protocol);
       A.MeetingStepFlow.step(state.meeting, state.protocol);
-      T.assertEqual(state.meeting.currentPhaseId, "summary", "收齐两位 advisor 后进入 summary");
+      T.assertEqual(state.meeting.currentPhaseId, "opening", "收齐两位 advisor 后停在当前阶段（F1 修正 3）");
+      T.assertEqual(A.MeetingTurnSelector.phaseStatus(state.meeting, state.protocol), "ready_to_advance", "阶段状态 ready_to_advance");
+      T.assert(A.MeetingRuntime.advancePhase(state.meeting, state.protocol).ok, "进入下一阶段成功");
+      T.assertEqual(state.meeting.currentPhaseId, "summary", "advance 后进入 summary");
       var s1 = A.MeetingStepFlow.summary(state.meeting);
       T.assertEqual(s1.pending.required.join(","), "chair-secretary-1", "summary 目标 = chair_secretary");
       T.assertEqual(s1.pending.received.length, 0, "进入新 Phase 后不得自动预跑");
       A.MeetingStepFlow.step(state.meeting, state.protocol);
-      T.assertEqual(state.meeting.currentPhaseId, "critique", "秘书总结完成后进入 critique");
+      T.assertEqual(A.MeetingTurnSelector.phaseStatus(state.meeting, state.protocol), "ready_to_advance", "秘书完成后 ready");
+      T.assert(A.MeetingRuntime.advancePhase(state.meeting, state.protocol).ok, "进入 critique");
+      T.assertEqual(state.meeting.currentPhaseId, "critique", "advance 后进入 critique");
       T.assertEqual(A.MeetingStepFlow.summary(state.meeting).pending.received.length, 0, "critique 同样不预跑");
     });
   });

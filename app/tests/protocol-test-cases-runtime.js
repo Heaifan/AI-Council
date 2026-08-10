@@ -131,7 +131,9 @@
       T.assertEqual(r.m.currentPhaseId, "opening", "仅 A 响应时仍在 opening");
       T.assertEqual(r.m.pendingAction.receivedParticipantIds.length, 1, "已收到 1 份");
       RT.submitResult(r.m, r.proto, { participant_id: "agent-b1", payload: {} });
-      T.assertEqual(r.m.currentPhaseId, "summary", "B 响应齐后进入 summary");
+      T.assertEqual(A.MeetingTurnSelector.phaseStatus(r.m, r.proto), "ready_to_advance", "B 响应齐后 READY_TO_ADVANCE（不自动切）");
+      T.assert(RT.advancePhase(r.m, r.proto).ok, "advance 成功");
+      T.assertEqual(r.m.currentPhaseId, "summary", "advance 后进入 summary");
     });
   });
 
@@ -148,7 +150,9 @@
 
   T.test("TEST-36", "Secretary Summary：只请求 chair_secretary", function (ctx) {
     return startCommittee(ctx).then(function (r) {
-      MOCK.runOnce(RT, r.m, r.proto); /* opening → summary */
+      MOCK.stepOnce(RT, r.m, r.proto); MOCK.stepOnce(RT, r.m, r.proto); /* opening 两位 */
+      T.assertEqual(r.m.currentPhaseId, "opening", "收齐后停在 opening（READY_TO_ADVANCE）");
+      T.assert(RT.advancePhase(r.m, r.proto).ok, "advance 成功");
       T.assertEqual(r.m.currentPhaseId, "summary", "进入 summary");
       T.assertEqual(r.m.pendingAction.requiredParticipantIds.length, 1, "summary 仅 1 个要求");
       T.assertEqual(r.m.pendingAction.requiredParticipantIds[0], "chair-secretary-1", "要求是 chair_secretary");
@@ -157,10 +161,11 @@
 
   T.test("TEST-37", "Critique：重新请求 advisors", function (ctx) {
     return startCommittee(ctx).then(function (r) {
-      MOCK.runOnce(RT, r.m, r.proto); /* opening -> summary */
-      MOCK.runOnce(RT, r.m, r.proto); /* summary -> critique */
-      T.assertEqual(r.m.currentPhaseId, "critique", "进入 critique");
-      T.assertEqual(r.m.pendingAction.requiredParticipantIds.length, 2, "critique 需要 2 个 advisor");
+      MOCK.stepOnce(RT, r.m, r.proto); MOCK.stepOnce(RT, r.m, r.proto); /* opening 两位 */
+      RT.advancePhase(r.m, r.proto); MOCK.stepOnce(RT, r.m, r.proto); /* summary 秘书 */
+      RT.advancePhase(r.m, r.proto); MOCK.stepOnce(RT, r.m, r.proto); MOCK.stepOnce(RT, r.m, r.proto); /* critique 两位 */
+      RT.advancePhase(r.m, r.proto);
+      T.assertEqual(r.m.status, "waiting_human", "模拟到 Human Gate 停住");
     });
   });
 
@@ -262,7 +267,9 @@
       T.assertEqual(m.pendingAction.requiredParticipantIds.length, 1, "只要求 agent-a1");
       T.assertEqual(m.pendingAction.requiredParticipantIds[0], "agent-a1", "显式参与者被选中");
       RT.submitResult(m, proto, { participant_id: "agent-a1", payload: {} });
-      T.assertEqual(m.currentPhaseId, "p2", "a1 响应后进入 p2");
+      T.assertEqual(A.MeetingTurnSelector.phaseStatus(m, proto), "ready_to_advance", "a1 响应后 ready");
+      T.assert(RT.advancePhase(m, proto).ok, "advance 成功");
+      T.assertEqual(m.currentPhaseId, "p2", "advance 后进入 p2");
     });
   });
 
@@ -359,8 +366,10 @@
       });
       RT.start(m, proto);
       RT.submitResult(m, proto, { participant_id: "agent-a1", payload: {} });
-      var res = RT.submitResult(m, proto, { participant_id: "agent-b1", payload: {} }); /* 触发 transition 解析 */
-      T.assert(!res.ok, "完成 p1 时返回 ok=false");
+      var res = RT.submitResult(m, proto, { participant_id: "agent-b1", payload: {} });
+      T.assert(res.ok, "响应被接受（停在 READY_TO_ADVANCE）");
+      var adv = RT.advancePhase(m, proto); /* 歧义在 advance 时解析 */
+      T.assert(!adv.ok, "advance 返回 ok=false（歧义）");
       T.assertEqual(m.status, "failed", "歧义 transition → failed");
       T.assertEqual(m.error.code, "RUNTIME_AMBIGUOUS_TRANSITION", "诊断码 RUNTIME_AMBIGUOUS_TRANSITION");
     });
@@ -393,12 +402,8 @@
       var proto = s.registry.available[0];
       var m = FACTORY.createMeeting(proto, { meetingId: "t52", participants: committeeParticipants() });
       RT.start(m, proto);
-      MOCK.runOnce(RT, m, proto); /* opening */
-      T.assertEqual(m.currentPhaseId, "summary", "opening→summary");
-      MOCK.runOnce(RT, m, proto); /* summary */
-      T.assertEqual(m.currentPhaseId, "critique", "summary→critique");
-      MOCK.runOnce(RT, m, proto); /* critique */
-      T.assertEqual(m.status, "waiting_human", "critique→human-decision");
+      MOCK.runOnce(RT, m, proto); /* 递归模拟：opening→summary→critique→human-decision */
+      T.assertEqual(m.status, "waiting_human", "模拟到 human-decision");
       var res = RT.submitHumanDecision(m, proto, { choice: "finish" });
       T.assert(res.ok, "finish 接受");
       T.assertEqual(m.status, "completed", "finish→archive→$end→completed");

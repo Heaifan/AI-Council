@@ -28,13 +28,17 @@
       actions.persistDraft();
     }
 
-    /* 显示名 / 网页 URL 属于 Transport Profile；profile 不存在（如自定义 model_ref）时自动创建（F2-F1）。 */
+    /* 显示名 / 网页 URL 属于 Transport Profile；profile 不存在（如自定义 model_ref）时自动创建（F2-F1）。
+     * T25-F2：model_ref 变更时显示名/URL 跟随目标 profile（默认表），未变更才用表单值——避免旧名覆盖新模型。 */
     var profiles = actions.getProfiles();
-    var targetRef = (edits.origModelRef || edits.model_ref || "").trim();
+    var targetRef = (edits.model_ref || "").trim();
+    var refChanged = targetRef !== (edits.origModelRef || "").trim();
     var prof = A.RelayProfiles.findByModelRef(profiles, targetRef);
     actions.setProfiles(A.RelayProfiles.upsert(profiles, {
       profile_id: prof ? prof.profile_id : ("seat-" + pid),
-      display_name: edits.display_name, model_ref: targetRef, web_url: edits.web_url
+      display_name: refChanged ? (prof ? prof.display_name : (edits.display_name || targetRef)) : edits.display_name,
+      model_ref: targetRef,
+      web_url: refChanged ? (prof ? prof.web_url : (edits.web_url || "")) : edits.web_url
     }));
     A.SeatLocalConfig.setStance(pid, edits.stance);
     A.SeatLocalConfig.setNote(pid, edits.note);

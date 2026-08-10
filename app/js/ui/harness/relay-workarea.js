@@ -64,7 +64,8 @@
     pa.className = "big-textarea";
     pa.placeholder = "请将 ChatGPT / Claude / Gemini 的完整回答粘贴到这里……";
     box.appendChild(pa);
-    box.appendChild(btn("relay-submit", "提交回答", "primary", !active, function () {
+    var locked = !active || active.state === "validated" || active.state === "accepted";   /* T43：validated 后无重复提交入口 */
+    box.appendChild(btn("relay-submit", "提交回答", "primary", locked, function () {
       A.WebRelayActions.paste(pa.value);
       A.WebRelayActions.validate();
     }));

@@ -23,8 +23,8 @@
     var d = A.MeetingDraft.create("committee-mvp");
     d.title = "回放测试"; d.topic = "议题";
     d.participants = [
-      { participant_id: "agent-a1", actor_type: "advisor", role_class: "advisor", side_id: "A", transport_kind: "mock" },
-      { participant_id: "agent-b1", actor_type: "advisor", role_class: "advisor", side_id: "B", transport_kind: "mock" },
+      { participant_id: "agent-a1", actor_type: "advisor", role_class: "advisor", side_id: "A", transport_kind: "mock", model_ref: "chatgpt-web" },
+      { participant_id: "agent-b1", actor_type: "advisor", role_class: "advisor", side_id: "B", transport_kind: "mock", model_ref: "claude-web" },
       { participant_id: "chair-1", actor_type: "chair_secretary", role_class: "chair_secretary", side_id: null, transport_kind: "mock" }
     ];
     var r = A.MeetingDraft.buildMeeting(d, proto, "mtg-replay-1");
@@ -38,6 +38,10 @@
     while (state.meeting.currentPhaseId !== phaseId && guard++ < 20) {
       var r = A.MeetingStepFlow.step(state.meeting, state.protocol);
       if (!r.ok || state.meeting.status === "completed") break;
+      if (A.MeetingTurnSelector && A.MeetingTurnSelector.phaseStatus(state.meeting, state.protocol) === "ready_to_advance") {
+        var ad = A.MeetingRuntime.advancePhase(state.meeting, state.protocol);
+        if (!ad.ok) break;
+      }
     }
     return state;
   }
