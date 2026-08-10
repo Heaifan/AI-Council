@@ -15,15 +15,17 @@
   function meet(id) { return A.MeetingFactory.createMeeting(proto(), { meetingId: id, participants: [relay()] }); }
   function open(m, p) { return WC.open(m, { participantId: "relay1", prompt: p, packet: PK }); }
 
-  T.test("WR-01", "open→receive→validate(V01–V05 全过)→state=validated", function () {
+  T.test("WR-01", "open→receive→validate(V01–V06 全过)→state=validated", function () {
+    /* F1-B 契约更新：V06 Output Contract 加入校验链（协议无约束时恒通过）。 */
     var m = meet("mtg-wr-01"); RT.start(m, proto());
     var o = open(m, "WR01 请给出建议"); T.assertEqual(o.state, "waiting_external", "begin 后 waiting_external");
     WC.receive(m, o.handle, "建议：控制风险敞口。");
     var v = WC.validate(m, o.handle);
     T.assert(v.ok, "validate 应通过：" + JSON.stringify(v.checks));
     T.assertEqual(v.state, "validated", "validate 后置 validated");
-    T.assertEqual(v.checks.length, 5, "应跑满 V01–V05 五条校验");
-    T.assert(v.checks.every(function (c) { return c.ok; }), "五条校验必须全部 ok");
+    T.assertEqual(v.checks.length, 6, "应跑满 V01–V06 六条校验");
+    T.assert(v.checks.every(function (c) { return c.ok; }), "六条校验必须全部 ok");
+    T.assertEqual(v.checks[5].id, "V06", "第六条应为 V06");
   });
 
   T.test("WR-02", "空响应 → V03 失败，state=rejected(EMPTY_RESPONSE)", function () {

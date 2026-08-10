@@ -72,6 +72,8 @@
       "js/instruction-compiler.js", "js/prompt-renderer.js", "js/role-card-registry.js",
       "js/instruction-packet-schema.js",
       "js/invocation/agent-web-relay-controller.js", "js/invocation/invocation-message-factory.js",
+      "js/invocation/agent-invocation-request.js", "js/invocation/agent-invocation-result.js",
+      "js/invocation/output-contract-resolver.js",
       "js/harness/harness-store.js", "js/harness/participant-binding.js",
       "js/harness/meeting-draft.js", "js/harness/relay-profiles.js", "js/harness/seat-layout.js",
       "js/harness/meeting-replay.js", "js/harness/meeting-admission.js",

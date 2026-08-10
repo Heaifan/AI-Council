@@ -252,7 +252,7 @@ async function runD3(page) {
   check("B11 · 按钮文案为「选中全部提示词」（非「复制 Prompt」）",
     selectBtn === "选中全部提示词");
 
-  await page.fill("#relay-paste", "建议：控制风险敞口，分批建仓，关注情报收集。");
+  await page.fill("#relay-paste", "{\"position\":\"控制风险敞口\",\"reasons\":[\"分批建仓\"],\"risks\":[\"情报不足\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -318,7 +318,7 @@ async function runD3(page) {
 
   await page.click("#relay-open");   /* V04 被拒后回 idle，需重新生成提示词 */
   await page.waitForSelector("#relay-paste");
-  await page.fill("#relay-paste", "建议：加强情报收集，谨慎行事，保持阵型稳定。");
+  await page.fill("#relay-paste", "{\"position\":\"加强情报收集\",\"reasons\":[\"谨慎行事\"],\"risks\":[\"阵型不稳\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => document.getElementById("relay-validation") === null);
   check("B24 · 重新粘贴有效回答 → 校验通过静默（无校验块）",
@@ -498,7 +498,7 @@ async function runD5(page) {
   check("S12 · 生成提示词仍含会议议题", promptVal.includes("六席议题进入提示词"));
 
   /* response 流程 + accept 仍成立 */
-  await page.fill("#relay-paste", "六席验收回答：同意继续自研。");
+  await page.fill("#relay-paste", "{\"position\":\"同意继续自研\",\"reasons\":[\"六席验收\"],\"risks\":[\"周期长\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -617,7 +617,7 @@ async function runD7(page) {
   check("R02b · 时间轴节点数 ≥ 1", nodeCount0 >= 1, "nodes=" + nodeCount0);
 
   /* R03：执行下一步后节点增加 */
-  await page.click("#mt-step");
+  await clickDevBtn(page, "#mt-step");
   await page.waitForFunction((n) => {
     const el = document.getElementById("tl-current-label");
     return el && el.textContent.length > 0;
@@ -722,7 +722,7 @@ async function runF1RT(page) {
   /* A1（web_relay）：open → paste → submit → accept */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 正式回答：支持继续自研。");
+  await page.fill("#relay-paste", "{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -770,7 +770,7 @@ async function runF1RT(page) {
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答。");
+  await page.fill("#relay-paste", "{\"position\":\"同意\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -825,7 +825,7 @@ async function runF1RT(page) {
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答 V1。");
+  await page.fill("#relay-paste", "{\"position\":\"同意 V1\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -846,7 +846,7 @@ async function runF1RT(page) {
     return msgs.map((x) => x.extensions && x.extensions.response_status + ":" + (x.extensions.revision || 1) + ":" + x.content.raw_text).join(" | ");
   });
   check("R1T-13 · 修改后：V1 superseded + V2 official（上下文取 V2）",
-    ctxV2.includes("superseded:1:A1 回答 V1") && ctxV2.includes("official:2:A1 回答 V2"), ctxV2);
+    ctxV2.includes("superseded:1:") && ctxV2.includes("official:2:A1 回答 V2"), ctxV2);
   /* 撤回 A1 */
   await page.click("#seat-revoke-A1");
   await page.waitForFunction(() => {
@@ -869,7 +869,7 @@ async function runF1RT(page) {
   check("R1T-16 · mock 完成 → 调度回到 A1（撤回席补答入口）", (await navText(page)).includes("A1"), await navText(page));
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 补答：最终支持自研。");
+  await page.fill("#relay-paste", "{\"position\":\"最终支持自研\",\"reasons\":[\"补答\"],\"risks\":[\"周期\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -902,7 +902,7 @@ async function runF1RT(page) {
   /* A1：Accept V1 → Revise V2 → Revoke → Re-Accept V3（历史：received, revised, revoked, received） */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 V1。");
+  await page.fill("#relay-paste", "{\"position\":\"同意 V1\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -923,7 +923,7 @@ async function runF1RT(page) {
   });
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 V3（重发）。");
+  await page.fill("#relay-paste", "{\"position\":\"同意 V3\",\"reasons\":[\"重发\"],\"risks\":[\"风险\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -999,7 +999,7 @@ async function runF1RT(page) {
   /* 完成 A1 → A2 blocked（运行中配置失效，B03） */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答。");
+  await page.fill("#relay-paste", "{\"position\":\"同意\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1067,7 +1067,7 @@ async function runF1RT(page) {
   /* A1 relay accept → 自动 B1（绝不落空席 A2） */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答。");
+  await page.fill("#relay-paste", "{\"position\":\"同意\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1118,7 +1118,7 @@ async function runF1RT(page) {
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答。");
+  await page.fill("#relay-paste", "{\"position\":\"同意\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1157,7 +1157,7 @@ async function runF1RT(page) {
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答。");
+  await page.fill("#relay-paste", "{\"position\":\"同意\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1219,7 +1219,7 @@ async function runF1RT(page) {
   await page.waitForSelector("#relay-hint");
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 回答。");
+  await page.fill("#relay-paste", "{\"position\":\"同意\",\"reasons\":[\"理由一\"],\"risks\":[\"风险一\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1259,7 +1259,7 @@ async function runF1RT(page) {
   /* A1 真实 accept */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 正式回答：支持继续自研。");
+  await page.fill("#relay-paste", "{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1271,7 +1271,7 @@ async function runF1RT(page) {
     const el = document.getElementById("relay-prompt");
     return el && el.value && el.value.includes("风险挑战方");
   });
-  await page.fill("#relay-paste", "B1 正式回答：反对，风险过高。");
+  await page.fill("#relay-paste", "{\"position\":\"反对，风险过高\",\"reasons\":[\"成本压力\"],\"risks\":[\"进度失控\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1287,11 +1287,11 @@ async function runF1RT(page) {
   /* summary：A3 秘书自动开 + 秘书 Prompt 注入 A1/B1 有效正式发言 */
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-prompt");
-    return el && el.value && el.value.includes("上一阶段正式发言") && el.value.includes("A1 正式回答：支持继续自研。") && el.value.includes("B1 正式回答：反对，风险过高。");
+    return el && el.value && el.value.includes("上一阶段正式发言") && el.value.includes("{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}") && el.value.includes("{\"position\":\"反对，风险过高\",\"reasons\":[\"成本压力\"],\"risks\":[\"进度失控\"]}");
   });
   const secPrompt = await page.locator("#relay-prompt").inputValue();
   check("F5-03 · 秘书 Prompt = A1+B1 有效正式发言 + 来源引用",
-    secPrompt.includes("source=") && !secPrompt.includes("A1 正式回答：支持继续自研。" + "A1"), secPrompt.slice(0, 80));
+    secPrompt.includes("source=") && !secPrompt.includes("{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}" + "A1"), secPrompt.slice(0, 80));
   const execLabel = await page.evaluate(() => {
     const el = document.getElementById("relay-exec-pid");
     const f = el && el.closest(".field");
@@ -1303,7 +1303,7 @@ async function runF1RT(page) {
     (await page.locator("#seat-A3 .seat-state").innerText()).includes("等待秘书回答"),
     (await page.locator("#seat-A3 .seat-state").innerText()));
   /* 秘书真实 accept → 1/1 */
-  await page.fill("#relay-paste", "秘书中立摘要：双方分歧在于风险评估。");
+  await page.fill("#relay-paste", "{\"supporting_points\":[\"自研理由充分\"],\"opposing_points\":[\"成本压力\"],\"conflicts\":[\"周期评估\"],\"open_questions\":[\"人力是否足够\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1320,7 +1320,7 @@ async function runF1RT(page) {
   /* Round 3 critique：委员 Prompt 共享同一份秘书汇总 */
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-prompt");
-    return el && el.value && el.value.includes("上一阶段秘书汇总") && el.value.includes("秘书中立摘要：双方分歧在于风险评估。");
+    return el && el.value && el.value.includes("上一阶段秘书汇总") && el.value.includes("{\"supporting_points\":[\"自研理由充分\"],\"opposing_points\":[\"成本压力\"],\"conflicts\":[\"周期评估\"],\"open_questions\":[\"人力是否足够\"]}");
   });
   check("F5-06 · Round3 委员 Prompt 含同一份秘书汇总（shared_context）", true);
   await page.screenshot({ path: path.join(shotDirD3, "08-runtime-f1-six-seats.png"), fullPage: true });
@@ -1384,7 +1384,7 @@ async function runF3(page, vp) {
   /* L08 校验通过静默（T03）——V04 被拒后回 idle，重新生成 */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-paste");
-  await page.fill("#relay-paste", "建议：加强情报收集，谨慎行事，保持阵型稳定。");
+  await page.fill("#relay-paste", "{\"position\":\"加强情报收集\",\"reasons\":[\"谨慎行事\"],\"risks\":[\"阵型不稳\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => document.getElementById("relay-validation") === null);
   check(tag + " · L08 校验 PASS 静默（无校验块）", true);
@@ -1609,7 +1609,7 @@ async function runF2(page) {
   await page.dispatchEvent("#cfg-model-ref-agent-a2", "change");
   const refHandle = await page.evaluateHandle(() => document.getElementById("cfg-model-ref-agent-a2"));
   await page.evaluate(() => {                       /* 模拟后台回答到达（既有动作层，不经 UI） */
-    AICouncil.WebRelayActions.paste("F2 防覆盖验收回答。");
+    AICouncil.WebRelayActions.paste('{"position":"F2 防覆盖验收","reasons":["理由"],"risks":["风险"]}');
     AICouncil.WebRelayActions.validate();
   });
   await page.waitForFunction(() => {
@@ -1716,7 +1716,7 @@ async function runF2F1(page) {
   const t2 = await page.locator("#meeting-timer").innerText();
   check("H02 · timer 持续变化", t1 !== t2, t1 + " -> " + t2);
   await page.evaluate(() => {
-    AICouncil.WebRelayActions.paste("F2-F1 验收回答。");
+    AICouncil.WebRelayActions.paste('{"position":"F2-F1 验收","reasons":["理由"],"risks":["风险"]}');
     AICouncil.WebRelayActions.validate();
   });
   await page.waitForFunction(() => {
@@ -1760,6 +1760,121 @@ async function runF2F1(page) {
   await page.screenshot({ path: path.join(shotDirD3, "09-seat-runtime-unlock.png"), fullPage: true });
 }
 
+/* ---------- MEETING-INTEGRITY-F1-B：Response Validation Pipeline E2E（M01 合法 / M02 尾巴 / M03 缺字段 / M04 修正恢复 / M05 battle 缺小节） ---------- */
+async function runF1B(page) {
+  const OK_OPEN = '{"position":"支持自研","reasons":["架构可控"],"risks":["周期长"]}';
+  const OK_SUM = '{"supporting_points":["自研理由充分"],"opposing_points":["成本压力"],"conflicts":["周期评估"],"open_questions":["人力是否足够"]}';
+  const OK_CRIT = '{"challenges":["成本被低估"]}';
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.evaluate(() => {
+    const d = AICouncil.ConsoleActions.getDraft();
+    d.participants.forEach((p) => { if (p.participant_id !== "agent-a1" && p.participant_id !== "agent-a3" && p.participant_id !== "agent-b1") p.model_ref = ""; });
+    AICouncil.ConsoleActions.persistDraft();
+  });
+  await page.fill("#cfg-title", "F1B 校验管线");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#preflight-start");
+  await page.click("#preflight-start");
+  await page.waitForSelector("#relay-hint");
+
+  /* M01：合法 JSON → accepted 并推进 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_OPEN);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  check("F1B-M01 · 合法 JSON → validated（V01–V06 全过）", true);
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  check("F1B-M01b · accepted 后 1/2 正常推进", true);
+  await clickDevBtn(page, "#mt-step");   /* B1 mock（dev-tools drawer 内） */
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  await page.click("#mt-advance");
+
+  /* summary：A3 秘书自动开 → M02：JSON+尾巴 → V06 拦截，不推进 */
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_SUM + "\n\n这就是我的总结。");
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  check("F1B-M02 · JSON+尾巴 → ⚠ 校验问题卡出现", true);
+  const navAfterBad = await page.locator("#seat-nav-current").innerText();
+  check("F1B-M02b · 不推进（秘书仍 0/1）", navAfterBad.includes("0/1"), navAfterBad);
+  check("F1B-M02c · 无「进入下一阶段」按钮", (await page.locator("#mt-advance").count()) === 0);
+
+  /* M03：缺字段 → Schema FAIL（V06 被拒后回 idle，重新 relay-open 再提交） */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-paste");
+  await page.fill("#relay-paste", '{"supporting_points":["自研理由充分"],"opposing_points":["成本压力"],"conflicts":["周期评估"]}');
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  check("F1B-M03 · 缺 open_questions → 校验问题卡出现", true);
+
+  /* M04：修正后重新提交 → 合法 → accepted → 1/1 → 推进 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-paste");
+  await page.fill("#relay-paste", OK_SUM);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  check("F1B-M04 · 修正后 validated", true);
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/1");
+  });
+  check("F1B-M04b · 秘书 accepted → 1/1", true);
+  await page.click("#mt-advance");
+
+  /* critique：A1 自动开 → 合法 → accept → B1 mock → 2/2 → human gate */
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_CRIT);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  await clickDevBtn(page, "#mt-step");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  await page.click("#mt-advance");
+  await page.waitForSelector("#mt-battle");
+  check("F1B-M04c · Human Gate 出现且可进入对辩", true);
+  await page.click("#mt-battle");
+
+  /* M05：battle text contract——缺 rebuttal → V06 拦截，不推进（battle 经 human gate 进入，手动 open） */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", "claim\n自研可行。\n\nremaining_uncertainty\n周期未定。");
+  await page.click("#relay-submit");
+  await page.waitForSelector("#relay-validation");
+  check("F1B-M05 · battle 缺 rebuttal → 校验问题卡出现", true);
+  const navBattle = await page.locator("#seat-nav-current").innerText();
+  check("F1B-M05b · battle 不推进（0/2）", navBattle.includes("0/2"), navBattle);
+  check("F1B-M05c · 详情含 V06", (await page.locator("#relay-verdict-toggle").count()) === 1);
+}
+
 /* ---------- MEETING-INTEGRITY-F1-A：Phase Context Snapshot E2E（S01 opening 独立 / S03 critique 只共享已完成阶段） ---------- */
 async function runF1A(page) {
   await page.evaluate(() => localStorage.clear());
@@ -1784,7 +1899,7 @@ async function runF1A(page) {
   /* S01：A1 accept 后 B1 自动开 → Prompt 不含 A1 本轮 Opening（snapshot 空引用） */
   await page.click("#relay-open");
   await page.waitForSelector("#relay-prompt");
-  await page.fill("#relay-paste", "A1 正式回答：支持继续自研。");
+  await page.fill("#relay-paste", "{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1797,10 +1912,10 @@ async function runF1A(page) {
   });
   const b1PromptS01 = await page.locator("#relay-prompt").inputValue();
   check("F1A-S01 · opening：B1 Prompt 不含 A1 本轮 Opening（0 命中）",
-    !b1PromptS01.includes("A1 正式回答") && !b1PromptS01.includes("上一阶段正式发言"), b1PromptS01.slice(0, 60));
+    !b1PromptS01.includes("支持继续自研") && !b1PromptS01.includes("上一阶段正式发言"), b1PromptS01.slice(0, 60));
 
   /* B1 完成 Opening → 2/2 → advance */
-  await page.fill("#relay-paste", "B1 正式回答：反对，风险过高。");
+  await page.fill("#relay-paste", "{\"position\":\"反对，风险过高\",\"reasons\":[\"成本压力\"],\"risks\":[\"进度失控\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1817,12 +1932,12 @@ async function runF1A(page) {
   /* summary：A3 秘书自动开 → 仍注入双方 Opening 原文（F5 链保留） */
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-prompt");
-    return el && el.value && el.value.includes("A1 正式回答：支持继续自研。") && el.value.includes("B1 正式回答：反对，风险过高。");
+    return el && el.value && el.value.includes("{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}") && el.value.includes("{\"position\":\"反对，风险过高\",\"reasons\":[\"成本压力\"],\"risks\":[\"进度失控\"]}");
   });
   const secPrompt = await page.locator("#relay-prompt").inputValue();
   check("F1A-S01c · 秘书 Prompt 仍含双方 Opening 原文",
-    secPrompt.includes("A1 正式回答：支持继续自研。") && secPrompt.includes("B1 正式回答：反对，风险过高。"), secPrompt.slice(0, 60));
-  await page.fill("#relay-paste", "秘书中立摘要：双方分歧在于风险评估。");
+    secPrompt.includes("{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}") && secPrompt.includes("{\"position\":\"反对，风险过高\",\"reasons\":[\"成本压力\"],\"risks\":[\"进度失控\"]}"), secPrompt.slice(0, 60));
+  await page.fill("#relay-paste", "{\"supporting_points\":[\"自研理由充分\"],\"opposing_points\":[\"成本压力\"],\"conflicts\":[\"周期评估\"],\"open_questions\":[\"人力是否足够\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1838,9 +1953,9 @@ async function runF1A(page) {
   /* critique：A1 先答 critique → B1 可见 Opening+秘书汇总、不可见 A1 的 Critique */
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-prompt");
-    return el && el.value && el.value.includes("上一阶段秘书汇总") && el.value.includes("秘书中立摘要：双方分歧在于风险评估。");
+    return el && el.value && el.value.includes("上一阶段秘书汇总") && el.value.includes("{\"supporting_points\":[\"自研理由充分\"],\"opposing_points\":[\"成本压力\"],\"conflicts\":[\"周期评估\"],\"open_questions\":[\"人力是否足够\"]}");
   });
-  await page.fill("#relay-paste", "A1 的批判意见：秘书摘要漏掉了成本风险。");
+  await page.fill("#relay-paste", "{\"challenges\":[\"秘书摘要漏掉了成本风险\"]}");
   await page.click("#relay-submit");
   await page.waitForFunction(() => {
     const el = document.getElementById("relay-state-raw");
@@ -1853,7 +1968,7 @@ async function runF1A(page) {
   });
   const b1PromptS03 = await page.locator("#relay-prompt").inputValue();
   check("F1A-S03 · critique：B1 可见 Opening 原文 + 秘书汇总",
-    b1PromptS03.includes("A1 正式回答：支持继续自研。") && b1PromptS03.includes("秘书中立摘要：双方分歧在于风险评估。"), b1PromptS03.slice(0, 60));
+    b1PromptS03.includes("{\"position\":\"支持继续自研\",\"reasons\":[\"架构可控\"],\"risks\":[\"周期长\"]}") && b1PromptS03.includes("{\"supporting_points\":[\"自研理由充分\"],\"opposing_points\":[\"成本压力\"],\"conflicts\":[\"周期评估\"],\"open_questions\":[\"人力是否足够\"]}"), b1PromptS03.slice(0, 60));
   check("F1A-S03b · critique：B1 不可见 A1 同阶段 Critique",
     !b1PromptS03.includes("A1 的批判意见"), b1PromptS03.slice(0, 60));
 }
@@ -1892,6 +2007,7 @@ async function runChannel(channel) {
   await runF2(page);
   await runF2F1(page);
   await runF1A(page);
+  await runF1B(page);
   await runTestPage(page);
 
   await browser.close();

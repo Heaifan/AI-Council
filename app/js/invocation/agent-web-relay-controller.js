@@ -12,7 +12,7 @@
   function diag(c, m) { return A.Diagnostic.create({ code: c, message: m }); }
   function bag(m) { return m.stateData || (m.stateData = {}); }
   function slot(m, h) { var b = bag(m); var s = b[NS] || (b[NS] = {}); return s[h] || (s[h] = {}); }
-  function sync(m, h) { var r = T._rec(h); if (!r) return; var s = slot(m, h); s.state = r.state; s.result = r.result; s.error = r.error; s.request = r.request; }
+  function sync(m, h) { var r = T._rec(h); if (!r) return; var s = slot(m, h); s.state = r.state; s.result = r.result; s.error = r.error; s.request = r.request; s.validation = r.validation; }
   function participant(m, id) { var ps = m.participants || []; for (var i = 0; i < ps.length; i++) if (ps[i].participant_id === id) return ps[i]; return null; }
   function nextRelay(m) { var pa = m.pendingAction; if (!pa || pa.action_type !== ACT.COLLECT_RESPONSES) return null; for (var i = 0; i < pa.requiredParticipantIds.length; i++) { var id = pa.requiredParticipantIds[i]; if (pa.receivedParticipantIds.indexOf(id) >= 0) continue; var p = participant(m, id); if (p && (p.transport_kind || "mock") === "web_relay") return p; } return null; }
   /* Save/Load 后把 stateData 断点灌回 transport 内存态。 */
@@ -30,27 +30,40 @@
     return { ok: true, handle: r.handle, request: req.request, prompt: inputs.prompt, participantId: p.participant_id, state: r.state };
   }
   function receive(m, h, raw) { var r = T.receive(h, raw); if (r.ok) sync(m, h); return r; }
-  /* V01–V05 五条硬校验：句柄有效 / 状态机在 response_received / 原文非空 / 长度合理 / 参与者仍在会议。 */
+  /* V01–V06：形状校验（句柄/状态机/非空/长度/参与者）+ Output Contract（strict JSON / text sections）。
+   * F1-B：transport_success ≠ runtime_accepted——V06 不通过 → rejected，participant 保持 pending。 */
   function validate(m, h) {
     var rec = T._rec(h); if (!rec) return fail(h, "V01", C.STALE_INVOCATION);
-    var tr = T.validate(h); if (!tr.ok) return fail(h, "V01", tr.diagnostics[0].code);
+    var contract = A.OutputContractResolver.resolve(rec.request.instruction_packet);
+    var tr = T.validate(h, contract); if (!tr.ok) return fail(h, "V01", tr.diagnostics[0].code);
     var checks = [{ id: "V01", ok: true }, { id: "V02", ok: true }];
-    if (rec.state === "rejected") { checks.push({ id: "V03", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.EMPTY_RESPONSE, "外部返回为空。")] }; }
+    if (rec.state === "rejected") {
+      if (tr.validation) {
+        /* V06：Output Contract 失败（非空但格式/字段不达标） */
+        checks.push({ id: "V06", ok: false });
+        var vr = tr.validation;
+        return { ok: false, state: "rejected", checks: checks, validation: vr,
+          diagnostics: [diag(C.INVOCATION_OUTPUT_CONTRACT_FAILED,
+            (vr.parser_error || (vr.schema_errors[0] || "")) || ("缺少小节：" + vr.missing_sections.join("、")))] };
+      }
+      checks.push({ id: "V03", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.EMPTY_RESPONSE, "外部返回为空。")] };
+    }
     checks.push({ id: "V03", ok: true });
     var raw = rec.result ? rec.result.raw_response : "";
     if (raw.length > MAX_LEN) { T.reject(h, C.INVALID_RESPONSE, "响应超 " + MAX_LEN + " 字符，疑似误粘贴。"); sync(m, h); checks.push({ id: "V04", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.INVALID_RESPONSE, "响应过长。")] }; }
     checks.push({ id: "V04", ok: true });
     if (!participant(m, rec.request.participant_id)) { checks.push({ id: "V05", ok: false }); return { ok: false, state: "rejected", checks: checks, diagnostics: [diag(C.PARTICIPANT_NOT_FOUND, "参与者已不在会议。")] }; }
     checks.push({ id: "V05", ok: true });
+    checks.push({ id: "V06", ok: true });
     sync(m, h);
-    return { ok: true, state: "validated", checks: checks, result: rec.result };
+    return { ok: true, state: "validated", checks: checks, result: rec.result, validation: tr.validation };
   }
   function fail(h, vid, code) { return { ok: false, state: null, checks: [{ id: vid, ok: false }], diagnostics: [diag(code, "校验未通过：" + vid)] }; }
   function accept(m, h) { var rec = T._rec(h); var r = T.accept(h); if (!r.ok) return r; sync(m, h); return { ok: true, state: "accepted", result: r.result, submission: { participant_id: rec.request.participant_id, payload: { mock: false, web_relay: true, result: r.result } } }; }
   function reject(m, h, code, msg) { var r = T.reject(h, code, msg); if (r.ok) sync(m, h); return r; }
   function retry(m, h) { var r = T.retry(h); if (r.ok) sync(m, h); return r; }
   function cancel(m, h) { var r = T.cancel(h); if (r.ok) sync(m, h); return r; }
-  function state(m, h) { var rec = T._rec(h); return rec ? { handle: h, state: rec.state, result: rec.result, error: rec.error, request: rec.request } : null; }
+  function state(m, h) { var rec = T._rec(h); return rec ? { handle: h, state: rec.state, result: rec.result, error: rec.error, request: rec.request, validation: rec.validation } : null; }
   function sessions(m) { var b = bag(m)[NS] || {}; return Object.keys(b).map(function (h) { return state(m, h); }); }
   A.WebRelayController = Object.freeze({ open: open, receive: receive, validate: validate, accept: accept, reject: reject, retry: retry, cancel: cancel, hydrate: hydrate, state: state, sessions: sessions });
 })(typeof globalThis !== "undefined" ? globalThis : this);

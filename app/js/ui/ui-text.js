@@ -57,6 +57,7 @@
   /* 错误码人话解释。界面必须同时给出中文解释与内部错误代码，禁止只甩代码。 */
   var ERROR = Object.freeze({
     EMPTY_RESPONSE: "外部 AI 回答为空。请粘贴完整回答后重新提交。",
+    INVOCATION_OUTPUT_CONTRACT_FAILED: "回答未通过输出合同校验（格式/字段不达标）。请按提示词要求的格式重新生成后粘贴。",
     INVALID_RESPONSE: "外部 AI 回答不合法（可能过长或格式异常）。请检查后重新粘贴。",
     VALIDATION_FAILED: "本次回答未通过校验，尚未写入正式会议记录。",
     CANCELLED: "本次请求已被取消。",

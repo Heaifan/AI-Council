@@ -75,7 +75,9 @@
     }
     return WC().open(meeting, { participantId: pid, prompt: prompt, packet: packet });
   }
-  /* accept → 交回 Runtime 推进会议；Runtime 接受后把正式 Message 写入 meeting.messages（accepted_by_runtime=true）。 */
+  /* accept → 交回 Runtime 推进会议；Runtime 接受后把正式 Message 写入 meeting.messages（accepted_by_runtime=true）。
+   * F1-B：runtime_accepted = transport_success AND validation_success——状态机已保证 validated 才 accepted，
+   * 此处显式断言 validation 记录（旧会话无记录时放行兼容，新会话必有）。 */
   function accept(meeting, protocol, handle) {
     var pa = meeting.pendingAction;
     if (pa && pa.action_type === ACTION.COLLECT_RESPONSES) {
@@ -84,6 +86,8 @@
       /* T07：接受对象必须属于本阶段 required 且当前有效未完成——防串席/重复接受。 */
       if (pid && (pa.requiredParticipantIds.indexOf(pid) < 0 || pa.receivedParticipantIds.indexOf(pid) >= 0))
         return { ok: false, diagnostics: [D.create({ code: C.INVOCATION_STATE_TRANSITION_INVALID, message: "该回答不属于当前阶段可接收的委员（" + pid + "）。" })] };
+      if (rec && rec.validation && !rec.validation.is_valid)
+        return { ok: false, diagnostics: [D.create({ code: C.INVOCATION_OUTPUT_CONTRACT_FAILED, message: "回答未通过输出合同校验，不能接受为正式发言。" })] };
     }
     var a = WC().accept(meeting, handle); if (!a.ok) return a;
     var r = A.MeetingRuntime.submitResult(meeting, protocol, a.submission);

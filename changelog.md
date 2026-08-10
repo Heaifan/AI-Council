@@ -2,6 +2,16 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-INTEGRITY-F1-B · Response Validation Pipeline — 2026-08-10
+
+- **F1-B-01 审计结论**：`WC.validate`（agent-web-relay-controller.js）V01–V05 只做形状校验（句柄/状态机/非空/长度/参与者），**从不消费协议 `output_contract`**（opening/summary/critique 的 json_schema + battle 的 required_sections 全部存在但零代码引用）；`T.receive` 构造 Result 时 `normalized_content` 恒 null；`RelayFlow.accept` → `submitResult` → `receivedParticipantIds.push` **无条件入列**——「Transport success = Runtime accepted」成立。
+- **修复**：新模块 `invocation/output-contract-resolver.js`（93 行）——`validate(raw, contract)` → `{mode, is_valid, parser_error, schema_errors[], missing_sections[], additional_properties[], normalized_content}`；**strict JSON**：整串 `JSON.parse`（仅 BOM/首尾空白/CRLF 归一，trailing/leading prose 天然抛错），schema 用 AjvBundle 编译（additionalProperties 由 schema 强制）；**text contract**：required_sections 标题行定位（缺失/空 → missing_sections）。
+- **三态拆分**：`transport_success`（Result.status=success）→ `validation_success`（V06：T.validate 内 OCR 校验，FAIL 走 VALIDATE_FAIL → rejected，participant 保持 pending）→ `runtime_accepted`（RelayFlow.accept 显式断言 `validation.is_valid`，旧会话无记录放行兼容）。**FAIL 禁止 advance**（状态机 rejected 不可 accept，received 不入列，phaseStatus 恒 running）。
+- **normalized_content 生效**：PASS 时重建 Result（content-address 同 result_id）携带解析对象/归一文本；`validation` 随 session 持久化（sync 扩展，Save/Load 断点续传保留）。
+- **UI**：V06 失败 → 校验卡 + 详情精确原因（parser_error / 缺少小节 / Schema 错误 / 不允许字段）；新错误码 `INVOCATION_OUTPUT_CONTRACT_FAILED`（UIText 中文文案）；V06 被拒后回 idle（既有 F3 设计），用户重新 relay-open 提交修正版。
+- **契约语义更新（既有测试适配）**：Browser 全部 relay 粘贴内容升级为合法 JSON（opening/summary/critique），依赖原文本的断言改 JSON 子串；WR-01 校验条数 5→6（V01–V06）；F2 动作层 paste 同步升级。空响应仍报 EMPTY_RESPONSE（V03，错误码不被 contract 分支污染）。
+- **门禁**：Node **264/264**（+TEST-226..245 B01..B20）· Browser **344/344**（+F1B-M01..M05c 十二条全真实链：合法/尾巴/缺字段/修正恢复/battle 缺小节）· Offline 14/14 · Schema PASS · diff --check PASS。
+
 ## MEETING-INTEGRITY-F1-A · Phase Context Snapshot — 2026-08-10
 
 - **F1-01 审计结论**：上下文注入唯一入口 = `RelayFlow.open` 每次实时提取 `effectiveResponses`/`secretarySummary`（不分阶段取各参与者 latestOfficial）→ ①同阶段污染（critique 中 B1 可见 A1 的 critique；opening 中 B1 可见 A1 的 opening）②latestOfficial 覆盖丢跨阶段原文（critique 阶段看不到 A1 的 opening）；Runtime `enterPhase` 无任何上下文冻结机制。

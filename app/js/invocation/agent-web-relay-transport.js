@@ -30,21 +30,37 @@
     return { ok: true, state: step.next, result: r.result };
   };
 
-  WebRelayTransport.prototype.validate = function (handle) {
+  WebRelayTransport.prototype.validate = function (handle, contract) {
     var rec = this._rec(handle);
     if (!rec) return { ok: false, diagnostics: [diag(C.STALE_INVOCATION, "未知 handle：" + String(handle) + "。")] };
     if (rec.state !== "response_received") return { ok: false, diagnostics: [diag(C.INVOCATION_STATE_TRANSITION_INVALID, "validate 要求状态 response_received，实际 " + rec.state + "。")] };
     var raw = rec.result ? rec.result.raw_response : "";
-    var ev = (raw && raw.trim().length > 0) ? SM.EVENTS.VALIDATE_OK : SM.EVENTS.VALIDATE_FAIL;
+    /* F1-B：Output Contract 校验（strict JSON / text required_sections）——FAIL 走 VALIDATE_FAIL → rejected。 */
+    var OCR = A.OutputContractResolver;
+    var vr = (contract && OCR) ? OCR.validate(raw, contract) : null;
+    var ev = (raw && raw.trim().length > 0 && (!vr || vr.is_valid)) ? SM.EVENTS.VALIDATE_OK : SM.EVENTS.VALIDATE_FAIL;
     var step = SM.apply("response_received", ev);
     if (!step.ok) return { ok: false, diagnostics: [step.error] };
     rec.state = step.next;
     if (ev === SM.EVENTS.VALIDATE_FAIL) {
-      rec.error = diag(C.EMPTY_RESPONSE, "外部返回为空，需要人工回填或重试。");
-      return { ok: true, state: step.next, result: rec.result, error: rec.error };
+      if (!raw || !raw.trim()) {
+        rec.error = diag(C.EMPTY_RESPONSE, "外部返回为空，需要人工回填或重试。");
+        rec.validation = null; rec.result = null;
+        return { ok: true, state: step.next, result: null, error: rec.error, validation: null };
+      }
+      rec.error = diag(C.INVOCATION_OUTPUT_CONTRACT_FAILED, "回答未通过输出合同校验："
+        + ((vr.parser_error || (vr.schema_errors[0] || "")) || ("缺少小节：" + (vr.missing_sections.join("、") || "?"))));
+      rec.validation = vr; rec.result = null;
+      return { ok: true, state: step.next, result: null, error: rec.error, validation: vr };
     }
+    /* F1-B：PASS → 重建 Result 携带 normalized_content（content-address 同 id），validation 记录随会话持久化。 */
+    if (vr) {
+      rec.validation = vr;
+      var rr = Res.create({ requestId: handle, status: "success", rawResponse: raw, normalizedContent: vr.normalized_content });
+      if (rr.ok) rec.result = rr.result;
+    } else { rec.validation = null; }
     rec.error = null;
-    return { ok: true, state: step.next, result: rec.result };
+    return { ok: true, state: step.next, result: rec.result, validation: rec.validation };
   };
 
   WebRelayTransport.prototype.accept = function (handle) {

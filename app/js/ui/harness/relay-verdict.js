@@ -14,6 +14,15 @@
     check.checks.forEach(function (c) {
       ul.appendChild(Dom.el("li", c.ok ? "ok" : "bad", c.id + (c.ok ? " ✅" : " ❌")));
     });
+    /* F1-B：V06 失败时展开精确原因（parser_error / missing_sections / schema_errors / additional_properties）。 */
+    if (check.validation && !check.validation.is_valid) {
+      var v = check.validation;
+      (v.parser_error ? ["解析错误：" + v.parser_error] : [])
+        .concat(v.missing_sections.length ? ["缺少小节：" + v.missing_sections.join("、")] : [])
+        .concat(v.schema_errors.slice(0, 5).map(function (s) { return "Schema：" + s; }))
+        .concat(v.additional_properties.length ? ["不允许的字段：" + v.additional_properties.join("、")] : [])
+        .forEach(function (line) { ul.appendChild(Dom.el("li", "bad", line)); });
+    }
     box.appendChild(ul);
   }
 
