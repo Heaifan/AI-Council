@@ -37,6 +37,8 @@
     };
     if (result.normalized_content !== undefined && result.normalized_content !== null) msg.content.structured_output = result.normalized_content;
     msg.extensions = { turn: (m.pendingAction && m.pendingAction.phase_entry) || 1 };   /* F1-C：slot turn = 该 phase 进入次数 */
+    /* F2-B1：battle_round 仅 Battle 使用（Runtime-owned，非 Battle 阶段不写） */
+    if (m.pendingAction && typeof m.pendingAction.battle_round === "number") msg.extensions.battle_round = m.pendingAction.battle_round;
     return { ok: true, message: msg };
   }
   function append(meeting, message) {

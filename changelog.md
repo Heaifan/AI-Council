@@ -2,6 +2,17 @@
 
 > 格式参考 Keep a Changelog。所有变更按时间倒序。
 
+## MEETING-INTEGRITY-F2-B1 · Battle Turn Contract — 2026-08-11
+
+- **目的**：把 Battle 从「阶段级上下文」提升为「回合级语义」的第一步——只冻结「回合身份」，不碰上下文内容（F2-B2 对称上下文的前置）。
+- **两层身份（用户方案冻结）**：`phase_entry`（第几次进入 Battle Phase，F1-C turn 不变）+ `battle_round`（本次 Battle 内第几轮交锋，**Runtime-owned**）。Battle Slot = `phase_id:participant_id:turn:battle_round`；非 Battle 保持三元不变。
+- **Runtime-owned battle_round**：`enterPhase`/`reenterPhase` 对 battle 首次置 1；新 API `MeetingRuntime.advanceBattleRound` 是唯一 +1 入口（仅 battle 且本轮全部完成时放行，开新轮 = 重置 received + 游标回首位）——**绝不因发言/transport/校验自动推导**。
+- **Formal Message**：`extensions.turn`（保留）+ `extensions.battle_round`（仅 Battle 写）；`MessageCommit` slot 四元组 + 幂等合同保持（NO-OP / DUP_SLOT），回合权威 = pendingAction（手工消息归一补写，旧存档三元回退）；`message_accepted` 事件 payload 带 battle_round（审计链同构）。
+- **持久化**：battle_round 挂 pendingAction → checkpoint/archive/restore 零代码改动自动携带（schema `pending_action` 开放袋，零 schema 变更、manifest 不动）；TEST-269 锁定「Round2 A1 完成 B1 未完成 → 恢复后不漂移」。
+- **禁止清单全守**：对称上下文 ❌ / Prompt ❌ / UI ❌ / F3 口径 ❌ / human_decision_context ❌（TEST-273 回归锁定）/ transport ❌ / validation ❌ / secretary ❌ / 胜负判断 ❌ / 自动继续 ❌。
+- **门禁**：Node **292/292**（+TEST-264..273 B1-01..B1-10）· Browser **363/363**（+F2B1-M01..M02e 八条：真实全链到 battle、round1 落库带回合身份、Runtime 显式开新回合后 UI 0/2、round2 slot 独立）· Offline 14/14 · Schema PASS · diff --check PASS。报告 `reports/meeting-integrity-f2b1.md`。
+- **登记 F2-B3**：Replay 的 spoken 按 actor_id 去重，多回合轮次在回放视图不可区分（本轮不引入新事件）；旧存档显式兼容测试。
+
 ## MEETING-INTEGRITY-F1-C · Formal Message Commit — 2026-08-10
 
 - **F1-C-01 审计结论**：正式 Message 基建已存在（message.schema.json + InvocationMessageFactory）但 ①archive DTO `messages: []` 恒空 ②checkpoint state_snapshot 不含 messages ③restore 不恢复 messages ④`submitResult` 直接 push received（transport 即完成依据）⑤无 message_accepted/message_rejected 事件。

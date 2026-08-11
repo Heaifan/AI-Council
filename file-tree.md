@@ -1,6 +1,6 @@
 # File Tree — AI 顾问委员会 v0.1
 
-> 最后更新：2026-08-09（MEETING-RUNTIME-F1 发言队列/入会检查/可逆正式发言：Node 236/236 · Browser 327/327 · Offline 14/14）
+> 最后更新：2026-08-11（MEETING-INTEGRITY-F2-B1 Battle Turn Contract：Node 292/292 · Browser 363/363 · Offline 14/14）
 > 技术栈已冻结：**HTML / CSS / JavaScript**（纯浏览器，无服务器、无后端、无 CDN）。
 > 早期 C# 探索实现（`.slnx` / `src/` / `tests/`）已在 D1-R1-F1 从正式工作树删除，历史保留于 Git；正式实现为纯浏览器 HTML/CSS/JS，无构建产物。
 
@@ -77,7 +77,7 @@ app/
 │   │   ├── meeting-response-state.js   # ★F1-RT 可逆正式发言（82 行：latestOfficial/revise/revoke + 追加事件，历史不物理删除）
 │   │   ├── phase-context-snapshot.js   # ★INTEGRITY-F1-A 阶段上下文冻结（85 行：进入 Phase 冻结可见消息引用，挂 pendingAction.phase_context）
 │   │   ├── output-contract-resolver.js # ★INTEGRITY-F1-B 输出合同校验（93 行：strict JSON 整串解析 + Ajv Schema + text required_sections → ValidationResult）
-│   │   ├── message-commit.js           # ★INTEGRITY-F1-C 正式消息唯一落库入口（74 行：slot=phase:pid:turn 幂等 commit / message_accepted / received 维护）
+│   │   ├── message-commit.js           # ★INTEGRITY-F1-C 正式消息唯一落库入口（94 行：slot=phase:pid:turn[:battle_round] 幂等 commit / message_accepted / received 维护；F2-B1 回合权威归一）
 │   │   ├── meeting-replay.js         # ★MEETING-REPLAY-F1 时间轴/只读回放（99 行：buildTimeline + replayStateAt Event Cursor 重建，F1-RT 消费 agent_output_revoked 保持 Live/Replay 一致）
 │   │   ├── meeting-step-flow.js      # 会议步进流程（98 行）：step 路由 web_relay 停下交人工 / Create Demo 只 start / Mock 单步 / Human Gate 只接人工 / Battle 确定性默认
 │   │   ├── compile-flow.js           # 编译产物：compile → Packet Schema 校验 → render，返回摘要/Raw/Prompt
@@ -142,6 +142,7 @@ app/
     ├── protocol-test-cases-seat-layout.js          # ★TEST-155..160（D3 六席：SEATS 顺序/映射/立场覆盖/seat↔participant 双向/六席模板建会 topic 入 Packet；95 行，测试文件不受 ≤100 约束）
     ├── protocol-test-cases-meeting-replay.js       # ★TEST-173..184
     ├── protocol-test-cases-meeting-runtime-f1.js     # ★TEST-185..196（N01..N10 六席状态机 + Admission + Live/Replay 一致）（MEETING-REPLAY-F1 十二项防御性门禁：timeline 单调/不改 live/不产 Message/PendingAction/B1 before-after/跨阶段/save-load/displayState 一致）
+    ├── protocol-test-cases-integrity-f2b1.js       # ★TEST-264..273（INTEGRITY-F2-B1 B1-01..B1-10：battle_round Runtime-owned / 四元 Slot / 幂等 / checkpoint-restore 不漂移 / human gate 回环 / 非 Battle 回归 / human_decision_context 恒 null）
     ├── source-bundle.js        # 被测模块聚合（浏览器/Node 共用）
     ├── fixtures/acceptance/protocols/   # 人工验收样例
     │       ├── good-a/ good-c/  broken-b/  missing-version/

@@ -12,7 +12,7 @@
   /* F1-C：mock 提交也落库 Formal Message（extensions.mock=true，无 provenance）——完成依据统一为正式消息。 */
   function mockMessage(meeting, pid) {
     var p = (meeting.participants || []).filter(function (x) { return x.participant_id === pid; })[0] || {};
-    return {
+    var msg = {
       schema_version: "0.1.0",
       message_id: "msg-mock-" + meeting.meetingId + "-" + meeting.currentPhaseId + "-" + pid,
       meeting_id: meeting.meetingId,
@@ -26,6 +26,10 @@
       created_at: Log.now(),
       extensions: { mock: true, turn: (meeting.pendingAction && meeting.pendingAction.phase_entry) || 1 }
     };
+    /* F2-B1：battle_round 仅 Battle 使用（Runtime-owned，非 Battle 阶段不写） */
+    if (meeting.pendingAction && typeof meeting.pendingAction.battle_round === "number")
+      msg.extensions.battle_round = meeting.pendingAction.battle_round;
+    return msg;
   }
   function commitMock(meeting, pid) {
     var MC = root.AICouncil.MessageCommit;

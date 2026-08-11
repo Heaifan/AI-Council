@@ -1844,6 +1844,166 @@ async function runF1C(page) {
   check("F1C-M05c · invalid 尝试不产生正式消息（rejected 仍 1）", (await evCount("message_rejected")) === 1, "ev=" + await evCount("message_rejected"));
 }
 
+/* ---------- MEETING-INTEGRITY-F2-B1：Battle Turn Contract E2E（M01 round1 落库带回合身份 / M02 Runtime 显式开新回合后 slot 独立） ---------- */
+async function runF2B1(page) {
+  const OK_OPEN = '{"position":"支持自研","reasons":["架构可控"],"risks":["周期长"]}';
+  const OK_SUM = '{"supporting_points":["自研理由充分"],"opposing_points":["成本压力"],"conflicts":["周期评估"],"open_questions":["人力是否足够"]}';
+  const OK_CRIT = '{"challenges":["成本被低估"]}';
+  const BATTLE_A1 = "claim\n自研可行。\n\nrebuttal\n对方低估成本。\n\nremaining_uncertainty\n周期未定。";
+  const BATTLE_B1 = "claim\n外购更稳。\n\nrebuttal\n自研锁死。\n\nremaining_uncertainty\n迁移成本未定。";
+  const msgs = () => page.evaluate(() => (AICouncil.HarnessStore.get().meeting.messages || []).length);
+  const pa = () => page.evaluate(() => {
+    const m = AICouncil.HarnessStore.get().meeting;
+    return m.pendingAction ? { phase_entry: m.pendingAction.phase_entry, battle_round: m.pendingAction.battle_round, received: (m.pendingAction.receivedParticipantIds || []).join(",") } : null;
+  });
+  const lastAccEv = () => page.evaluate(() => {
+    const evs = (AICouncil.HarnessStore.get().meeting.events || []).filter((e) => e.event_type === "message_accepted");
+    return evs.length ? evs[evs.length - 1].payload : null;
+  });
+
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+  await page.setInputFiles("#dir-input", repoRoot);
+  await waitStatus(page, /可用规则 1 · 已隔离 0/);
+  await page.evaluate(() => {
+    const d = AICouncil.ConsoleActions.getDraft();
+    d.participants.forEach((p) => { if (p.participant_id !== "agent-a1" && p.participant_id !== "agent-a3" && p.participant_id !== "agent-b1") p.model_ref = ""; });
+    AICouncil.ConsoleActions.persistDraft();
+  });
+  await page.fill("#cfg-title", "F2B1 回合合同");
+  await page.dispatchEvent("#cfg-title", "change");
+  await page.click("#cfg-create");
+  await page.waitForSelector("#preflight-start");
+  await page.click("#preflight-start");
+  await page.waitForSelector("#relay-hint");
+
+  /* opening：A1 relay + B1 mock → 2/2 → summary */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_OPEN);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  await clickDevBtn(page, "#mt-step");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  await page.click("#mt-advance");
+
+  /* summary：A3 relay → 1/1 → critique */
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_SUM);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/1");
+  });
+  await page.click("#mt-advance");
+
+  /* critique：A1 relay + B1 mock → 2/2 → human gate → battle */
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", OK_CRIT);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  await clickDevBtn(page, "#mt-step");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  await page.click("#mt-advance");
+  await page.waitForSelector("#mt-battle");
+  await page.click("#mt-battle");
+
+  /* M01：首次进入 battle → Runtime-owned battle_round=1 */
+  await page.waitForSelector("#relay-open");
+  const p1 = await pa();
+  check("F2B1-M01 · 首次进入 battle → phase_entry=1 / battle_round=1", p1 && p1.phase_entry === 1 && p1.battle_round === 1, JSON.stringify(p1));
+
+  /* round1：A1 relay → 1/2 → B1 mock → 2/2 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", BATTLE_A1);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  await clickDevBtn(page, "#mt-step");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("2/2");
+  });
+  check("F2B1-M01b · round1 完成 → messages=7（正式事实含 battle_round=1）", (await msgs()) === 7, "msgs=" + await msgs());
+  const evP = await lastAccEv();
+  check("F2B1-M01c · message_accepted 事件 payload 含 battle_round=1 / turn=1", evP && evP.battle_round === 1 && evP.turn === 1, JSON.stringify(evP));
+
+  /* M02：Runtime 显式开新回合（本轮禁 UI 改动——直调 Runtime API 模拟未来裁定链接线，notify 刷新视图） */
+  const adv = await page.evaluate(() => {
+    const s = AICouncil.HarnessStore.get();
+    const r = AICouncil.MeetingRuntime.advanceBattleRound(s.meeting, s.protocol);
+    if (r.ok) AICouncil.HarnessStore.notify();
+    return r;
+  });
+  check("F2B1-M02 · Runtime 显式开新回合 → battle_round=2", adv && adv.ok && adv.battle_round === 2, JSON.stringify(adv));
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("0/2");
+  });
+  check("F2B1-M02b · 新回合 received 重置 → UI 0/2 running（round1 不误判已满足）", true);
+
+  /* round2：A1 relay → slot 与 round1 独立 */
+  await page.click("#relay-open");
+  await page.waitForSelector("#relay-prompt");
+  await page.fill("#relay-paste", BATTLE_A1);
+  await page.click("#relay-submit");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("relay-state-raw");
+    return el && el.textContent.includes("validated");
+  });
+  await page.click("#relay-accept");
+  await page.waitForFunction(() => {
+    const el = document.getElementById("seat-nav-current");
+    return el && el.textContent.includes("1/2");
+  });
+  check("F2B1-M02c · round2 A1 落库 → messages=8（round1/round2 slot 独立）", (await msgs()) === 8, "msgs=" + await msgs());
+  const slotChk = await page.evaluate(() => {
+    const m = AICouncil.HarnessStore.get().meeting;
+    const MC = AICouncil.MessageCommit;
+    const r1 = MC.findCommitted(m, "battle", "agent-a1", m.pendingAction.phase_entry, 1);
+    const r2 = MC.findCommitted(m, "battle", "agent-a1", m.pendingAction.phase_entry, 2);
+    return r1 && r2 && r1.message_id !== r2.message_id ? { ok: true, r1: MC.battleRoundOf(r1), r2: MC.battleRoundOf(r2) } : { ok: false };
+  });
+  check("F2B1-M02d · 同 A1 的 round1/round2 slot 指向不同正式消息", slotChk && slotChk.ok && slotChk.r1 === 1 && slotChk.r2 === 2, JSON.stringify(slotChk));
+  const p2 = await pa();
+  check("F2B1-M02e · round2 进行中 battle_round=2 / received=[A1]", p2 && p2.battle_round === 2 && p2.received === "agent-a1", JSON.stringify(p2));
+}
+
 /* ---------- MEETING-INTEGRITY-F1-B：Response Validation Pipeline E2E（M01 合法 / M02 尾巴 / M03 缺字段 / M04 修正恢复 / M05 battle 缺小节） ---------- */
 async function runF1B(page) {
   const OK_OPEN = '{"position":"支持自研","reasons":["架构可控"],"risks":["周期长"]}';
@@ -2093,6 +2253,7 @@ async function runChannel(channel) {
   await runF1A(page);
   await runF1B(page);
   await runF1C(page);
+  await runF2B1(page);
   await runTestPage(page);
 
   await browser.close();

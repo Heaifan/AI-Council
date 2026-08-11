@@ -88,6 +88,7 @@ const RUNTIME = [
   "app/js/invocation/invocation-message-factory.js",
   "app/tests/protocol-test-cases-integrity-f1b.js",
   "app/tests/protocol-test-cases-integrity-f1c.js",
+  "app/tests/protocol-test-cases-integrity-f2b1.js",
   "app/tests/protocol-test-cases-web-relay-flow.js",
   "app/tests/protocol-test-cases-web-relay-recovery.js",
   "app/tests/protocol-test-cases-web-relay-contract.js",

@@ -97,6 +97,9 @@
         var entry = 1;
         (meeting.events || []).forEach(function (e) { if (e.event_type === "phase_entered" && e.phase_id === phaseId) entry++; });
         meeting.pendingAction.phase_entry = entry;
+        /* F2-B1：battle_round = 本次 Battle 内第几轮交锋（Runtime-owned，首次进入 = 1；
+         * 只有 Runtime 显式 advanceBattleRound 才 +1，绝不从 AI/消息数/speaker 顺序推导） */
+        if (phase.kind === "battle") meeting.pendingAction.battle_round = 1;
         meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;   /* F1：本阶段游标 = roster 首位 */
         /* MEETING-INTEGRITY-F1-A：进入瞬间冻结可见上下文引用（挂 pendingAction，随 checkpoint/存档自动持久化） */
         var PCS = root.AICouncil.PhaseContextSnapshot;
@@ -243,6 +246,7 @@
     var entry2 = 1;
     (meeting.events || []).forEach(function (e) { if (e.event_type === "phase_entered" && e.phase_id === meeting.currentPhaseId) entry2++; });
     meeting.pendingAction.phase_entry = entry2;
+    if (phase.kind === "battle") meeting.pendingAction.battle_round = 1;   /* F2-B1：重解析与 enterPhase 一致 */
     meeting.activeSpeakerId = r.ids.length ? r.ids[0] : null;
     /* F1-A：名单变化后重建冻结上下文（与 enterPhase 一致，仅未开始时允许） */
     var PCS = root.AICouncil.PhaseContextSnapshot;
@@ -261,6 +265,26 @@
     if (stop) return { ok: false, diagnostic: meeting.error };
     drive(meeting, protocol, pm);
     return { ok: true };
+  }
+
+  /* F2-B1：Battle 开新回合的唯一入口（Runtime-owned battle_round += 1）。
+   * 守卫：仅当前为 battle phase 且本轮全部完成（ready_to_advance）时允许——绝不因发言/transport/校验自动 +1；
+   * 开新轮 = 重置 received（新轮重新收集）+ 游标回 roster 首位（新轮从第一人开始）。
+   * 显式调用方 = 人类/未来 UI 裁定（F2-B2 接线），本轮只冻结合同。 */
+  function advanceBattleRound(meeting, protocol) {
+    var TS = root.AICouncil.MeetingTurnSelector;
+    var pm = root.AICouncil.MeetingFactory.buildPhaseMap(docOf(protocol));
+    var phase = currentPhase(meeting, pm);
+    if (!phase || phase.kind !== "battle")
+      return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "当前阶段不是 Battle，无法开启新回合。") };
+    var st = TS ? TS.phaseStatus(meeting, protocol) : null;
+    if (st !== "ready_to_advance")
+      return { ok: false, diagnostic: diag(C.RUNTIME_INVALID_STATE, "本轮 Battle 尚未完成（" + (st || "无") + "），不能开启下一回合。") };
+    var pa = meeting.pendingAction;
+    pa.battle_round = (typeof pa.battle_round === "number" && pa.battle_round >= 1 ? pa.battle_round : 1) + 1;
+    pa.receivedParticipantIds = [];
+    meeting.activeSpeakerId = (pa.requiredParticipantIds && pa.requiredParticipantIds.length) ? pa.requiredParticipantIds[0] : null;
+    return { ok: true, battle_round: pa.battle_round };
   }
 
   function submitHumanDecision(meeting, protocol, decision) {
@@ -296,7 +320,7 @@
     start: start,
     getNextAction: getNextAction,
     submitResult: submitResult, reenterPhase: reenterPhase,
-    advancePhase: advancePhase, submitHumanDecision: submitHumanDecision,
+    advancePhase: advancePhase, advanceBattleRound: advanceBattleRound, submitHumanDecision: submitHumanDecision,
     /* 暴露内部助手供测试/调试 */
     _resolveParticipants: resolveParticipants,
     _resolveTransition: resolveTransition
